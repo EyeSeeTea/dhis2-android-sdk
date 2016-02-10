@@ -259,6 +259,98 @@ public class OrganisationUnit extends BaseModel {
         return ancestors;
     }
 
+    public String getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(String lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public String getCreated() {
+        return created;
+    }
+
+    public void setCreated(String created) {
+        this.created = created;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getShortName() {
+        return shortName;
+    }
+
+    public void setShortName(String shortName) {
+        this.shortName = shortName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayShortName() {
+        return displayShortName;
+    }
+
+    public void setDisplayShortName(String displayShortName) {
+        this.displayShortName = displayShortName;
+    }
+
+    public Boolean getExternalAccess() {
+        return externalAccess;
+    }
+
+    public void setExternalAccess(Boolean externalAccess) {
+        this.externalAccess = externalAccess;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getFeatureType() {
+        return featureType;
+    }
+
+    public void setFeatureType(String featureType) {
+        this.featureType = featureType;
+    }
+
+    public String getOpeningDate() {
+        return openingDate;
+    }
+
+    public void setOpeningDate(String openingDate) {
+        this.openingDate = openingDate;
+    }
+
+    public String getDimensionItem() {
+        return dimensionItem;
+    }
+
+    public void setDimensionItem(String dimensionItem) {
+        this.dimensionItem = dimensionItem;
+    }
+
     @JsonProperty("ancestors")
     public void setAncestors(List<Map<String, Object>> organisationUnits) {
         List<String> tempAncestors = new ArrayList<>();
