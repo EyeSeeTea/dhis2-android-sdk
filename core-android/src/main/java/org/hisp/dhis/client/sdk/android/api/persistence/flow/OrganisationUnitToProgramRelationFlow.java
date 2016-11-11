@@ -44,7 +44,7 @@ import org.hisp.dhis.client.sdk.android.api.persistence.DbDhis;
 @Table(database = DbDhis.class, uniqueColumnGroups = {@UniqueGroup(
         groupNumber = OrganisationUnitToProgramRelationFlow.UNIQUE_ORGANISATION_UNIT_PROGRAM_GROUP,
         uniqueConflict = ConflictAction.REPLACE)})
-public final class OrganisationUnitToProgramRelationFlow extends BaseModel {
+public class OrganisationUnitToProgramRelationFlow extends BaseModel {
     final static String ORGANISATION_UNIT_KEY = "organisationUnit";
     final static String PROGRAM_KEY = "program";
     final static int UNIQUE_ORGANISATION_UNIT_PROGRAM_GROUP = 56745632;

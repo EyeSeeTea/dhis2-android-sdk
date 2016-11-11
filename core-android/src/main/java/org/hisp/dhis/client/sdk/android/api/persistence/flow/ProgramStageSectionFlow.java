@@ -40,7 +40,7 @@ import org.hisp.dhis.client.sdk.android.common.Mapper;
 import org.hisp.dhis.client.sdk.models.program.ProgramStageSection;
 
 @Table(database = DbDhis.class)
-public final class ProgramStageSectionFlow extends BaseIdentifiableObjectFlow {
+public class ProgramStageSectionFlow extends BaseIdentifiableObjectFlow {
     public static final Mapper<ProgramStageSection, ProgramStageSectionFlow>
             MAPPER = new SectionMapper();
 

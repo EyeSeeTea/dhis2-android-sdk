@@ -47,7 +47,7 @@ import org.hisp.dhis.client.sdk.models.trackedentity.TrackedEntityDataValue;
                 groupNumber = TrackedEntityDataValueFlow.UNIQUE_EVENT_DATAVALUE,
                 uniqueConflict = ConflictAction.FAIL)
 })
-public final class TrackedEntityDataValueFlow extends BaseModelFlow {
+public class TrackedEntityDataValueFlow extends BaseModelFlow {
     public static final Mapper<TrackedEntityDataValue,
                 TrackedEntityDataValueFlow> MAPPER = new TrackedEntityDataValueMapper();
 

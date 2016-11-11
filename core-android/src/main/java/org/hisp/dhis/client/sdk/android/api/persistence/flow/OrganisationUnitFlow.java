@@ -40,7 +40,7 @@ import org.hisp.dhis.client.sdk.android.common.Mapper;
 import org.hisp.dhis.client.sdk.models.organisationunit.OrganisationUnit;
 
 @Table(database = DbDhis.class)
-public final class OrganisationUnitFlow extends BaseIdentifiableObjectFlow {
+public class OrganisationUnitFlow extends BaseIdentifiableObjectFlow {
     public static Mapper<OrganisationUnit, OrganisationUnitFlow>
             MAPPER = new OrganisationUnitMapper();
 

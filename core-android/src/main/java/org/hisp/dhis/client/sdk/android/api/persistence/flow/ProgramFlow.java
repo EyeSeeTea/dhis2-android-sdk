@@ -41,7 +41,7 @@ import org.hisp.dhis.client.sdk.models.program.Program;
 import org.hisp.dhis.client.sdk.models.program.ProgramType;
 
 @Table(database = DbDhis.class)
-public final class ProgramFlow extends BaseIdentifiableObjectFlow {
+public class ProgramFlow extends BaseIdentifiableObjectFlow {
     public static Mapper<Program, ProgramFlow> MAPPER = new ProgramMapper();
 
     private static final String TRACKED_ENTITY_KEY = "trackedEntity";

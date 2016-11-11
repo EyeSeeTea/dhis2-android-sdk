@@ -41,7 +41,7 @@ import org.hisp.dhis.client.sdk.models.dataelement.ValueType;
 import org.hisp.dhis.client.sdk.models.trackedentity.TrackedEntityAttribute;
 
 @Table(database = DbDhis.class)
-public final class TrackedEntityAttributeFlow extends BaseIdentifiableObjectFlow {
+public class TrackedEntityAttributeFlow extends BaseIdentifiableObjectFlow {
     public static final Mapper<TrackedEntityAttribute, TrackedEntityAttributeFlow>
             MAPPER = new AttributeMapper();
 

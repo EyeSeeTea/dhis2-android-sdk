@@ -40,7 +40,7 @@ import org.hisp.dhis.client.sdk.models.event.Event.EventStatus;
 import org.joda.time.DateTime;
 
 @Table(database = DbDhis.class)
-public final class EventFlow extends BaseIdentifiableObjectFlow {
+public class EventFlow extends BaseIdentifiableObjectFlow {
     public static final Mapper<Event, EventFlow> MAPPER = new EventMapper();
 
     @Column(name = "status")

@@ -40,7 +40,7 @@ import org.hisp.dhis.client.sdk.android.common.Mapper;
 import org.hisp.dhis.client.sdk.models.optionset.Option;
 
 @Table(database = DbDhis.class)
-public final class OptionFlow extends BaseIdentifiableObjectFlow {
+public class OptionFlow extends BaseIdentifiableObjectFlow {
     public static Mapper<Option, OptionFlow> MAPPER = new OptionMapper();
 
     static final String OPTION_SET_KEY = "optionSet";

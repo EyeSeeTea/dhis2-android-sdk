@@ -39,7 +39,7 @@ import org.hisp.dhis.client.sdk.models.optionset.OptionSet;
 import java.util.List;
 
 @Table(database = DbDhis.class)
-public final class OptionSetFlow extends BaseIdentifiableObjectFlow {
+public class OptionSetFlow extends BaseIdentifiableObjectFlow {
     public static Mapper<OptionSet, OptionSetFlow> MAPPER = new OptionSetMapper();
 
     @Column

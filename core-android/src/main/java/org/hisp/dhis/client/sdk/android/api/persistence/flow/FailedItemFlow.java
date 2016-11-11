@@ -40,7 +40,7 @@ import org.hisp.dhis.client.sdk.android.api.persistence.DbDhis;
 import org.hisp.dhis.client.sdk.models.common.faileditem.FailedItemType;
 
 @Table(database = DbDhis.class)
-public final class FailedItemFlow extends BaseModel {
+public class FailedItemFlow extends BaseModel {
 
     static final int UNIQUE_FAILEDITEM_GROUP = 123493;
     static final String IMPORTSUMMARY_KEY = "importSummary";

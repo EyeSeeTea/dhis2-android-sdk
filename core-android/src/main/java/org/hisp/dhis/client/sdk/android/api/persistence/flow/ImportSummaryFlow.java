@@ -39,7 +39,7 @@ import org.hisp.dhis.client.sdk.models.common.importsummary.ImportSummary;
 import java.util.List;
 
 @Table(database = DbDhis.class)
-public final class ImportSummaryFlow extends BaseModelFlow {
+public class ImportSummaryFlow extends BaseModelFlow {
 
     static final String IMPORTCOUNT_KEY = "importCount";
 

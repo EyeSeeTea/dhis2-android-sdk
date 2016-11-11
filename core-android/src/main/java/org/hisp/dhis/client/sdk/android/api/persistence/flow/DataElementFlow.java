@@ -41,7 +41,7 @@ import org.hisp.dhis.client.sdk.models.dataelement.ValueType;
 import org.hisp.dhis.client.sdk.models.dataelement.DataElement;
 
 @Table(database = DbDhis.class)
-public final class DataElementFlow extends BaseIdentifiableObjectFlow {
+public class DataElementFlow extends BaseIdentifiableObjectFlow {
     public static Mapper<DataElement, DataElementFlow> MAPPER = new DataElementMapper();
 
     private final static String OPTION_SET_KEY = "optionset";

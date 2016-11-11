@@ -46,7 +46,7 @@ import org.hisp.dhis.client.sdk.models.program.ProgramTrackedEntityAttribute;
                 groupNumber = ProgramTrackedEntityAttributeFlow.UNIQUE_TRACKED_ENTITY_PROGRAM,
                 uniqueConflict = ConflictAction.FAIL)
 })
-public final class ProgramTrackedEntityAttributeFlow extends BaseIdentifiableObjectFlow {
+public class ProgramTrackedEntityAttributeFlow extends BaseIdentifiableObjectFlow {
     public static final Mapper<ProgramTrackedEntityAttribute, ProgramTrackedEntityAttributeFlow>
             MAPPER = new AttributeMapper();
 

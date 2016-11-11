@@ -46,7 +46,7 @@ import org.hisp.dhis.client.sdk.models.program.ProgramStageDataElement;
                 groupNumber = ProgramStageDataElementFlow.UNIQUE_PROGRAM_DATA_ELEMENT_GROUP,
                 uniqueConflict = ConflictAction.FAIL)
 })
-public final class ProgramStageDataElementFlow extends BaseIdentifiableObjectFlow {
+public class ProgramStageDataElementFlow extends BaseIdentifiableObjectFlow {
     public static Mapper<ProgramStageDataElement, ProgramStageDataElementFlow>
             MAPPER = new ProgramStageDataElementMapper();
 
