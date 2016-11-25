@@ -154,20 +154,21 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
     }
 
     @Override
-    public void push(Set<String> uids) throws ApiException {
+    public List<ImportSummary> push(Set<String> uids) throws ApiException {
         isEmpty(uids, "Set of event uids must not be null");
 
-        sendEvents(uids);
+        List <ImportSummary> importSummaries = sendEvents(uids);
         deleteEvents(uids);
+        return importSummaries;
     }
 
-    private void sendEvents(Set<String> uids) throws ApiException {
+    private List<ImportSummary> sendEvents(Set<String> uids) throws ApiException {
         // retrieve basic events with given state from database
         List<Event> eventStates = stateStore.queryModelsWithActions(
                 Event.class, uids, Action.TO_POST, Action.TO_UPDATE);
 
         if (eventStates == null || eventStates.isEmpty()) {
-            return;
+            return null;
         }
 
         Set<String> eventUids = ModelUtils.toUidSet(eventStates);
@@ -191,9 +192,11 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
                     stateStore.saveActionForModel(event, Action.ERROR);
                 }
             }
+            return importSummaries;
         } catch (ApiException apiException) {
             handleApiException(apiException, null);
         }
+        return null;
     }
 
     private void deleteEvents(Set<String> uids) throws ApiException {

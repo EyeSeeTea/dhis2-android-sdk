@@ -32,6 +32,7 @@ import org.hisp.dhis.client.sdk.android.api.utils.DefaultOnSubscribe;
 import org.hisp.dhis.client.sdk.core.common.controllers.SyncStrategy;
 import org.hisp.dhis.client.sdk.core.event.EventController;
 import org.hisp.dhis.client.sdk.core.event.EventService;
+import org.hisp.dhis.client.sdk.models.common.importsummary.ImportSummary;
 import org.hisp.dhis.client.sdk.models.common.state.Action;
 import org.hisp.dhis.client.sdk.models.common.state.State;
 import org.hisp.dhis.client.sdk.models.event.Event;
@@ -39,6 +40,7 @@ import org.hisp.dhis.client.sdk.models.organisationunit.OrganisationUnit;
 import org.hisp.dhis.client.sdk.models.program.Program;
 import org.hisp.dhis.client.sdk.models.program.ProgramStage;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,12 +89,23 @@ public class EventInteractorImpl implements EventInteractor {
     }
 
     @Override
-    public Observable<List<Event>> push(final Set<String> uids) {
-        return Observable.create(new DefaultOnSubscribe<List<Event>>() {
+    public Observable<Map<Event,ImportSummary>> push(final Set<String> uids) {
+        return Observable.create(new DefaultOnSubscribe<Map<Event,ImportSummary>>() {
             @Override
-            public List<Event> call() {
-                eventController.push(uids);
-                return eventService.list(uids);
+            public Map<Event,ImportSummary> call() {
+                Map<Event,ImportSummary> importSumariesAndEventsMap = new HashMap<Event,
+                        ImportSummary>();
+
+                List<ImportSummary> importSummaries = eventController.push(uids);
+                List<Event> events = eventService.list(uids);
+                for(ImportSummary importSummary:importSummaries){
+                    for(Event event:events){
+                        if(importSummary.getReference().equals(event.getUId())){
+                            importSumariesAndEventsMap.put(event,importSummary);
+                        }
+                    }
+                }
+                return importSumariesAndEventsMap;
             }
         });
     }
