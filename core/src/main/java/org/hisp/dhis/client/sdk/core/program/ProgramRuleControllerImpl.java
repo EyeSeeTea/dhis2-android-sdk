@@ -164,13 +164,16 @@ public final class ProgramRuleControllerImpl
         DateTime lastUpdated = lastUpdatedPreferences.get(
                 ResourceType.PROGRAM_RULES, DateType.SERVER);
 
+        List<ProgramRule> allExistingProgramRules = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingProgramRules =
+                    programRuleApiClient.getProgramRules(Fields.BASIC, null);
+        }
+
+
         List<ProgramRule> persistedProgramRules = identifiableObjectStore.queryAll();
 
         // we have to download all ids from server in order to
-        // find out what was removed on the server side
-        List<ProgramRule> allExistingProgramRules = programRuleApiClient
-                .getProgramRules(Fields.BASIC, null);
-
         List<ProgramRule> updatedProgramRules = new ArrayList<>();
         if (uids == null) {
             updatedProgramRules.addAll(programRuleApiClient.getProgramRules(

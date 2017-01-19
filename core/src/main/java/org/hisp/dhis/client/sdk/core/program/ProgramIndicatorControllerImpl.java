@@ -56,8 +56,11 @@ public class ProgramIndicatorControllerImpl
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<ProgramIndicator> allExistingProgramIndicators = programindicatorApiClient
-                .getProgramIndicators(Fields.BASIC, null);
+        List<ProgramIndicator> allExistingProgramIndicators = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingProgramIndicators =
+                    programindicatorApiClient.getProgramIndicators(Fields.BASIC, null);
+        }
 
         List<ProgramIndicator> updatedProgramIndicators = new ArrayList<>();
         if (uids == null) {

@@ -57,11 +57,11 @@ public final class TrackedEntityAttributeControllerImpl
     private final OptionSetController optionSetController;
 
     public TrackedEntityAttributeControllerImpl(SystemInfoController systemInfoController,
-                                                OptionSetController optionSetController,
-                                                LastUpdatedPreferences lastUpdatedPreferences,
-                                                TrackedEntityAttributeStore attributeStore,
-                                                TrackedEntityAttributeApiClient attributeApiClient,
-                                                TransactionManager transactionManager) {
+            OptionSetController optionSetController,
+            LastUpdatedPreferences lastUpdatedPreferences,
+            TrackedEntityAttributeStore attributeStore,
+            TrackedEntityAttributeApiClient attributeApiClient,
+            TransactionManager transactionManager) {
         super(ResourceType.TRACKED_ENTITY_ATTRIBUTES, attributeStore, lastUpdatedPreferences);
         this.trackedEntityAttributeApiClient = attributeApiClient;
         this.transactionManager = transactionManager;
@@ -80,8 +80,11 @@ public final class TrackedEntityAttributeControllerImpl
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<TrackedEntityAttribute> allExistingTrackedEntityAttributes = trackedEntityAttributeApiClient
-                .getTrackedEntityAttributes(Fields.BASIC, null);
+        List<TrackedEntityAttribute> allExistingTrackedEntityAttributes = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingTrackedEntityAttributes =
+                    trackedEntityAttributeApiClient.getTrackedEntityAttributes(Fields.BASIC, null);
+        }
 
         List<TrackedEntityAttribute> updatedTrackedEntityAttributes = new ArrayList<>();
         if (uids == null) {

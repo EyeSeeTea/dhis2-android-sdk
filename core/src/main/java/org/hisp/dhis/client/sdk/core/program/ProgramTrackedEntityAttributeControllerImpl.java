@@ -55,8 +55,10 @@ public final class ProgramTrackedEntityAttributeControllerImpl extends
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<ProgramTrackedEntityAttribute> allExistingProgramTrackedEntityAttributes = programTrackedEntityAttributeApiClient
-                .getProgramTrackedEntityAttributes(Fields.BASIC, null);
+        List<ProgramTrackedEntityAttribute> allExistingProgramTrackedEntityAttributes = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingProgramTrackedEntityAttributes = programTrackedEntityAttributeApiClient.getProgramTrackedEntityAttributes(Fields.BASIC, null);
+        }
 
         List<ProgramTrackedEntityAttribute> updatedProgramTrackedEntityAttributes = new ArrayList<>();
         if (uids == null) {

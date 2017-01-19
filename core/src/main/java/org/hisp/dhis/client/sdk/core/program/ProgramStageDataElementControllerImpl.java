@@ -98,7 +98,11 @@ public class ProgramStageDataElementControllerImpl
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<ProgramStageDataElement> allExistingStageDataElements =
+        List<ProgramStageDataElement> allExistingStagesDataElements = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingStagesDataElements = stageDataElementApiClient
+                    .getProgramStageDataElements(Fields.BASIC, null, null);
+        }
                 stageDataElementApiClient.getProgramStageDataElements(Fields.BASIC, null, null);
 
         List<ProgramStageDataElement> updatedStageDataElements = new ArrayList<>();
@@ -135,7 +139,7 @@ public class ProgramStageDataElementControllerImpl
         Set<String> programStageSectionUids = new HashSet<>();
 
         List<ProgramStageDataElement> mergedProgramStageDataElements = ModelUtils.merge(
-                allExistingStageDataElements, updatedStageDataElements, programStageDataElements);
+                allExistingStagesDataElements, updatedStageDataElements, programStageDataElements);
         for (ProgramStageDataElement programStageDataElement : mergedProgramStageDataElements) {
             if (programStageDataElement.getProgramStageSection() != null) {
                 programStageSectionUids.add(
@@ -153,7 +157,7 @@ public class ProgramStageDataElementControllerImpl
         dataElementController.pull(strategy, dataElementUids);
         stageSectionController.pull(strategy, programStageSectionUids);
 
-        List<DbOperation> dbOperations = DbUtils.createOperations(allExistingStageDataElements,
+        List<DbOperation> dbOperations = DbUtils.createOperations(allExistingStagesDataElements,
                 updatedStageDataElements, programStageDataElements, identifiableObjectStore);
         transactionManager.transact(dbOperations);
 

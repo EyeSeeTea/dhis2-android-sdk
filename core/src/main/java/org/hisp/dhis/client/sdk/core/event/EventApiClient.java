@@ -39,6 +39,9 @@ import java.util.Set;
 
 public interface EventApiClient {
     List<Event> getEvents(
+            Fields fields, String organisationUnit, String program) throws ApiException;
+
+    List<Event> getEvents(
             Fields fields, DateTime lastUpdated, Set<String> uids) throws ApiException;
 
     ApiMessage postEvents(List<Event> events) throws ApiException;

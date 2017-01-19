@@ -96,8 +96,12 @@ public final class ProgramRuleActionControllerImpl
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<ProgramRuleAction> allExistingProgramRuleActions = programRuleActionApiClient
-                .getProgramRuleActions(Fields.BASIC, null);
+        List<ProgramRuleAction> allExistingProgramRuleActions = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingProgramRuleActions =
+                    programRuleActionApiClient.getProgramRuleActions(Fields.BASIC, null);
+        }
+
 
         List<ProgramRuleAction> updatedProgramRuleActions = new ArrayList<>();
         if (uids == null) {

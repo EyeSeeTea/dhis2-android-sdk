@@ -82,8 +82,11 @@ public final class OptionSetControllerImpl extends
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<OptionSet> allExistingOptionSets = optionSetApiClient
-                .getOptionSets(Fields.BASIC, null, null);
+        List<OptionSet> allExistingOptionSets = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingOptionSets =
+                    optionSetApiClient.getOptionSets(Fields.BASIC, null, null);
+        }
 
         List<OptionSet> updatedOptionSets = new ArrayList<>();
         if (uids == null) {

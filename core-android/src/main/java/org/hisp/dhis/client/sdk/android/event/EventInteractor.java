@@ -70,6 +70,10 @@ public interface EventInteractor {
 
     Observable<List<Event>> pull(SyncStrategy strategy, Set<String> uids);
 
+    Observable<List<Event>> pull(String organisationUnit, String program);
+
+    Observable<List<Event>> pull(OrganisationUnit organisationUnit, Program program);
+
     Observable<Map<Event,ImportSummary>> push(Set<String> uids);
 
     Observable<List<Event>> sync(Set<String> uids);

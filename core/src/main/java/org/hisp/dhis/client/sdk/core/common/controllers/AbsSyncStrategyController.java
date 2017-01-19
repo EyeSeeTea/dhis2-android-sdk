@@ -79,6 +79,12 @@ public abstract class AbsSyncStrategyController<T extends IdentifiableObject>
 
             lastUpdatedPreferences.save(resourceType, DateType.LOCAL, currentDate);
         }
+
+        if (SyncStrategy.NO_DELETE.equals(strategy) && isResourceOutdated(currentDate)) {
+            synchronize(SyncStrategy.NO_DELETE, uids);
+
+            lastUpdatedPreferences.save(resourceType, DateType.LOCAL, currentDate);
+        }
     }
 
     private boolean isResourceOutdated(DateTime currentDate) {

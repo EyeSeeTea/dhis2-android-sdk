@@ -63,11 +63,11 @@ public class OrganisationUnitControllerImpl extends AbsSyncStrategyController<Or
     private final TransactionManager transactionManager;
 
     public OrganisationUnitControllerImpl(SystemInfoController systemInfoController,
-                                          OrganisationUnitApiClient organisationUnitApiClient,
-                                          UserApiClient userApiClient,
-                                          OrganisationUnitStore organisationUnitStore,
-                                          LastUpdatedPreferences lastUpdatedPreferences,
-                                          TransactionManager transactionManager) {
+            OrganisationUnitApiClient organisationUnitApiClient,
+            UserApiClient userApiClient,
+            OrganisationUnitStore organisationUnitStore,
+            LastUpdatedPreferences lastUpdatedPreferences,
+            TransactionManager transactionManager) {
         super(ResourceType.ORGANISATION_UNITS, organisationUnitStore, lastUpdatedPreferences);
 
         this.systemInfoController = systemInfoController;
@@ -86,8 +86,10 @@ public class OrganisationUnitControllerImpl extends AbsSyncStrategyController<Or
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<OrganisationUnit> allExistingOrganisationUnits =
-                organisationUnitApiClient.getOrganisationUnits(Fields.BASIC, null, null);
+        List<OrganisationUnit> allExistingOrganisationUnits = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            organisationUnitApiClient.getOrganisationUnits(Fields.BASIC, null, null);
+        }
 
 
         List<OrganisationUnit> updatedOrganisationUnits = new ArrayList<>();
