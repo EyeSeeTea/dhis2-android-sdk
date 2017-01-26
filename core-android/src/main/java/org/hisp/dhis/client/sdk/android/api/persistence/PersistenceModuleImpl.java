@@ -41,6 +41,7 @@ import org.hisp.dhis.client.sdk.android.enrollment.EnrollmentStoreImpl;
 import org.hisp.dhis.client.sdk.android.event.EventStoreImpl;
 import org.hisp.dhis.client.sdk.android.optionset.OptionSetStoreImpl;
 import org.hisp.dhis.client.sdk.android.optionset.OptionStoreImpl;
+import org.hisp.dhis.client.sdk.android.organisationunit.OrganisationUnitLevelStoreImpl;
 import org.hisp.dhis.client.sdk.android.organisationunit.OrganisationUnitStoreImpl;
 import org.hisp.dhis.client.sdk.android.program.ProgramIndicatorStoreImpl;
 import org.hisp.dhis.client.sdk.android.program.ProgramRuleActionStoreImpl;
@@ -66,6 +67,7 @@ import org.hisp.dhis.client.sdk.core.enrollment.EnrollmentStore;
 import org.hisp.dhis.client.sdk.core.event.EventStore;
 import org.hisp.dhis.client.sdk.core.optionset.OptionSetStore;
 import org.hisp.dhis.client.sdk.core.optionset.OptionStore;
+import org.hisp.dhis.client.sdk.core.organisationunit.OrganisationUnitLevelStore;
 import org.hisp.dhis.client.sdk.core.organisationunit.OrganisationUnitStore;
 import org.hisp.dhis.client.sdk.core.program.ProgramIndicatorStore;
 import org.hisp.dhis.client.sdk.core.program.ProgramRuleActionStore;
@@ -98,6 +100,7 @@ public class PersistenceModuleImpl implements PersistenceModule {
     private final TrackedEntityAttributeStore trackedEntityAttributeStore;
     private final ProgramStageDataElementStore programStageDataElementStore;
     private final OrganisationUnitStore organisationUnitStore;
+    private final OrganisationUnitLevelStore organisationUnitLevelStore;
     private final EventStore eventStore;
     private final TrackedEntityDataValueStore trackedEntityDataValueStore;
     private final DataElementStore dataElementStore;
@@ -132,6 +135,7 @@ public class PersistenceModuleImpl implements PersistenceModule {
 
         userAccountStore = new UserAccountStoreImpl(stateStore);
         organisationUnitStore = new OrganisationUnitStoreImpl(transactionManager);
+        organisationUnitLevelStore = new OrganisationUnitLevelStoreImpl(transactionManager);
 
         trackedEntityDataValueStore = new TrackedEntityDataValueStoreImpl();
         eventStore = new EventStoreImpl(stateStore, trackedEntityDataValueStore, transactionManager);
@@ -211,6 +215,10 @@ public class PersistenceModuleImpl implements PersistenceModule {
     public OrganisationUnitStore getOrganisationUnitStore() {
         return organisationUnitStore;
     }
+    @Override
+    public OrganisationUnitLevelStore getOrganisationUnitLevelStore() {
+        return organisationUnitLevelStore;
+    }
 
     @Override
     public EventStore getEventStore() {
@@ -281,6 +289,7 @@ public class PersistenceModuleImpl implements PersistenceModule {
                 trackedEntityAttributeStore.deleteAll() &&
                 programStageDataElementStore.deleteAll() &&
                 organisationUnitStore.deleteAll() &&
+                organisationUnitLevelStore.deleteAll() &&
                 eventStore.deleteAll() &&
                 trackedEntityDataValueStore.deleteAll() &&
                 dataElementStore.deleteAll() &&

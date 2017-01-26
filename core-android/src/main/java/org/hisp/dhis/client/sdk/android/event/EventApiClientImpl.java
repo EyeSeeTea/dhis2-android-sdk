@@ -3,7 +3,6 @@ package org.hisp.dhis.client.sdk.android.event;
 import org.hisp.dhis.client.sdk.core.common.Fields;
 import org.hisp.dhis.client.sdk.core.common.network.ApiException;
 import org.hisp.dhis.client.sdk.core.common.network.ApiMessage;
-import org.hisp.dhis.client.sdk.core.common.network.ApiResponse;
 import org.hisp.dhis.client.sdk.core.common.utils.CollectionUtils;
 import org.hisp.dhis.client.sdk.core.event.EventApiClient;
 import org.hisp.dhis.client.sdk.models.event.Event;
@@ -23,6 +22,36 @@ public class EventApiClientImpl implements EventApiClient {
 
     public EventApiClientImpl(EventApiClientRetrofit eventApiclientRetrofit) {
         this.eventApiclientRetrofit = eventApiclientRetrofit;
+    }
+
+    @Override
+    public List<Event> getEvents(Fields fields, String organisationUnit, String program) throws ApiException {
+        Map<String, String> queryMap = new HashMap<>();
+
+        //filter by org unit
+        queryMap.put("orgUnit",organisationUnit );
+        //filter by program
+        queryMap.put("program",program);
+        /* disable paging */
+        queryMap.put("skipPaging", "true");
+
+        switch (fields) {
+            case BASIC: {
+                queryMap.put("fields", "event");
+                break;
+            }
+            case ALL: {
+                queryMap.put("fields", "event,name,displayName,created,lastUpdated,access," +
+                        "program,programStage,status,orgUnit,eventDate,dueDate," +
+                        "coordinate,dataValues");
+                break;
+            }
+        }
+
+        List<Event> allEvents = new ArrayList<>();
+        allEvents.addAll(unwrap(call(
+                eventApiclientRetrofit.getEvents(queryMap)), "events"));
+        return allEvents;
     }
 
     @Override

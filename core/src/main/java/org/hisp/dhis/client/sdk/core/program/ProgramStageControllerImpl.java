@@ -84,8 +84,11 @@ public class ProgramStageControllerImpl extends
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<ProgramStage> allExistingProgramStages = programStageApiClient
-                .getProgramStages(Fields.BASIC, null, null);
+        List<ProgramStage> allExistingProgramStages = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingProgramStages = programStageApiClient
+                    .getProgramStages(Fields.BASIC, null, null);
+        }
 
         List<ProgramStage> updatedProgramStages = new ArrayList<>();
         if (uids == null) {
@@ -115,7 +118,8 @@ public class ProgramStageControllerImpl extends
                 allExistingProgramStages, updatedProgramStages, persistedProgramStages);
 
         for (ProgramStage programStage : mergedProgramStages) {
-            programUids.add(programStage.getProgram().getUId());
+            if(programStage.getProgram()!=null)
+                programUids.add(programStage.getProgram().getUId());
         }
 
         // Syncing programs before saving program stages (since

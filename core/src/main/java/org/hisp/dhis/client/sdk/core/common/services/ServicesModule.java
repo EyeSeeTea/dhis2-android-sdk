@@ -32,6 +32,7 @@ import org.hisp.dhis.client.sdk.core.dataelement.DataElementService;
 import org.hisp.dhis.client.sdk.core.enrollment.EnrollmentService;
 import org.hisp.dhis.client.sdk.core.event.EventService;
 import org.hisp.dhis.client.sdk.core.optionset.OptionSetService;
+import org.hisp.dhis.client.sdk.core.organisationunit.OrganisationUnitLevelService;
 import org.hisp.dhis.client.sdk.core.organisationunit.OrganisationUnitService;
 import org.hisp.dhis.client.sdk.core.program.ProgramIndicatorService;
 import org.hisp.dhis.client.sdk.core.program.ProgramRuleActionService;
@@ -60,6 +61,8 @@ public interface ServicesModule {
     ProgramStageSectionService getProgramStageSectionService();
 
     OrganisationUnitService getOrganisationUnitService();
+
+    OrganisationUnitLevelService getOrganisationUnitLevelService();
 
     EventService getEventService();
 

@@ -84,8 +84,12 @@ public final class DataElementControllerImpl extends
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<DataElement> allExistingDataElements = dataElementApiClient
-                .getDataElements(Fields.BASIC, null, null);
+        List<DataElement> allExistingDataElements = new ArrayList<>();
+
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingDataElements = dataElementApiClient
+                    .getDataElements(Fields.BASIC, null, null);
+        }
 
 
         List<DataElement> updatedDataElements = new ArrayList<>();

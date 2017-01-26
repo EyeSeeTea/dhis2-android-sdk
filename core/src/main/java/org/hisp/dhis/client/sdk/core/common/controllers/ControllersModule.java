@@ -33,6 +33,7 @@ import org.hisp.dhis.client.sdk.core.enrollment.EnrollmentController;
 import org.hisp.dhis.client.sdk.core.event.EventController;
 import org.hisp.dhis.client.sdk.core.optionset.OptionSetController;
 import org.hisp.dhis.client.sdk.core.organisationunit.OrganisationUnitController;
+import org.hisp.dhis.client.sdk.core.organisationunit.OrganisationUnitLevelController;
 import org.hisp.dhis.client.sdk.core.program.ProgramController;
 import org.hisp.dhis.client.sdk.core.program.ProgramIndicatorController;
 import org.hisp.dhis.client.sdk.core.program.ProgramRuleActionController;
@@ -60,6 +61,8 @@ public interface ControllersModule {
     ProgramStageSectionController getProgramStageSectionController();
 
     OrganisationUnitController getOrganisationUnitController();
+
+    OrganisationUnitLevelController getOrganisationUnitLevelController();
 
     AssignedProgramsController getAssignedProgramsController();
 

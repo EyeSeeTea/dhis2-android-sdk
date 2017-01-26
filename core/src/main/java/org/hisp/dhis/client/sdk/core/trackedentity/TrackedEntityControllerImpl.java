@@ -40,7 +40,6 @@ import org.hisp.dhis.client.sdk.core.common.preferences.LastUpdatedPreferences;
 import org.hisp.dhis.client.sdk.core.common.preferences.ResourceType;
 import org.hisp.dhis.client.sdk.core.common.utils.ModelUtils;
 import org.hisp.dhis.client.sdk.core.systeminfo.SystemInfoController;
-import org.hisp.dhis.client.sdk.models.program.ProgramStageSection;
 import org.hisp.dhis.client.sdk.models.trackedentity.TrackedEntity;
 import org.joda.time.DateTime;
 
@@ -80,8 +79,11 @@ public final class TrackedEntityControllerImpl extends AbsSyncStrategyController
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<TrackedEntity> allExistingTrackedEntities = trackedEntityApiClient
-                .getTrackedEntities(Fields.BASIC, null);
+        List<TrackedEntity> allExistingTrackedEntities = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingTrackedEntities = trackedEntityApiClient.getTrackedEntities(Fields.BASIC,
+                    null);
+        }
 
         List<TrackedEntity> updatedTrackedEntities = new ArrayList<>();
         if (uids == null) {

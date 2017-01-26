@@ -33,6 +33,7 @@ import org.hisp.dhis.client.sdk.core.enrollment.EnrollmentApiClient;
 import org.hisp.dhis.client.sdk.core.event.EventApiClient;
 import org.hisp.dhis.client.sdk.core.optionset.OptionSetApiClient;
 import org.hisp.dhis.client.sdk.core.organisationunit.OrganisationUnitApiClient;
+import org.hisp.dhis.client.sdk.core.organisationunit.OrganisationUnitLevelApiClient;
 import org.hisp.dhis.client.sdk.core.program.ProgramApiClient;
 import org.hisp.dhis.client.sdk.core.program.ProgramIndicatorApiClient;
 import org.hisp.dhis.client.sdk.core.program.ProgramRuleActionApiClient;
@@ -53,6 +54,8 @@ public interface NetworkModule {
     UserApiClient getUserApiClient();
 
     OrganisationUnitApiClient getOrganisationUnitApiClient();
+
+    OrganisationUnitLevelApiClient getOrganisationUnitLevelApiClient();
 
     ProgramApiClient getProgramApiClient();
 

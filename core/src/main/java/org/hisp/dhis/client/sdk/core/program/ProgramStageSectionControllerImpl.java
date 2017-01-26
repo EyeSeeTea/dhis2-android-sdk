@@ -29,7 +29,6 @@
 package org.hisp.dhis.client.sdk.core.program;
 
 import org.hisp.dhis.client.sdk.core.common.Fields;
-import org.hisp.dhis.client.sdk.core.common.KeyValue;
 import org.hisp.dhis.client.sdk.core.common.controllers.AbsSyncStrategyController;
 import org.hisp.dhis.client.sdk.core.common.controllers.SyncStrategy;
 import org.hisp.dhis.client.sdk.core.common.network.ApiException;
@@ -87,8 +86,10 @@ public class ProgramStageSectionControllerImpl extends
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<ProgramStageSection> allExistingProgramStageSections = programStageSectionApiClient
-                .getProgramStageSections(Fields.BASIC, null);
+        List<ProgramStageSection> allExistingProgramStageSections = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingProgramStageSections = programStageSectionApiClient.getProgramStageSections(Fields.BASIC, null);
+        }
 
         List<ProgramStageSection> updatedProgramStageSections = new ArrayList<>();
         if (uids == null) {
@@ -118,7 +119,8 @@ public class ProgramStageSectionControllerImpl extends
                 allExistingProgramStageSections, updatedProgramStageSections,
                 persistedProgramStageSections);
         for (ProgramStageSection programStageSection : mergedProgramStageSections) {
-            programStageSectionUids.add(programStageSection.getProgramStage().getUId());
+            if(programStageSection.getProgramStage()!=null)
+                programStageSectionUids.add(programStageSection.getProgramStage().getUId());
         }
 
         // Syncing programs before saving program stages (since

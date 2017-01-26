@@ -93,8 +93,11 @@ public final class ProgramRuleVariableControllerImpl
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<ProgramRuleVariable> allExistingProgramRuleVariables =
-                programRuleVariableApiClient.getProgramRuleVariables(Fields.BASIC, null);
+        List<ProgramRuleVariable> allExistingProgramRuleVariables = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingProgramRuleVariables =
+                    programRuleVariableApiClient.getProgramRuleVariables(Fields.BASIC, null);
+        }
 
 
         List<ProgramRuleVariable> updatedProgramRuleVariables = new ArrayList<>();

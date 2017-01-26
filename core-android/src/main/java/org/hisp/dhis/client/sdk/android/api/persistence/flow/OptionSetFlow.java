@@ -67,6 +67,10 @@ public class OptionSetFlow extends BaseIdentifiableObjectFlow {
         this.options = options;
     }
 
+    public String getUid() {
+        return getUId();
+    }
+
     private static class OptionSetMapper extends AbsMapper<OptionSet, OptionSetFlow> {
 
         @Override

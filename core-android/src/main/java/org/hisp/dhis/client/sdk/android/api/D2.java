@@ -46,6 +46,8 @@ import org.hisp.dhis.client.sdk.android.optionset.OptionSetInteractor;
 import org.hisp.dhis.client.sdk.android.optionset.OptionSetInteractorImpl;
 import org.hisp.dhis.client.sdk.android.organisationunit.OrganisationUnitInteractor;
 import org.hisp.dhis.client.sdk.android.organisationunit.OrganisationUnitInteractorImpl;
+import org.hisp.dhis.client.sdk.android.organisationunit.OrganisationUnitLevelInteractor;
+import org.hisp.dhis.client.sdk.android.organisationunit.OrganisationUnitLevelInteractorImpl;
 import org.hisp.dhis.client.sdk.android.organisationunit.UserOrganisationUnitInteractor;
 import org.hisp.dhis.client.sdk.android.organisationunit.UserOrganisationUnitInteractorImpl;
 import org.hisp.dhis.client.sdk.android.program.ProgramIndicatorInteractor;
@@ -117,6 +119,7 @@ public class D2 {
 
     private final CurrentUserInteractor currentUserInteractor;
     private final OrganisationUnitInteractor organisationUnitInteractor;
+    private final OrganisationUnitLevelInteractor organisationUnitLevelInteractor;
     private final ProgramInteractor programInteractor;
     private final ProgramStageInteractor programStageInteractor;
     private final ProgramStageSectionInteractor programStageSectionInteractor;
@@ -154,6 +157,7 @@ public class D2 {
         if (!isD2Configured) {
             currentUserInteractor = null;
             organisationUnitInteractor = null;
+            organisationUnitLevelInteractor = null;
             programInteractor = null;
             programStageInteractor = null;
             programStageSectionInteractor = null;
@@ -229,6 +233,11 @@ public class D2 {
         organisationUnitInteractor = new OrganisationUnitInteractorImpl(
                 servicesModule.getOrganisationUnitService(),
                 controllersModule.getOrganisationUnitController());
+
+        organisationUnitLevelInteractor = new OrganisationUnitLevelInteractorImpl(
+                servicesModule.getOrganisationUnitLevelService(),
+                controllersModule.getOrganisationUnitLevelController()
+        );
 
         eventInteractor = new EventInteractorImpl(
                 servicesModule.getEventService(),
@@ -389,6 +398,10 @@ public class D2 {
         return configuredInstance().organisationUnitInteractor;
     }
 
+
+    public static OrganisationUnitLevelInteractor organisationUnitLevels() {
+        return configuredInstance().organisationUnitLevelInteractor;
+    }
     public static ProgramStageDataElementInteractor programStageDataElements() {
         return configuredInstance().programStageDataElementInteractor;
     }

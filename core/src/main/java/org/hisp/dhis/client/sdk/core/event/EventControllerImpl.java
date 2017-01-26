@@ -49,6 +49,7 @@ import org.hisp.dhis.client.sdk.models.event.Event;
 import org.hisp.dhis.client.sdk.utils.Logger;
 import org.joda.time.DateTime;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -137,7 +138,11 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
 
         // we have to download all ids from server in order to
         // find out what was removed on the server side
-        List<Event> allExistingEvents = eventApiClient.getEvents(Fields.BASIC, null, uids);
+        List<Event> allExistingEvents = new ArrayList<>();
+        if (strategy != SyncStrategy.NO_DELETE) {
+            allExistingEvents =
+                    eventApiClient.getEvents(Fields.BASIC, null, uids);
+        }
 
         Set<String> uidSet = ModelUtils.toUidSet(persistedEvents);
         uidSet.addAll(uids);
@@ -154,20 +159,35 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
     }
 
     @Override
-    public void push(Set<String> uids) throws ApiException {
-        isEmpty(uids, "Set of event uids must not be null");
+    public void pull(String organisationUnit, String program) throws ApiException {
 
-        sendEvents(uids);
-        deleteEvents(uids);
+        DateTime serverTime = systemInfoController.getSystemInfo().getServerDate();
+
+        List<Event> updatedEvents = eventApiClient.getEvents(
+                Fields.ALL, organisationUnit, program);
+
+        List<DbOperation> dbOperations = DbUtils.createOperations(eventStore, updatedEvents);
+        transactionManager.transact(dbOperations);
+
+        lastUpdatedPreferences.save(ResourceType.EVENTS, DateType.SERVER, serverTime);
     }
 
-    private void sendEvents(Set<String> uids) throws ApiException {
+    @Override
+    public List<ImportSummary> push(Set<String> uids) throws ApiException {
+        isEmpty(uids, "Set of event uids must not be null");
+
+        List <ImportSummary> importSummaries = sendEvents(uids);
+        deleteEvents(uids);
+        return importSummaries;
+    }
+
+    private List<ImportSummary> sendEvents(Set<String> uids) throws ApiException {
         // retrieve basic events with given state from database
         List<Event> eventStates = stateStore.queryModelsWithActions(
                 Event.class, uids, Action.TO_POST, Action.TO_UPDATE);
 
         if (eventStates == null || eventStates.isEmpty()) {
-            return;
+            return null;
         }
 
         Set<String> eventUids = ModelUtils.toUidSet(eventStates);
@@ -191,9 +211,11 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
                     stateStore.saveActionForModel(event, Action.ERROR);
                 }
             }
+            return importSummaries;
         } catch (ApiException apiException) {
             handleApiException(apiException, null);
         }
+        return null;
     }
 
     private void deleteEvents(Set<String> uids) throws ApiException {
