@@ -84,10 +84,6 @@ public final class TrackedEntityAttribute extends BaseNameableObject {
         this.optionSet = optionSet;
     }
 
-    public void setIsUnique(boolean isUnique) {
-        this.isUnique = isUnique;
-    }
-
     public boolean isUnique() {
         return isUnique;
     }

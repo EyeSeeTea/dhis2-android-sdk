@@ -61,6 +61,9 @@ public final class OrganisationUnit extends BaseIdentifiableObject {
     @JsonProperty("path")
     private String path;
 
+    @JsonProperty("code")
+    private String code;
+
     @JsonIgnore
     private boolean isAssignedToUser;
 
@@ -133,6 +136,14 @@ public final class OrganisationUnit extends BaseIdentifiableObject {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public static class LevelComparator implements Comparator<OrganisationUnit> {
