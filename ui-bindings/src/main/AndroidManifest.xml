@@ -29,6 +29,14 @@
             android:exported="false"
             android:label="provider"
             android:syncable="true" />
-
+        <provider
+            android:name="org.hisp.dhis.client.sdk.ui.bindings.commons.export.DBProvider"
+            android:authorities="org.hisp.dhis.client.sdk.ui.bindings.commons.export.ExportData"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

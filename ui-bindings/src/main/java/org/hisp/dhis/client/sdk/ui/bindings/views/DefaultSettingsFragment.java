@@ -28,15 +28,20 @@
 
 package org.hisp.dhis.client.sdk.ui.bindings.views;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.view.View;
+import android.widget.Toast;
 
 import org.hisp.dhis.client.sdk.ui.bindings.R;
 import org.hisp.dhis.client.sdk.ui.bindings.commons.Inject;
+import org.hisp.dhis.client.sdk.ui.bindings.commons.export.ExportData;
 import org.hisp.dhis.client.sdk.ui.bindings.presenters.SettingsPresenter;
 import org.hisp.dhis.client.sdk.ui.fragments.AbsSettingsFragment;
+
+import java.io.IOException;
 
 
 public class DefaultSettingsFragment extends AbsSettingsFragment implements SettingsView {
@@ -101,6 +106,21 @@ public class DefaultSettingsFragment extends AbsSettingsFragment implements Sett
     @Override
     public boolean onCrashReportsClick() {
         return false;
+    }
+
+    @Override
+    public boolean onExportDataClick() {
+        ExportData exportData = new ExportData();
+        Intent emailIntent = null;
+        try {
+            emailIntent = exportData.dumpAndSendToAIntent(getActivity());
+        } catch (IOException e) {
+            Toast.makeText(getContext(), R.string.error_exporting_data, Toast.LENGTH_LONG).show();
+        }
+        if (emailIntent != null) {
+            startActivity(emailIntent);
+        }
+        return true;
     }
 
     @Override
