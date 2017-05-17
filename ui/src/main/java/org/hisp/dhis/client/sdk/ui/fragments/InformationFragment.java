@@ -140,8 +140,8 @@ public class InformationFragment extends BaseFragment implements OnBackPressedCa
     }
 
     /**
-     * App-info from app package name.
-     * Fills in the App name, version, build and adds the app icon.
+     * Commit hash from main app file.
+     * Fills in the commit hash if exists, or how make it works.
      *
      * @param context the name of the app package.
      */
@@ -151,8 +151,8 @@ public class InformationFragment extends BaseFragment implements OnBackPressedCa
     }
 
     /**
-     * App-info from app package name.
-     * Fills in the App name, version, build and adds the app icon.
+     * App-info from main app file.
+     * Fills in the app description message.
      *
      * @param context the name of the app package.
      */
