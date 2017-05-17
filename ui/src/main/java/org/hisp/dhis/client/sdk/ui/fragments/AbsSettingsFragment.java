@@ -76,7 +76,7 @@ public abstract class AbsSettingsFragment extends PreferenceFragmentCompat
         crashReports.setOnPreferenceChangeListener(this);
         crashReports.setOnPreferenceClickListener(this);
 
-        Preference myPref = findPreference(getContext().getString(R.string.export_data_key));
+        Preference myPref = (Preference) findPreference(getContext().getString(R.string.export_data_key));
         myPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             public boolean onPreferenceClick(Preference preference) {
                 return onExportDataClick();
@@ -120,9 +120,6 @@ public abstract class AbsSettingsFragment extends PreferenceFragmentCompat
             }
             case SettingPreferences.CRASH_REPORTS: {
                 return onCrashReportsClick();
-            }
-            case SettingPreferences.EXPORT_DATA: {
-                return onExportDataClick();
             }
         }
         return false;
