@@ -28,6 +28,10 @@
 
 package org.hisp.dhis.client.sdk.ui.activities;
 
+import static android.text.TextUtils.isEmpty;
+
+import static org.hisp.dhis.client.sdk.utils.Preconditions.isNull;
+
 import android.animation.LayoutTransition;
 import android.animation.LayoutTransition.TransitionListener;
 import android.app.Activity;
@@ -55,9 +59,6 @@ import org.hisp.dhis.client.sdk.ui.views.AbsTextWatcher;
 
 import fr.castorflex.android.circularprogressbar.CircularProgressBar;
 import fr.castorflex.android.circularprogressbar.CircularProgressDrawable;
-
-import static android.text.TextUtils.isEmpty;
-import static org.hisp.dhis.client.sdk.utils.Preconditions.isNull;
 
 
 // TODO show snackbars for errors (not dialogs)
@@ -293,10 +294,16 @@ public abstract class AbsLoginActivity extends AppCompatActivity {
     }
 
     private void onTextChanged() {
-        loginButton.setEnabled(
-                !isEmpty(serverUrl.getText()) &&
-                        !isEmpty(username.getText()) &&
-                        !isEmpty(password.getText()));
+        if (canEnableLoginButtonOnTextChange()) {
+            loginButton.setEnabled(
+                    !isEmpty(serverUrl.getText()) &&
+                            !isEmpty(username.getText()) &&
+                            !isEmpty(password.getText()));
+        }
+    }
+
+    protected boolean canEnableLoginButtonOnTextChange() {
+        return true;
     }
 
     private boolean isAnimationInProgress() {
