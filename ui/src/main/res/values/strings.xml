@@ -55,6 +55,7 @@
     <!-- Preferences fragment -->
     <string name="sys_sync_disabled_warning">"Enable auto-sync data from system settings."</string>
     <string name="application_settings">Application</string>
+    <string name="developers_settings">Developers options</string>
     <string name="user_settings">User</string>
 
     <string name="background_synchronization_key">backgroundSynchronization</string>
@@ -65,6 +66,8 @@
     <string name="background_synchronization_description_off">
         Application data will not be synced in the background
     </string>
+    <string name="export_data_key">exportdata</string>
+    <string name="export_data_name">Export database</string>
 
     <string name="filter_options">Filter available options</string>
 

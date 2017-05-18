@@ -75,6 +75,13 @@ public abstract class AbsSettingsFragment extends PreferenceFragmentCompat
         crashReports = findPreference(SettingPreferences.CRASH_REPORTS);
         crashReports.setOnPreferenceChangeListener(this);
         crashReports.setOnPreferenceClickListener(this);
+
+        Preference myPref = (Preference) findPreference(getContext().getString(R.string.export_data_key));
+        myPref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            public boolean onPreferenceClick(Preference preference) {
+                return onExportDataClick();
+            }
+        });
     }
 
     @Override
@@ -169,6 +176,8 @@ public abstract class AbsSettingsFragment extends PreferenceFragmentCompat
     public abstract boolean onSynchronizationPeriodChanged(String newPeriod);
 
     public abstract boolean onCrashReportsClick();
+
+    public abstract boolean onExportDataClick();
 
     public abstract boolean onCrashReportsChanged(boolean isEnabled);
 

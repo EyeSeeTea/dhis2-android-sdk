@@ -57,4 +57,10 @@
             android:summaryOn="@string/crash_reports_description_on"
             android:title="@string/crash_reports_name" />
     </PreferenceCategory>
+    <PreferenceCategory android:title="@string/developers_settings">
+        <Preference
+            android:key="@string/export_data_key"
+            android:title="@string/export_data_name"
+            android:onClick="exportData"/>
+    </PreferenceCategory>
 </PreferenceScreen>
