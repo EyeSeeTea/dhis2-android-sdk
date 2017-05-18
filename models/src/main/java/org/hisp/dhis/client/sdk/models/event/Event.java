@@ -40,6 +40,8 @@ import org.hisp.dhis.client.sdk.models.common.base.IdentifiableObject;
 import org.hisp.dhis.client.sdk.models.trackedentity.TrackedEntityDataValue;
 import org.joda.time.DateTime;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.List;
 
@@ -52,6 +54,7 @@ public final class Event extends BaseModel implements IdentifiableObject {
     public static final String EVENT_DATE_LABEL = "Event date";
     public static final String STATUS_LABEL = "Status";
     public static final String ORG_UNIT = "OrgUnit";
+    public static final String DHIS_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
     @JsonProperty("event")
     private String uId;
@@ -93,7 +96,7 @@ public final class Event extends BaseModel implements IdentifiableObject {
     private String orgUnit;
 
     @JsonProperty("eventDate")
-    private DateTime eventDate;
+    private String eventDate;
 
     @JsonIgnore
     int sortOrder;
@@ -103,7 +106,7 @@ public final class Event extends BaseModel implements IdentifiableObject {
     */
     @JsonProperty("dueDate")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private DateTime dueDate;
+    private String dueDate;
 
     @JsonProperty("dataValues")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -232,19 +235,19 @@ public final class Event extends BaseModel implements IdentifiableObject {
     }
 
     public DateTime getEventDate() {
-        return eventDate;
+        return parseDate(eventDate);
     }
 
     public void setEventDate(DateTime eventDate) {
-        this.eventDate = eventDate;
+        this.eventDate = formatDateTime(eventDate);
     }
 
     public DateTime getDueDate() {
-        return dueDate;
+        return parseDate(dueDate);
     }
 
     public void setDueDate(DateTime dueDate) {
-        this.dueDate = dueDate;
+        this.dueDate = formatDateTime(dueDate);
     }
 
     public List<TrackedEntityDataValue> getDataValues() {
@@ -272,5 +275,25 @@ public final class Event extends BaseModel implements IdentifiableObject {
 
             return 0;
         }
+    }
+
+    private String formatDateTime(DateTime dateTime) {
+        if(dateTime==null){
+            return null;
+        }
+        SimpleDateFormat simpleDateFormat=new SimpleDateFormat(DHIS_FORMAT);
+        return simpleDateFormat.format(dateTime.toDate());
+    }
+
+    private DateTime parseDate(String date) {
+        if(date == null)
+            return null;
+        SimpleDateFormat simpleDateFormat=new SimpleDateFormat(DHIS_FORMAT);
+        try {
+            return new DateTime(simpleDateFormat.parse(date));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
