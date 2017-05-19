@@ -121,7 +121,7 @@ public class EditTextRow extends Row {
                 editText.setSingleLine(true);
             } else if (DataEntryRowTypes.PERCENTAGE.equals(mRowType)) {
                 editText.setInputType(InputType.TYPE_CLASS_NUMBER |
-                        InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                        InputType.TYPE_NUMBER_FLAG_SIGNED);
                 editText.setHint(R.string.enter_percentage);
                 editText.setFilters(new InputFilter[]{new PercentageFilter()});
                 int pos = editText.getText().length();
@@ -288,28 +288,21 @@ public class EditTextRow extends Row {
         @Override
         public CharSequence filter(CharSequence str, int start, int end,
                 Spanned spn, int spnStart, int spnEnd) {
+
             String value = spn.toString();
             if(value.isEmpty()){
                 return str;
             }
 
-            if(str.length()==0){
+            if(str.length()==0 || value.equals("0") || value.equals("100")){
                 return EMPTY_FIELD;
             }
 
-            if(value.contains(".")){
-                return str;
-            }
             if((value.equals("10") && str.charAt(0) == '0')){
                 return str;
-            }
-            if( value.equals("100") || (value.matches("^\\d{2}$") && (str.charAt(0) != '.'))){
+            }else if(value.matches("^\\d{2}$")){
                 return EMPTY_FIELD;
-            }
-
-            if ((str.length() > 0) && (spn.length() > 0) && (spn.charAt(0) == '0') && str.charAt(0) != '.' ) {
-                return EMPTY_FIELD;
-            }
+            } 
 
             if ((spn.length() > 0) && (spnStart == 0)
                     && (str.length() > 0) && (str.charAt(0) == '0')) {
