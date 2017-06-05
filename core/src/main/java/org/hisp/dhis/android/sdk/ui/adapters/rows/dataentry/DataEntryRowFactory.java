@@ -40,11 +40,13 @@ public class DataEntryRowFactory {
             row = new EditTextRow(trackedEntityAttributeName, mandatory, null, baseValue, DataEntryRowTypes.INTEGER_POSITIVE);
         } else if (valueType.equals(ValueType.INTEGER_NEGATIVE)) {
             row = new EditTextRow(trackedEntityAttributeName, mandatory, null, baseValue, DataEntryRowTypes.INTEGER_NEGATIVE);
+        } else if(valueType.equals(ValueType.PERCENTAGE)) {
+            row = new EditTextRow(trackedEntityAttributeName, mandatory, null, baseValue, DataEntryRowTypes.PERCENTAGE);
         } else if (valueType.equals(ValueType.BOOLEAN)) {
             row = new RadioButtonsRow(trackedEntityAttributeName, mandatory, null, baseValue, DataEntryRowTypes.BOOLEAN);
         } else if (valueType.equals(ValueType.TRUE_ONLY)) {
             row = new CheckBoxRow(trackedEntityAttributeName, mandatory, null, baseValue);
-        } else if (valueType.equals(ValueType.DATE)) {
+        } else if (valueType.equals(ValueType.DATE) || (valueType.equals(ValueType.AGE))) {
             row = new DatePickerRow(trackedEntityAttributeName, mandatory, null, baseValue, allowFutureDate);
         } else if(valueType.equals(ValueType.COORDINATE)) {
             row = new DataValueCoordinatesRow(trackedEntityAttributeName, mandatory, null, baseValue, DataEntryRowTypes.DATAVALUECOORDINATES);
