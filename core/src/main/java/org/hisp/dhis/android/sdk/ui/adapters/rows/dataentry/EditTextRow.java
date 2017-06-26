@@ -38,6 +38,7 @@ import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -45,6 +46,7 @@ import org.hisp.dhis.android.sdk.R;
 import org.hisp.dhis.android.sdk.persistence.Dhis2Application;
 import org.hisp.dhis.android.sdk.persistence.models.BaseValue;
 import org.hisp.dhis.android.sdk.ui.adapters.rows.AbsTextWatcher;
+import org.hisp.dhis.android.sdk.ui.fragments.dataentry.DataEntryFragment;
 import org.hisp.dhis.android.sdk.ui.fragments.dataentry.RowValueChangedEvent;
 
 public class EditTextRow extends Row {
@@ -93,7 +95,7 @@ public class EditTextRow extends Row {
             TextView errorLabel = (TextView) root.findViewById(R.id.error_label);
             final EditText editText = (EditText) root.findViewById(R.id.edit_text_row);
 //            detailedInfoButton = root.findViewById(R.id.detailed_info_button_layout);
-
+            editText.setImeOptions(EditorInfo.IME_ACTION_NEXT);
             if (DataEntryRowTypes.TEXT.equals(mRowType)) {
                 editText.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
                 editText.setHint(R.string.enter_text);
@@ -177,6 +179,7 @@ public class EditTextRow extends Row {
                 editText.setHint(R.string.invalid_entry_type);
                 editText.setEnabled(false);
                 editText.setFocusable(false);
+                setShouldNeverBeEdited(true);
             }
 
             OnTextChangeListener listener = new OnTextChangeListener();
@@ -189,6 +192,13 @@ public class EditTextRow extends Row {
             view = root;
         }
 
+        holder.editText.setOnEditorActionListener(new Row.CustomOnEditorActionListener(
+                DataEntryFragment.getListView()));
+
+        holder.editText.clearFocus();
+        setFocusableEditText(holder.editText);
+
+        setScrollableView(view);
         //when recycling views we don't want to keep the focus on the edittext
         //holder.editText.clearFocus();
 

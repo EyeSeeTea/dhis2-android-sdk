@@ -34,6 +34,9 @@ import android.support.v4.app.FragmentManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.ListView;
 
 import com.raizlabs.android.dbflow.sql.builder.Condition;
 import com.raizlabs.android.dbflow.sql.language.Select;
@@ -45,6 +48,7 @@ import org.hisp.dhis.android.sdk.persistence.models.Option$Table;
 import org.hisp.dhis.android.sdk.persistence.models.OptionSet;
 import org.hisp.dhis.android.sdk.ui.adapters.rows.dataentry.DataEntryRowTypes;
 import org.hisp.dhis.android.sdk.ui.adapters.rows.dataentry.Row;
+import org.hisp.dhis.android.sdk.ui.fragments.dataentry.DataEntryFragment;
 
 public final class AutoCompleteRow extends Row implements OptionNameCacher {
     static final String EMPTY_FIELD = "";
@@ -81,9 +85,16 @@ public final class AutoCompleteRow extends Row implements OptionNameCacher {
         } else {
             view = inflater.inflate(R.layout.listview_row_autocomplete, container, false);
 //            detailedInfoButton =  view.findViewById(R.id.detailed_info_button_layout);
-            holder = new AutoCompleteRowViewHolder(view);
+            EditText fakeEditText = (EditText) view.findViewById(R.id.fake_edit_text);
+            fakeEditText.setOnEditorActionListener(new Row.CustomOnEditorActionListener(
+                    DataEntryFragment.getListView()));
+            holder = new AutoCompleteRowViewHolder(view, fakeEditText);
             view.setTag(holder);
         }
+
+        holder.fakeEditText.clearFocus();
+        setFocusableEditText(holder.fakeEditText);
+        setScrollableView(view);
         holder.textView.setText(mLabel);
 //        holder.detailedInfoButton.setOnClickListener(new OnDetailedInfoButtonClick(this));
         holder.onTextChangedListener.setBaseValue(mValue);
@@ -99,6 +110,9 @@ public final class AutoCompleteRow extends Row implements OptionNameCacher {
 
         holder.valueTextView.setText(mSelectedOptionName);
 
+        holder.valueTextView.setImeOptions(EditorInfo.IME_FLAG_NAVIGATE_NEXT);
+        holder.valueTextView.setImeOptions(EditorInfo.IME_ACTION_NEXT);
+        holder.valueTextView.setTextColor(Color.parseColor("#C6C6C6"));
         holder.setOnTextChangedListener();
 
         if(!isEditable()) {

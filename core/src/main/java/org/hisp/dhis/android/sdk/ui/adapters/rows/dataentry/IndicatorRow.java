@@ -29,18 +29,7 @@
 
 package org.hisp.dhis.android.sdk.ui.adapters.rows.dataentry;
 
-import android.support.v4.app.FragmentManager;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.TextView;
-
-import org.hisp.dhis.android.sdk.R;
-import org.hisp.dhis.android.sdk.persistence.models.BaseValue;
 import org.hisp.dhis.android.sdk.persistence.models.ProgramIndicator;
-import org.hisp.dhis.android.sdk.ui.adapters.rows.events.OnDetailedInfoButtonClick;
 
 public final class IndicatorRow extends NonEditableTextViewRow {
     private static final String EMPTY_FIELD = "";

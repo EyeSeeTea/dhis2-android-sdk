@@ -36,6 +36,8 @@
     android:orientation="horizontal"
     android:background="@color/white">
 
+    <include layout="@layout/listview_fake_edittext"/>
+
     <include layout="@layout/listview_row_info_button"/>
 
     <LinearLayout

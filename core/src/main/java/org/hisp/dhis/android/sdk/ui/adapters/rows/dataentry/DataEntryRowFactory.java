@@ -17,7 +17,7 @@ public class DataEntryRowFactory {
     public static Row createDataEntryView(boolean mandatory, boolean allowFutureDate,
                                           String optionSetId, String rowName, BaseValue baseValue,
                                           ValueType valueType, boolean editable,
-                                          boolean shouldNeverBeEdited, boolean dataEntryMethod ) {
+                                          boolean shouldNeverBeEdited, boolean dataEntryMethod) {
         Row row;
         String trackedEntityAttributeName = rowName;
         if (optionSetId != null) {

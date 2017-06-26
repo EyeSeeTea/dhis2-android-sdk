@@ -34,13 +34,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import org.hisp.dhis.android.sdk.R;
-import org.hisp.dhis.android.sdk.ui.fragments.dataentry.RowValueChangedEvent;
 import org.hisp.dhis.android.sdk.persistence.Dhis2Application;
 import org.hisp.dhis.android.sdk.persistence.models.BaseValue;
+import org.hisp.dhis.android.sdk.ui.fragments.dataentry.DataEntryFragment;
+import org.hisp.dhis.android.sdk.ui.fragments.dataentry.RowValueChangedEvent;
 
 public class RadioButtonsRow extends Row {
     private static final String EMPTY_FIELD = "";
@@ -93,8 +95,6 @@ public class RadioButtonsRow extends Row {
             RadioGroup radioGroup = (RadioGroup) root.findViewById(R.id.radio_group_row_radio_buttons);
 //            detailedInfoButton =
 //                    root.findViewById(R.id.detailed_info_button_layout);
-
-
             if (DataEntryRowTypes.BOOLEAN.equals(mRowType)) {
                 firstButton.setText(R.string.yes);
                 secondButton.setText(R.string.no);
@@ -104,14 +104,21 @@ public class RadioButtonsRow extends Row {
             }
 
             OnCheckedChangeListener onCheckedChangeListener = new OnCheckedChangeListener();
+
+            EditText fakeEditText = (EditText) root.findViewById(R.id.fake_edit_text);
+            fakeEditText.setOnEditorActionListener(new Row.CustomOnEditorActionListener(
+                    DataEntryFragment.getListView()));
             holder = new BooleanRowHolder(mRowType, label, mandatoryIndicator, warningLabel, errorLabel, firstButton,
-                    secondButton, radioGroup, onCheckedChangeListener);
+                    secondButton, radioGroup, onCheckedChangeListener, fakeEditText);
 
             holder.radioGroup.setOnCheckedChangeListener(onCheckedChangeListener);
-
             root.setTag(holder);
             view = root;
         }
+
+        holder.fakeEditText.clearFocus();
+        setFocusableEditText(holder.fakeEditText);
+        setScrollableView(view);
 
         if(!isEditable()) {
             holder.firstButton.setEnabled(false);
@@ -171,9 +178,10 @@ public class RadioButtonsRow extends Row {
 //        final View detailedInfoButton;
         final OnCheckedChangeListener radioGroupCheckedChangeListener;
         final DataEntryRowTypes type;
+        final EditText fakeEditText;
 
         public BooleanRowHolder(DataEntryRowTypes type, TextView textLabel, TextView mandatoryIndicator, TextView warningLabel, TextView errorLabel, CompoundButton firstButton,
-                                CompoundButton secondButton, RadioGroup radioGroup, OnCheckedChangeListener radioGroupCheckedChangeListener) {
+                                CompoundButton secondButton, RadioGroup radioGroup, OnCheckedChangeListener radioGroupCheckedChangeListener, EditText fakeEditText) {
             this.type = type;
             this.textLabel = textLabel;
             this.mandatoryIndicator = mandatoryIndicator;
@@ -183,7 +191,10 @@ public class RadioButtonsRow extends Row {
             this.secondButton = secondButton;
             this.radioGroup = radioGroup;
             this.radioGroupCheckedChangeListener = radioGroupCheckedChangeListener;
+            this.fakeEditText = fakeEditText;
         }
+
+
 
         public void updateViews(String label, BaseValue baseValue) {
             textLabel.setText(label);

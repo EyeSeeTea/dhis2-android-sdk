@@ -37,15 +37,19 @@ import android.support.v4.content.Loader;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.otto.Subscribe;
@@ -76,7 +80,7 @@ public abstract class DataEntryFragment<D> extends AbsProgramRuleFragment<D>
     protected static final int INITIAL_POSITION = 0;
     protected static final String EXTRA_ARGUMENTS = "extra:Arguments";
     protected static final String EXTRA_SAVED_INSTANCE_STATE = "extra:savedInstanceState";
-    protected ListView listView;
+    protected static ListView listView;
     protected ProgressBar progressBar;
     protected DataValueAdapter listViewAdapter;
     protected boolean refreshing = false;
@@ -141,7 +145,8 @@ public abstract class DataEntryFragment<D> extends AbsProgramRuleFragment<D>
                 .inflate(R.layout.up_button_layout, listView, false);
         listViewAdapter = new DataValueAdapter(getChildFragmentManager(),
                 getLayoutInflater(savedInstanceState));
-
+        EditText fakeEditText = (EditText) upButton.findViewById(R.id.fake_edit_text);
+        fakeEditText.setOnEditorActionListener(new CustomOnEditorActionListener(getListView()));
         listView.addFooterView(upButton);
         listView.setVisibility(View.VISIBLE);
         listView.setAdapter(listViewAdapter);
@@ -346,5 +351,35 @@ public abstract class DataEntryFragment<D> extends AbsProgramRuleFragment<D>
             getActivity().finish();
         }
         return false;
+    }
+
+    public static ListView getListView() {
+        return listView;
+    }
+
+    private static class CustomOnEditorActionListener implements TextView.OnEditorActionListener{
+
+        ListView mListView;
+        public CustomOnEditorActionListener(ListView listView){
+            mListView=listView;
+        }
+        @Override
+        public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+            final TextView view = v;
+            if(actionId == EditorInfo.IME_ACTION_NEXT) {
+                mListView.setSelection(0);
+                mListView.postDelayed(new Runnable() {
+                    public void run() {
+                        View nextField = view.focusSearch(View.FOCUS_DOWN);
+                        mListView.scrollTo(0, 0);
+                        if(nextField != null) {
+                            nextField.requestFocus();
+                        }
+                    }
+                }, 200);
+                return true;
+            }
+            return false;
+        }
     }
 }

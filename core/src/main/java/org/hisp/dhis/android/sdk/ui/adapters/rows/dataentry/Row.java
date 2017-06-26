@@ -29,13 +29,16 @@
 
 package org.hisp.dhis.android.sdk.ui.adapters.rows.dataentry;
 
-import android.os.Parcelable;
 import android.support.v4.app.FragmentManager;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.TextView;
 
-import org.hisp.dhis.android.sdk.R;
 import org.hisp.dhis.android.sdk.controllers.metadata.MetaDataController;
 import org.hisp.dhis.android.sdk.persistence.models.BaseValue;
 import org.hisp.dhis.android.sdk.persistence.models.DataElement;
@@ -55,7 +58,9 @@ public abstract class Row implements DataEntryRow, Serializable {
     protected BaseValue mValue;
     protected String mDescription;
     protected DataEntryRowTypes mRowType;
-//    protected View detailedInfoButton;
+    protected EditText focusableEditText;
+    protected View scrollableView;
+    //    protected View detailedInfoButton;
     private boolean hideDetailedInfoButton;
     private boolean editable = true;
     protected boolean mMandatory = false;
@@ -65,7 +70,7 @@ public abstract class Row implements DataEntryRow, Serializable {
 //        return detailedInfoButton;
 //    }
 
-    public BaseValue getValue(){
+    public BaseValue getValue() {
         return mValue;
     }
 
@@ -78,53 +83,54 @@ public abstract class Row implements DataEntryRow, Serializable {
     }
 
     @Override
-    public abstract View getView(FragmentManager fragmentManager, LayoutInflater inflater, View convertView, ViewGroup container);
+    public abstract View getView(FragmentManager fragmentManager, LayoutInflater inflater,
+            View convertView, ViewGroup container);
 
     @Override
     public abstract int getViewType();
 
-    public String getItemId()
-    {
-        if(mValue instanceof DataValue)
+    public String getItemId() {
+        if (mValue instanceof DataValue) {
             return ((DataValue) mValue).getDataElement();
-        else if(mValue instanceof TrackedEntityAttributeValue)
+        } else if (mValue instanceof TrackedEntityAttributeValue) {
             return ((TrackedEntityAttributeValue) mValue).getTrackedEntityAttributeId();
-        else
+        } else {
             return "";
+        }
     }
 
     public String getDescription() {
-        if(this instanceof CoordinatesRow) {
+        if (this instanceof CoordinatesRow) {
             mDescription = "";
         } else if (this instanceof StatusRow) {
             mDescription = "";
-        } else if(this instanceof IndicatorRow) {
+        } else if (this instanceof IndicatorRow) {
             mDescription = "";
         }
 
         String itemId = getItemId();
         DataElement dataElement = MetaDataController.getDataElement(itemId);
-        if(dataElement != null) {
+        if (dataElement != null) {
             mDescription = dataElement.getDescription();
         } else {
             TrackedEntityAttribute attribute = MetaDataController.getTrackedEntityAttribute(itemId);
-            if(attribute != null) {
+            if (attribute != null) {
                 mDescription = attribute.getDescription();
             }
         }
 
         return mDescription;
     }
-    public void checkNeedsForDescriptionButton()
-    {
+
+    public void checkNeedsForDescriptionButton() {
         mDescription = getDescription();
-        if(mDescription == null || mDescription.equals("")) {
+        if (mDescription == null || mDescription.equals("")) {
             setHideDetailedInfoButton(true);
-        }
-        else {
+        } else {
             setHideDetailedInfoButton(false);
         }
     }
+
     public boolean isDetailedInfoButtonHidden() {
         return hideDetailedInfoButton;
     }
@@ -155,5 +161,74 @@ public abstract class Row implements DataEntryRow, Serializable {
 
     public void setShouldNeverBeEdited(boolean shouldNeverBeEdited) {
         this.shouldNeverBeEdited = shouldNeverBeEdited;
+    }
+
+    public static class CustomOnEditorActionListener implements TextView.OnEditorActionListener {
+
+        ListView mListView;
+
+        public CustomOnEditorActionListener(ListView listView) {
+            mListView = listView;
+        }
+
+        @Override
+        public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+            final TextView view = v;
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                final int position = mListView.getPositionForView(v);
+                mListView.setSelection(position);
+                int nextPosition = 1;
+                Row nextField = (Row) mListView.getItemAtPosition(position + nextPosition);
+                if (nextField == null) {
+                    return false;
+                }
+                while (nextField.isShouldNeverBeEdited()) {
+                    nextPosition++;
+                    Row nextRow = (Row) mListView.getItemAtPosition(position + nextPosition);
+                    if (nextRow == null) {
+                        nextPosition--;
+                        break;
+                    } else {
+                        nextField = nextRow;
+                    }
+                }
+                mListView.postDelayed(new Runnable() {
+                    public void run() {
+                        int position = mListView.getPositionForView(view);
+                        int nextPosition = 1;
+                        Row nextField = (Row) mListView.getItemAtPosition(position + nextPosition);
+                        mListView.scrollTo(0, nextField.scrollableView.getTop());
+                        while (nextField != null && nextField.isShouldNeverBeEdited()) {
+                            nextPosition++;
+                            nextField = (Row) mListView.getItemAtPosition(position + nextPosition);
+                        }
+                        if (nextField != null && nextField.focusableEditText != null) {
+                            nextField.focusableEditText.requestFocus();
+                        }
+                    }
+                }, 200);
+                return true;
+            }
+            return false;
+        }
+
+        private boolean isNotSupportedEditText(Row nextField) {
+            if (nextField instanceof EditTextRow) {
+                if (DataEntryRowTypes.INVALID_DATA_ENTRY.equals(nextField.getViewType()))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    @Override
+    public void setFocusableEditText(EditText editText) {
+        focusableEditText = editText;
+    }
+
+    public void setScrollableView(View scrollableView) {
+        this.scrollableView = scrollableView;
     }
 }

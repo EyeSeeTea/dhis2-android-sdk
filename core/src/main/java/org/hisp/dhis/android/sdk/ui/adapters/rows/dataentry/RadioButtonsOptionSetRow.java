@@ -35,6 +35,7 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
@@ -42,6 +43,7 @@ import org.hisp.dhis.android.sdk.R;
 import org.hisp.dhis.android.sdk.persistence.Dhis2Application;
 import org.hisp.dhis.android.sdk.persistence.models.BaseValue;
 import org.hisp.dhis.android.sdk.persistence.models.Option;
+import org.hisp.dhis.android.sdk.ui.fragments.dataentry.DataEntryFragment;
 import org.hisp.dhis.android.sdk.ui.fragments.dataentry.RowValueChangedEvent;
 import org.hisp.dhis.android.sdk.ui.views.FontRadioButton;
 
@@ -91,13 +93,20 @@ public class RadioButtonsOptionSetRow extends Row {
 
             OnCheckedChangeListener onCheckedChangeListener = new OnCheckedChangeListener();
 
+
+            EditText fakeEditText = (EditText) root.findViewById(R.id.fake_edit_text);
+            fakeEditText.setOnEditorActionListener(new Row.CustomOnEditorActionListener(
+                    DataEntryFragment.getListView()));
             holder = new RadioGroupRowHolder(mRowType, label, mandatoryIndicator, warningLabel,
-                    errorLabel, radioGroup, onCheckedChangeListener);
+                    errorLabel, radioGroup, onCheckedChangeListener, fakeEditText);
 
             root.setTag(holder);
             view = root;
         }
 
+        holder.fakeEditText.clearFocus();
+        setFocusableEditText(holder.fakeEditText);
+        setScrollableView(view);
 //        holder.detailedInfoButton.setOnClickListener(new OnDetailedInfoButtonClick(this));
         holder.updateViews(mLabel, mValue, mOptions, isEditable());
 
@@ -146,10 +155,12 @@ public class RadioButtonsOptionSetRow extends Row {
         //        final View detailedInfoButton;
         final OnCheckedChangeListener radioGroupCheckedChangeListener;
         final DataEntryRowTypes type;
+        final EditText fakeEditText;
 
         public RadioGroupRowHolder(DataEntryRowTypes type, TextView textLabel,
                 TextView mandatoryIndicator, TextView warningLabel, TextView errorLabel,
-                RadioGroup radioGroup, OnCheckedChangeListener radioGroupCheckedChangeListener) {
+                RadioGroup radioGroup, OnCheckedChangeListener radioGroupCheckedChangeListener,
+                EditText fakeEditText) {
             this.type = type;
             this.textLabel = textLabel;
             this.mandatoryIndicator = mandatoryIndicator;
@@ -157,6 +168,7 @@ public class RadioButtonsOptionSetRow extends Row {
             this.errorLabel = errorLabel;
             this.radioGroup = radioGroup;
             this.radioGroupCheckedChangeListener = radioGroupCheckedChangeListener;
+            this.fakeEditText = fakeEditText;
         }
 
         public void updateViews(String label, BaseValue baseValue,

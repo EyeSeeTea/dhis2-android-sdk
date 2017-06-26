@@ -33,11 +33,10 @@ import android.support.v4.app.FragmentManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-
-import org.hisp.dhis.android.sdk.persistence.models.BaseValue;
+import android.widget.EditText;
 
 public interface DataEntryRow {
     View getView(FragmentManager fragmentManager, LayoutInflater inflater, View convertView, ViewGroup container);
     int getViewType();
+    void setFocusableEditText(EditText editText);
 }

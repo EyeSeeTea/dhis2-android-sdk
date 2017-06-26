@@ -1,6 +1,7 @@
 package org.hisp.dhis.android.sdk.ui.adapters.rows.dataentry.autocompleterow;
 
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -13,12 +14,13 @@ class AutoCompleteRowViewHolder {
     public final TextView errorLabel;
     public final TextView valueTextView;
     public final ImageButton clearButton;
+    public final EditText fakeEditText;
     //        public final View detailedInfoButton;
     public final AutoCompleteOnClearButtonListener onClearButtonListener;
     public final AutoCompleteOnTextChangedListener onTextChangedListener;
     public final AutoCompleteDropDownButtonListener onDropDownButtonListener;
 
-    AutoCompleteRowViewHolder(View view) {
+    AutoCompleteRowViewHolder(View view, EditText fakeEditText) {
         mandatoryIndicator = (TextView) view.findViewById(R.id.mandatory_indicator);
         textView = (TextView) view.findViewById(R.id.text_label);
         warningLabel = (TextView) view.findViewById(R.id.warning_label);
@@ -26,7 +28,7 @@ class AutoCompleteRowViewHolder {
         valueTextView = (TextView) view.findViewById(R.id.choose_option);
         clearButton = (ImageButton) view.findViewById(R.id.clear_option_value);
 //            this.detailedInfoButton = detailedInfoButton;
-
+        this.fakeEditText = fakeEditText;
         AutoCompleteOnOptionSelectedListener onOptionListener
                 = new OnOptionItemSelectedListener(valueTextView);
         onClearButtonListener = new AutoCompleteOnClearButtonListener(valueTextView);

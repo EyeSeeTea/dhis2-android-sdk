@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+<org.hisp.dhis.android.sdk.ui.views.FontEditText
+    android:id="@+id/fake_edit_text"
+    android:layout_width="1px"
+    android:layout_height="1px"
+    android:singleLine="true"
+    android:maxLines="1"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:imeOptions="actionNext"
+    android:textSize="@dimen/medium_text_size"
+    app:font="@string/light_font_name"/>
+</merge>

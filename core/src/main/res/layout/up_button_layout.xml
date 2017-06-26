@@ -37,6 +37,8 @@
     android:gravity="center"
     android:orientation="horizontal">
 
+    <include layout="@layout/listview_fake_edittext"/>
+
     <org.hisp.dhis.android.sdk.ui.views.FontTextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
