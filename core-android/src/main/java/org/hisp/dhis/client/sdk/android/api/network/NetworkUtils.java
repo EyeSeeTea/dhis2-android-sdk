@@ -149,6 +149,7 @@ public class NetworkUtils {
             response = call.execute();
         } catch (IOException ioException) {
             System.out.println("Exception "+call.request().url().toString());
+            ioException.printStackTrace();
             apiException = ApiException.networkError(null, ioException);
         }
 
@@ -171,6 +172,8 @@ public class NetworkUtils {
             System.out.println(
                     "Error !(>= 200 && <300)" + call.request().url().toString());
             try {
+                String apiMessage = response.errorBody().string();
+                System.out.println("error " + apiMessage);
                 System.out.println(response.errorBody().string());
             } catch (IOException e) {
                 e.printStackTrace();

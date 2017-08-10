@@ -65,10 +65,10 @@ public final class EventFlow extends BaseIdentifiableObjectFlow {
     String orgUnit;
 
     @Column(name = "eventDate")
-    DateTime eventDate;
+    String eventDate;
 
     @Column(name = "dueDate")
-    DateTime dueDate;
+    String dueDate;
 
     public EventFlow() {
         // explicit empty constructor
@@ -135,19 +135,19 @@ public final class EventFlow extends BaseIdentifiableObjectFlow {
         this.orgUnit = orgUnit;
     }
 
-    public DateTime getEventDate() {
+    public String getEventDate() {
         return eventDate;
     }
 
-    public void setEventDate(DateTime eventDate) {
+    public void setEventDate(String eventDate) {
         this.eventDate = eventDate;
     }
 
-    public DateTime getDueDate() {
+    public String getDueDate() {
         return dueDate;
     }
 
-    public void setDueDate(DateTime dueDate) {
+    public void setDueDate(String dueDate) {
         this.dueDate = dueDate;
     }
 
@@ -180,8 +180,12 @@ public final class EventFlow extends BaseIdentifiableObjectFlow {
             eventFlow.setProgramStage(event.getProgramStage());
             eventFlow.setAttributeCategoryOptions(event.getAttributeCategoryOptions());
             eventFlow.setOrgUnit(event.getOrgUnit());
-            eventFlow.setEventDate(event.getEventDate());
-            eventFlow.setDueDate(event.getDueDate());
+            if(event.getEventDate()!=null) {
+                eventFlow.setEventDate(event.getEventDate().toString());
+            }
+            if(event.getDueDate()!=null) {
+                eventFlow.setDueDate(event.getDueDate().toString());
+            }
 
             return eventFlow;
         }

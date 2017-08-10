@@ -93,7 +93,7 @@ public final class Event extends BaseModel implements IdentifiableObject {
     private String orgUnit;
 
     @JsonProperty("eventDate")
-    private DateTime eventDate;
+    private String eventDate;
 
     @JsonIgnore
     int sortOrder;
@@ -103,7 +103,7 @@ public final class Event extends BaseModel implements IdentifiableObject {
     */
     @JsonProperty("dueDate")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private DateTime dueDate;
+    private String dueDate;
 
     @JsonProperty("dataValues")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -231,19 +231,19 @@ public final class Event extends BaseModel implements IdentifiableObject {
         this.orgUnit = orgUnit;
     }
 
-    public DateTime getEventDate() {
+    public String getEventDate() {
         return eventDate;
     }
 
-    public void setEventDate(DateTime eventDate) {
+    public void setEventDate(String eventDate) {
         this.eventDate = eventDate;
     }
 
-    public DateTime getDueDate() {
+    public String getDueDate() {
         return dueDate;
     }
 
-    public void setDueDate(DateTime dueDate) {
+    public void setDueDate(String dueDate) {
         this.dueDate = dueDate;
     }
 
