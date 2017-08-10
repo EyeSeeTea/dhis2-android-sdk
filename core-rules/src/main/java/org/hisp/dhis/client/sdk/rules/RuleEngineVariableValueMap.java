@@ -253,7 +253,7 @@ class RuleEngineVariableValueMap {
         DateFormat df = new SimpleDateFormat(DATE_PATTERN, Locale.ENGLISH);
 
         if(currentEvent != null) {
-            DateTime eventDate = currentEvent.getEventDate() != null ? currentEvent.getEventDate() : DateTime.now();
+            DateTime eventDate = currentEvent.getEventDate() != null ? new DateTime(currentEvent.getEventDate()) : DateTime.now();
             addEnviromentVariableValueToMap("event_date", df.format(eventDate.toDate()), ValueType.DATE, currentEvent.getEventDate() != null);
         }
         else
