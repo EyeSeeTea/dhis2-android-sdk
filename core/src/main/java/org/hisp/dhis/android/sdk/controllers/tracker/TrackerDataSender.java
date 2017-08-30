@@ -66,6 +66,7 @@ import org.joda.time.DateTime;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -212,15 +213,6 @@ final class TrackerDataSender {
             return;
         }
 
-        Enrollment cancelledEnrollment = TrackerController.getCancelledEnrollment(event.getEnrollment());
-        if (cancelledEnrollment != null && !cancelledEnrollment.isFromServer()) { // the cancelled enrollment should be pushed before.
-            sendEnrollmentChanges(dhisApi, cancelledEnrollment, false);
-        }
-        Enrollment enrollment = TrackerController.getNotCancelledEnrollment(event.getEnrollment());
-        if (enrollment != null && !enrollment.isFromServer()) { // if enrollment is unsent, send it before events
-            sendEnrollmentChanges(dhisApi, enrollment, false);
-        }
-
         if (event.getCreated() == null) {
             postEvent(event, dhisApi);
         } else {
@@ -351,11 +343,7 @@ final class TrackerDataSender {
                 return;
             }
         }
-        if (enrollments.size() <= 1) {
-            sendEnrollmentChanges(dhisApi, enrollments, sendEvents);
-        } else if (enrollments.size() > 1) {
-            postEnrollmentBatch(dhisApi, enrollments);
-        }
+        sendEnrollmentChanges(dhisApi, enrollments, sendEvents);
     }
 
     static void sendEnrollmentChanges(DhisApi dhisApi, List<Enrollment> enrollments, boolean sendEvents) throws APIException {
@@ -371,7 +359,16 @@ final class TrackerDataSender {
             }
         }
         Log.d(CLASS_TAG, "got this many enrollments to send:" + enrollments.size());
+
+        Collections.sort(enrollments, new Enrollment.EnrollmentComparator());
+
         for (Enrollment enrollment : enrollments) {
+            if(enrollment.isFromServer()){
+                continue;
+            }
+            if(enrollment.getCreated()==null && enrollment.getStatus().equals(Enrollment.CANCELLED)) {
+                sendEnrollmentChanges(dhisApi, enrollment, false);
+            }
             sendEnrollmentChanges(dhisApi, enrollment, sendEvents);
         }
     }
