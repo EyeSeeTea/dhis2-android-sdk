@@ -72,6 +72,10 @@ import org.hisp.dhis.android.core.user.UserRoleProgramLinkModel;
 
 import static org.hisp.dhis.android.core.user.UserOrganisationUnitLinkModel.Columns.ORGANISATION_UNIT_SCOPE;
 
+
+
+import java.util.HashMap;
+
 @SuppressWarnings({
         "PMD.AvoidDuplicateLiterals", "PMD.ExcessiveImports"
 })
@@ -812,6 +816,9 @@ public class DbOpenHelper extends SQLiteOpenHelper {
     public DbOpenHelper(@NonNull Context context, @Nullable String databaseName) {
         super(context, databaseName, null, VERSION);
     }
+    public DbOpenHelper(@NonNull Context context, @Nullable String databaseName, int version) {
+        super(context, databaseName, null, version);
+    }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
@@ -820,7 +827,35 @@ public class DbOpenHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // ToDo: logic for proper schema migration
+        int startMigrationCounter = 2;
+        while(startMigrationCounter<=newVersion){
+            upgrade(oldVersion, startMigrationCounter, db);
+            startMigrationCounter++;
+        }
+    }
+
+    private void upgrade(int oldVersion, int upgradeVersion, SQLiteDatabase db) {
+        if (oldVersion < upgradeVersion) {
+            if(migrations.containsKey(upgradeVersion)){
+                migrations.get(upgradeVersion).upgrade(db);
+            }else{
+                throw new IllegalArgumentException(upgradeVersion+" migration doesn't exist");
+            }
+        }
+    }
+
+    static HashMap<Integer,IMigration> migrations = new HashMap<>();
+
+    public void setMigrations(HashMap<Integer, IMigration> migrations){
+        this.migrations = migrations;
+    }
+
+    public HashMap<Integer, IMigration> getMigrations() {
+        return migrations;
+    }
+
+    public static void putMigration(IMigration migration) {
+        migrations.put(migration.getVersion(), migration);
     }
 
     @Override
