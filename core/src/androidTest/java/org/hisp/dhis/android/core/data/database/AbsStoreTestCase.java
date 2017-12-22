@@ -41,11 +41,12 @@ import java.io.IOException;
 public abstract class AbsStoreTestCase {
     private SQLiteDatabase sqLiteDatabase;
     private DatabaseAdapter databaseAdapter;
+    private String dbName = "test_nacho.db";
 
     @Before
     public void setUp() throws IOException {
         DbOpenHelper dbOpenHelper = new DbOpenHelper(InstrumentationRegistry.getTargetContext().getApplicationContext()
-                , null);
+                , dbName);
         sqLiteDatabase = dbOpenHelper.getWritableDatabase();
         databaseAdapter = new SqLiteDatabaseAdapter(dbOpenHelper);
     }

@@ -38,6 +38,13 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.util.Log;
 
+import org.hisp.dhis.android.core.category.CategoryComboLinkModel;
+import org.hisp.dhis.android.core.category.CategoryComboModel;
+import org.hisp.dhis.android.core.category.CategoryModel;
+import org.hisp.dhis.android.core.category.CategoryOptionComboCategoryLinkModel;
+import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.category.CategoryOptionLinkModel;
+import org.hisp.dhis.android.core.category.CategoryOptionModel;
 import org.hisp.dhis.android.core.configuration.ConfigurationModel;
 import org.hisp.dhis.android.core.constant.ConstantModel;
 import org.hisp.dhis.android.core.dataelement.DataElementModel;
@@ -79,6 +86,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
+import static org.hisp.dhis.android.core.user.UserOrganisationUnitLinkModel.Columns
+        .ORGANISATION_UNIT_SCOPE;
+
 @SuppressWarnings({
         "PMD.AvoidDuplicateLiterals", "PMD.ExcessiveImports"
 })
@@ -92,6 +102,98 @@ public class DbOpenHelper extends CustomSQLBriteOpenHelper {
                     ConfigurationModel.Columns.ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
                     ConfigurationModel.Columns.SERVER_URL + " TEXT NOT NULL UNIQUE" +
                     ");";
+    private static final String CREATE_CATEGORY_TABLE =
+            "CREATE TABLE " + CategoryModel.TABLE + " (" +
+                    CategoryModel.Columns.ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    CategoryModel.Columns.UID + " TEXT NOT NULL UNIQUE," +
+                    CategoryModel.Columns.CODE + " TEXT," +
+                    CategoryModel.Columns.NAME + " TEXT," +
+                    CategoryModel.Columns.DISPLAY_NAME + " TEXT," +
+                    CategoryModel.Columns.CREATED + " TEXT," +
+                    CategoryModel.Columns.LAST_UPDATED + " TEXT," +
+                    CategoryModel.Columns.DATA_DIMENSION_TYPE + " TEXT" + ");";
+
+    private static final String CREATE_CATEGORY_OPTION_TABLE =
+            "CREATE TABLE " + CategoryOptionModel.TABLE + " (" +
+                    CategoryModel.Columns.ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    CategoryModel.Columns.UID + " TEXT NOT NULL UNIQUE," +
+                    CategoryModel.Columns.CODE + " TEXT," +
+                    CategoryModel.Columns.NAME + " TEXT," +
+                    CategoryModel.Columns.DISPLAY_NAME + " TEXT," +
+                    CategoryModel.Columns.CREATED + " TEXT," +
+                    CategoryModel.Columns.LAST_UPDATED + " TEXT" + ");";
+
+    private static final String CREATE_CATEGORY_CATEGORY_OPTION_LINK_TABLE = "CREATE TABLE " +
+            CategoryOptionLinkModel.TABLE + " (" +
+            CategoryOptionLinkModel.Columns.ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+            CategoryOptionLinkModel.Columns.CATEGORY + " TEXT NOT NULL," +
+            CategoryOptionLinkModel.Columns.CATEGORY_OPTION + " TEXT NOT NULL, " +
+            " FOREIGN KEY (" + CategoryOptionLinkModel.Columns.CATEGORY + ") " +
+            " REFERENCES " + CategoryModel.TABLE + " (" + CategoryModel.Columns.UID + ") " +
+            " ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED," +
+            " FOREIGN KEY (" + CategoryOptionLinkModel.Columns.CATEGORY_OPTION + ") " +
+            " REFERENCES " + CategoryOptionModel.TABLE + " (" + CategoryOptionModel.Columns.UID
+            + ")" +
+            " ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED," +
+            "UNIQUE (" + CategoryOptionLinkModel.Columns.CATEGORY + ", " +
+            CategoryOptionLinkModel.Columns.CATEGORY_OPTION + ")" +
+            ");";
+
+    private static final String CREATE_CATEGORY_COMBO_TABLE =
+            "CREATE TABLE " + CategoryComboModel.TABLE + " (" +
+                    CategoryComboModel.Columns.ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    CategoryComboModel.Columns.UID + " TEXT NOT NULL UNIQUE," +
+                    CategoryComboModel.Columns.CODE + " TEXT," +
+                    CategoryComboModel.Columns.NAME + " TEXT," +
+                    CategoryComboModel.Columns.DISPLAY_NAME + " TEXT," +
+                    CategoryComboModel.Columns.CREATED + " TEXT," +
+                    CategoryComboModel.Columns.LAST_UPDATED + " TEXT, " +
+                    CategoryComboModel.Columns.IS_DEFAULT + " INTEGER" + ");";
+
+    private static final String CREATE_CATEGORY_CATEGORY_COMBO_LINK_TABLE = "CREATE TABLE " +
+            CategoryComboLinkModel.TABLE + " (" +
+            CategoryComboLinkModel.Columns.ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+            CategoryComboLinkModel.Columns.CATEGORY + " TEXT NOT NULL," +
+            CategoryComboLinkModel.Columns.CATEGORY_COMBO + " TEXT NOT NULL, " +
+            " FOREIGN KEY (" + CategoryComboLinkModel.Columns.CATEGORY + ") " +
+            " REFERENCES " + CategoryModel.TABLE + " (" + CategoryModel.Columns.UID + ") " +
+            " ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED," +
+            " FOREIGN KEY (" + CategoryComboLinkModel.Columns.CATEGORY_COMBO + ") " +
+            " REFERENCES " + CategoryComboModel.TABLE + " (" + CategoryComboModel.Columns.UID + ")"
+            +
+            " ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED," +
+            "UNIQUE (" + CategoryComboLinkModel.Columns.CATEGORY + ", " +
+            CategoryComboLinkModel.Columns.CATEGORY_COMBO + ")" +
+            ");";
+
+    private static final String CREATE_CATEGORY_OPTION_COMBO_TABLE =
+            "CREATE TABLE " + CategoryOptionComboModel.TABLE + " (" +
+                    CategoryOptionComboModel.Columns.ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    CategoryOptionComboModel.Columns.UID + " TEXT NOT NULL UNIQUE," +
+                    CategoryOptionComboModel.Columns.CODE + " TEXT," +
+                    CategoryOptionComboModel.Columns.NAME + " TEXT," +
+                    CategoryOptionComboModel.Columns.DISPLAY_NAME + " TEXT," +
+                    CategoryOptionComboModel.Columns.CREATED + " TEXT," +
+                    CategoryOptionComboModel.Columns.LAST_UPDATED + " TEXT, " +
+                    CategoryOptionComboModel.Columns.CATEGORY_COMBO + " TEXT, " +
+                    " FOREIGN KEY (" + CategoryOptionComboModel.Columns.CATEGORY_COMBO + ") " +
+                    " REFERENCES " + CategoryComboModel.TABLE + " ("
+                    + CategoryComboModel.Columns.UID + ")" +
+                    " ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED );";
+
+    private static final String CREATE_CATEGORY_OPTION_COMBO_CATEGORY_LINK_TABLE = "CREATE TABLE " +
+            CategoryOptionComboCategoryLinkModel.TABLE + " (" +
+            CategoryOptionComboCategoryLinkModel.Columns.ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+            +
+            CategoryOptionComboCategoryLinkModel.Columns.CATEGORY_OPTION_COMBO + " TEXT NOT NULL," +
+            CategoryOptionComboCategoryLinkModel.Columns.CATEGORY + " TEXT NOT NULL, " +
+            " FOREIGN KEY (" + CategoryOptionComboCategoryLinkModel.Columns.CATEGORY_OPTION_COMBO + ") " +
+            " REFERENCES " + CategoryOptionComboModel.TABLE + " ("
+            + CategoryOptionComboModel.Columns.UID + ") " +
+            " ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED," +
+            "UNIQUE (" + CategoryOptionComboCategoryLinkModel.Columns.CATEGORY_OPTION_COMBO + ", " +
+            CategoryOptionComboCategoryLinkModel.Columns.CATEGORY + ")" +
+            ");";
 
     private static final String CREATE_USER_TABLE = "CREATE TABLE " + UserModel.TABLE + " (" +
             UserModel.Columns.ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -842,6 +944,13 @@ public class DbOpenHelper extends CustomSQLBriteOpenHelper {
         database.execSQL(CREATE_USER_ROLE_TABLE);
         database.execSQL(CREATE_USER_ROLE_PROGRAM_TABLE);
         database.execSQL(CREATE_PROGRAM_STAGE_SECTION_PROGRAM_INDICATOR_LINK_TABLE);
+        database.execSQL(CREATE_CATEGORY_TABLE);
+        database.execSQL(CREATE_CATEGORY_OPTION_TABLE);
+        database.execSQL(CREATE_CATEGORY_CATEGORY_OPTION_LINK_TABLE);
+        database.execSQL(CREATE_CATEGORY_COMBO_TABLE);
+        database.execSQL(CREATE_CATEGORY_CATEGORY_COMBO_LINK_TABLE);
+        database.execSQL(CREATE_CATEGORY_OPTION_COMBO_TABLE);
+        database.execSQL(CREATE_CATEGORY_OPTION_COMBO_CATEGORY_LINK_TABLE);
         return database;
     }
 
