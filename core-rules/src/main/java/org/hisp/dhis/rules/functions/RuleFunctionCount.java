@@ -40,8 +40,7 @@ final class RuleFunctionCount extends RuleFunction {
     private Integer count(String variableName, Map<String, RuleVariableValue> valueMap) {
         RuleVariableValue ruleVariableValue = valueMap.get(variableName);
         Integer count = 0;
-        if (ruleVariableValue != null) {
-            if (ruleVariableValue.value() != null) {
+        if (ruleVariableValue != null && ruleVariableValue.value() != null) {
                 if (ruleVariableValue.candidates().size() > 0) {
                     count = ruleVariableValue.candidates().size();
                 } else {
@@ -50,7 +49,6 @@ final class RuleFunctionCount extends RuleFunction {
                     //This happens for variables of "DATAELEMENT_CURRENT_STAGE" and "TEI_ATTRIBUTE"
                     count = 1;
                 }
-            }
         }
         return count;
     }

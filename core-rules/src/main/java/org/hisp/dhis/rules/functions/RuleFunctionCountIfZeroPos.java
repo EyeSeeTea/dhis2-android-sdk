@@ -5,6 +5,7 @@ import org.hisp.dhis.rules.RuleVariableValue;
 
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.annotation.Nonnull;
 
@@ -42,8 +43,7 @@ final class RuleFunctionCountIfZeroPos extends RuleFunction {
             Map<String, RuleVariableValue> valueMap) {
         RuleVariableValue ruleVariableValue = valueMap.get(variableName);
         Integer count = 0;
-        if (ruleVariableValue != null) {
-            if (ruleVariableValue.value() != null) {
+        if (ruleVariableValue != null && ruleVariableValue.value() != null) {
                 if (ruleVariableValue.candidates().size() > 0) {
                     for (String candidateValue : ruleVariableValue.candidates()) {
                         if (ifZeroPos(candidateValue)) {
@@ -51,15 +51,19 @@ final class RuleFunctionCountIfZeroPos extends RuleFunction {
                         }
                     }
                 } else if (ruleVariableValue.value() != null) {
-                    String value = ruleVariableValue.value().replace("'", "");
-
-                    if (ifZeroPos(value)) {
-                        return 1;
-                    }
+                    return countNoCandidates(ruleVariableValue);
                 }
-            }
         }
         return count;
+    }
+
+    private int countNoCandidates(RuleVariableValue ruleVariableValue) {
+        String value = ruleVariableValue.value().replace("'", "");
+
+        if (ifZeroPos(value)) {
+            return 1;
+        }
+        return 0;
     }
 
     private boolean ifZeroPos(String candidateValue) {
@@ -69,6 +73,8 @@ final class RuleFunctionCountIfZeroPos extends RuleFunction {
                 ifZeroPos = true;
             }
         } catch (NumberFormatException e) {
+            Logger log = Logger.getLogger(RuleFunctionCountIfZeroPos.class.getName());
+            log.fine(e.getMessage());
             //It's not important, this value simply don't count as zero or positive
         }
 
