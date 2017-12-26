@@ -47,10 +47,10 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
      * Create a helper object to create, open, and/or manage a database.
      * This method always returns very quickly.  The database is not actually
      * created or opened until one of
-     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
-     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getWritableDatabase} or
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getReadableDatabase} is called.
      *
-     * @see SQLBriteOpenHelper
+     * @see com.github.lykmapipo.sqlbrite.migrations.SQLBriteOpenHelper
      */
     public CustomSQLBriteOpenHelper(Context context, String name,
             SQLiteDatabase.CursorFactory factory, int version, String migrationTestDir) {
@@ -65,10 +65,10 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
      * Create a helper object to create, open, and/or manage a database.
      * This method always returns very quickly.  The database is not actually
      * created or opened until one of
-     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
-     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getWritableDatabase} or
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getReadableDatabase} is called.
      *
-     * @see SQLBriteOpenHelper
+     * @see com.github.lykmapipo.sqlbrite.migrations.SQLBriteOpenHelper
      */
     public CustomSQLBriteOpenHelper(Context context, String name,
             SQLiteDatabase.CursorFactory factory,
@@ -84,10 +84,10 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
      * Create a helper object to create, open, and/or manage a testing database.
      * This method always returns very quickly.  The database is not actually
      * created or opened until one of
-     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
-     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getWritableDatabase} or
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getReadableDatabase} is called.
      *
-     * @see SQLBriteOpenHelper
+     * @see com.github.lykmapipo.sqlbrite.migrations.SQLBriteOpenHelper
      */
     public CustomSQLBriteOpenHelper(Context context, String name, int version) {
         super(context, name, null, version);
@@ -100,10 +100,10 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
      * Create a helper object to create, open, and/or manage a testing database.
      * This method always returns very quickly.  The database is not actually
      * created or opened until one of
-     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
-     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getWritableDatabase} or
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getReadableDatabase} is called.
      *
-     * @see SQLBriteOpenHelper
+     * @see com.github.lykmapipo.sqlbrite.migrations.SQLBriteOpenHelper
      */
     public CustomSQLBriteOpenHelper(Context context, String name, int version, boolean testing,
             String migrationTestDir) {
@@ -148,14 +148,14 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     }
 
     /**
-     * Create a {@link BriteDatabase} instance.N
+     * Create a {@link com.squareup.sqlbrite2.BriteDatabase} instance.N
      * This method always returns very quickly.  The database is not actually
      * created or opened until one of
-     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
-     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getWritableDatabase} or
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getReadableDatabase} is called.
      *
-     * @see SQLBriteOpenHelper
-     * @see BriteDatabase
+     * @see com.github.lykmapipo.sqlbrite.migrations.SQLBriteOpenHelper
+     * @see com.squareup.sqlbrite2.BriteDatabase
      */
 
     @SuppressWarnings("PMD")
@@ -170,14 +170,14 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
 
 
     /**
-     * Create a {@link BriteDatabase} instance.
+     * Create a {@link com.squareup.sqlbrite2.BriteDatabase} instance.
      * This method always returns very quickly.  The database is not actually
      * created or opened until one of
-     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
-     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getWritableDatabase} or
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getReadableDatabase} is called.
      *
-     * @see SQLBriteOpenHelper
-     * @see BriteDatabase
+     * @see com.github.lykmapipo.sqlbrite.migrations.SQLBriteOpenHelper
+     * @see com.squareup.sqlbrite2.BriteDatabase
      */
 
     @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
@@ -194,14 +194,14 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
 
 
     /**
-     * Create a {@link BriteDatabase} instance.
+     * Create a {@link com.squareup.sqlbrite2.BriteDatabase} instance.
      * This method always returns very quickly.  The database is not actually
      * created or opened until one of
-     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
-     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getWritableDatabase} or
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getReadableDatabase} is called.
      *
-     * @see SQLBriteOpenHelper
-     * @see BriteDatabase
+     * @see com.github.lykmapipo.sqlbrite.migrations.SQLBriteOpenHelper
+     * @see com.squareup.sqlbrite2.BriteDatabase
      */
 
     @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
@@ -218,14 +218,14 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     }
 
     /**
-     * Create a {@link BriteDatabase} instance for testing.
+     * Create a {@link com.squareup.sqlbrite2.BriteDatabase} instance for testing.
      * This method always returns very quickly.  The database is not actually
      * created or opened until one of
-     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
-     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getWritableDatabase} or
+     * {@link com.squareup.sqlbrite2.BriteDatabase#getReadableDatabase} is called.
      *
-     * @see SQLBriteOpenHelper
-     * @see BriteDatabase
+     * @see com.github.lykmapipo.sqlbrite.migrations.SQLBriteOpenHelper
+     * @see com.squareup.sqlbrite2.BriteDatabase
      */
 
     @SuppressWarnings("PMD.AvoidSynchronizedAtMethodLevel")
