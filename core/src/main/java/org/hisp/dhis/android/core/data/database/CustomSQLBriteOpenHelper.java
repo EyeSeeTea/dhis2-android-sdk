@@ -46,8 +46,9 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     /**
      * Create a helper object to create, open, and/or manage a database.
      * This method always returns very quickly.  The database is not actually
-     * created or opened until one of {@link #getWritableDatabase} or
-     * {@link #getReadableDatabase} is called.
+     * created or opened until one of
+     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
+     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
      *
      * @see SQLBriteOpenHelper
      */
@@ -63,8 +64,9 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     /**
      * Create a helper object to create, open, and/or manage a database.
      * This method always returns very quickly.  The database is not actually
-     * created or opened until one of {@link #getWritableDatabase} or
-     * {@link #getReadableDatabase} is called.
+     * created or opened until one of
+     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
+     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
      *
      * @see SQLBriteOpenHelper
      */
@@ -81,8 +83,9 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     /**
      * Create a helper object to create, open, and/or manage a testing database.
      * This method always returns very quickly.  The database is not actually
-     * created or opened until one of {@link #getWritableDatabase} or
-     * {@link #getReadableDatabase} is called.
+     * created or opened until one of
+     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
+     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
      *
      * @see SQLBriteOpenHelper
      */
@@ -96,8 +99,9 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     /**
      * Create a helper object to create, open, and/or manage a testing database.
      * This method always returns very quickly.  The database is not actually
-     * created or opened until one of {@link #getWritableDatabase} or
-     * {@link #getReadableDatabase} is called.
+     * created or opened until one of
+     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
+     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
      *
      * @see SQLBriteOpenHelper
      */
@@ -146,8 +150,9 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     /**
      * Create a {@link BriteDatabase} instance.N
      * This method always returns very quickly.  The database is not actually
-     * created or opened until one of {@link #getWritableDatabase} or
-     * {@link #getReadableDatabase} is called.
+     * created or opened until one of
+     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
+     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
      *
      * @see SQLBriteOpenHelper
      * @see BriteDatabase
@@ -167,8 +172,9 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     /**
      * Create a {@link BriteDatabase} instance.
      * This method always returns very quickly.  The database is not actually
-     * created or opened until one of {@link #getWritableDatabase} or
-     * {@link #getReadableDatabase} is called.
+     * created or opened until one of
+     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
+     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
      *
      * @see SQLBriteOpenHelper
      * @see BriteDatabase
@@ -190,8 +196,9 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     /**
      * Create a {@link BriteDatabase} instance.
      * This method always returns very quickly.  The database is not actually
-     * created or opened until one of {@link #getWritableDatabase} or
-     * {@link #getReadableDatabase} is called.
+     * created or opened until one of
+     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
+     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
      *
      * @see SQLBriteOpenHelper
      * @see BriteDatabase
@@ -213,8 +220,9 @@ public class CustomSQLBriteOpenHelper extends SQLBriteOpenHelper {
     /**
      * Create a {@link BriteDatabase} instance for testing.
      * This method always returns very quickly.  The database is not actually
-     * created or opened until one of {@link #getWritableDatabase} or
-     * {@link #getReadableDatabase} is called.
+     * created or opened until one of
+     * {@link android.database.sqlite.SQLiteOpenHelper#getWritableDatabase} or
+     * {@link android.database.sqlite.SQLiteOpenHelper#getReadableDatabase} is called.
      *
      * @see SQLBriteOpenHelper
      * @see BriteDatabase

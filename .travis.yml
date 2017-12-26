@@ -6,6 +6,7 @@ android:
   components:
   - tools
   - platform-tools
+  - tools
   - build-tools-25.0.2
   - android-25
   - android-22
@@ -14,6 +15,7 @@ android:
   - extra-google-m2repository
   - extra-android-m2repository
   - sys-img-armeabi-v7a-android-22
+  - extra-android-support
 env:
   global:
   - secure: XVjRNpEzXe1TuT6v1FklkNr6f50jbA4qS51Cg9vCE5u5WEbFTuKPkoFhyRv3clTpLm2QS+kF/Iah0P9GjCvYI4VOcfe+zp+p3LCc4vZjFtdfFJfdZ1+P9IiSB4rUnvnHdxzHg3QEAxAO/zMEzUFAkCc6OyZruEcuid1q8vHu6r4=
