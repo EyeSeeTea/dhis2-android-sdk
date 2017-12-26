@@ -97,30 +97,30 @@ public class EventEndPointCallMockIntegrationShould extends AbsStoreTestCase {
 
         EventEndPointCall eventEndPointCall = EventCallFactory.create(
                 d2.retrofit(), databaseAdapter(), "DiszpKrYNg8", 0);
-        ;
 
-        dhis2MockServer.enqueueMockResponse("events_1.json");
+        dhis2MockServer.enqueueMockResponse("event_1_with_all_data_values.json");
 
         eventEndPointCall.call();
 
         eventEndPointCall = EventCallFactory.create(
                 d2.retrofit(), databaseAdapter(), "DiszpKrYNg8", 0);
 
-        dhis2MockServer.enqueueMockResponse("events_1_with_removed_data_values.json");
+        dhis2MockServer.enqueueMockResponse("event_1_with_only_one_data_values.json");
 
         eventEndPointCall.call();
 
-        verifyDownloadedEvents("events_1_with_removed_data_values.json");
+        verifyDownloadedEvents("event_1_with_only_one_data_values.json");
     }
 
     private void givenAMetadataInDatabase() throws Exception {
         dhis2MockServer.enqueueMockResponse("system_info.json");
         dhis2MockServer.enqueueMockResponse("user.json");
         dhis2MockServer.enqueueMockResponse("organisationUnits.json");
+        dhis2MockServer.enqueueMockResponse("categories.json");
+        dhis2MockServer.enqueueMockResponse("category_combos.json");
         dhis2MockServer.enqueueMockResponse("programs.json");
         dhis2MockServer.enqueueMockResponse("tracked_entities.json");
         dhis2MockServer.enqueueMockResponse("option_sets.json");
-
         d2.syncMetaData().call();
     }
 
@@ -132,7 +132,6 @@ public class EventEndPointCallMockIntegrationShould extends AbsStoreTestCase {
         assertThat(downloadedEvents.size(), is(expectedEventsResponse.items().size()));
         assertThat(downloadedEvents, is(expectedEventsResponse.items()));
     }
-
 
     private List<Event> getDownloadedEvents() {
         List<Event> downloadedEvents = new ArrayList<>();
@@ -154,7 +153,8 @@ public class EventEndPointCallMockIntegrationShould extends AbsStoreTestCase {
                     event.createdAtClient(), event.lastUpdatedAtClient(),
                     event.program(), event.programStage(), event.organisationUnit(),
                     event.eventDate(), event.status(), event.coordinates(), event.completedDate(),
-                    event.dueDate(), event.deleted(), downloadedValues.get(event.uid()));
+                    event.dueDate(), event.deleted(), downloadedValues.get(event.uid()), event.attributeCategoryOptions(),
+                    event.attributeOptionCombo(), event.trackedEntityInstance());
 
             downloadedEvents.add(event);
         }

@@ -104,10 +104,11 @@ public class TrackedEntityInstanceCallMockIntegrationShould extends AbsStoreTest
         dhis2MockServer.enqueueMockResponse("system_info.json");
         dhis2MockServer.enqueueMockResponse("user.json");
         dhis2MockServer.enqueueMockResponse("organisationUnits.json");
+        dhis2MockServer.enqueueMockResponse("categories.json");
+        dhis2MockServer.enqueueMockResponse("category_combos.json");
         dhis2MockServer.enqueueMockResponse("programs.json");
         dhis2MockServer.enqueueMockResponse("tracked_entities.json");
         dhis2MockServer.enqueueMockResponse("option_sets.json");
-
         d2.syncMetaData().call();
     }
 
@@ -233,7 +234,9 @@ public class TrackedEntityInstanceCallMockIntegrationShould extends AbsStoreTest
                     event.program(), event.programStage(), event.organisationUnit(),
                     event.eventDate(), event.status(), event.coordinates(),
                     event.completedDate(),
-                    event.dueDate(), event.deleted(), downloadedValues.get(event.uid()));
+                    event.dueDate(), event.deleted(), downloadedValues.get(event.uid()),
+                    event.attributeCategoryOptions(), event.attributeOptionCombo(),
+                    event.trackedEntityInstance());
 
             if (downloadedEvents.get(event.enrollmentUid()) == null) {
                 downloadedEvents.put(event.enrollmentUid(), new ArrayList<Event>());
