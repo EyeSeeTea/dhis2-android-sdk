@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+
 public abstract class RuleFunction {
     static final String DATE_PATTERN = "yyyy-MM-dd";
 
@@ -16,11 +17,8 @@ public abstract class RuleFunction {
             Map<String, RuleVariableValue> valueMap);
 
     @Nullable
+    @SuppressWarnings("PMD")
     public static RuleFunction create(@Nonnull String fun) {
-        return createPart1(fun);
-    }
-//    Dividing in 3 parts because PMD returns CyclomaticComplexity if is only one method
-    private static RuleFunction createPart1(@Nonnull String fun) {
         switch (fun) {
             case RuleFunctionDaysBetween.D2_DAYS_BETWEEN:
                 return RuleFunctionDaysBetween.create();
@@ -38,13 +36,6 @@ public abstract class RuleFunction {
                 return RuleFunctionCeil.create();
             case RuleFunctionAddDays.D2_ADD_DAYS:
                 return RuleFunctionAddDays.create();
-            default:
-                return createPart2(fun);
-        }
-    }
-
-    private static RuleFunction createPart2(@Nonnull String fun) {
-        switch (fun) {
             case RuleFunctionConcatenate.D2_CONCATENATE:
                 return RuleFunctionConcatenate.create();
             case RuleFunctionCount.D2_COUNT:
@@ -61,13 +52,6 @@ public abstract class RuleFunction {
                 return RuleFunctionModulus.create();
             case RuleFunctionOizp.D2_OIZP:
                 return RuleFunctionOizp.create();
-            default:
-                return createPart3(fun);
-        }
-    }
-
-    private static RuleFunction createPart3(@Nonnull String fun) {
-        switch (fun) {
             case RuleFunctionRound.D2_ROUND:
                 return RuleFunctionRound.create();
             case RuleFunctionRight.D2_RIGHT:
