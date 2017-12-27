@@ -23,12 +23,6 @@ env:
 script:
 - travis_wait 40 "./build.sh"
 before_script:
-- wget https://github.com/square/sqlbrite/archive/2.0.0.tar.gz -O /tmp/sqlbrite.tar.gz
-- tar -xvf /tmp/sqlbrite.tar.gz
-- export PATH=$PATH:$PWD/sqlbrite-2.0.0/sqlbrite/src/main/java
-- wget https://github.com/lykmapipo/sqlbrite-migrations/archive/v1.0.1.tar.gz -O /tmp/sqlbrite-migrations.tar.gz
-- tar -xvf /tmp/sqlbrite-migrations.tar.gz
-- export PATH=$PATH:$PWD/sqlbrite-migrations-1.0.1/library/src/main/java
 - echo no | android create avd --force -n test -t android-22 --abi armeabi-v7a
 - emulator -avd test -no-audio -no-window &
 - android-wait-for-emulator
