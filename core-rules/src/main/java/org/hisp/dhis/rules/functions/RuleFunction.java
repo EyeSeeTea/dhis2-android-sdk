@@ -8,7 +8,10 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-
+@SuppressWarnings({
+        "PMD.CyclomaticComplexity",
+        "PMD.StdCyclomaticComplexity"
+})
 public abstract class RuleFunction {
     static final String DATE_PATTERN = "yyyy-MM-dd";
 
@@ -17,7 +20,6 @@ public abstract class RuleFunction {
             Map<String, RuleVariableValue> valueMap);
 
     @Nullable
-    @SuppressWarnings("PMD")
     public static RuleFunction create(@Nonnull String fun) {
         switch (fun) {
             case RuleFunctionDaysBetween.D2_DAYS_BETWEEN:
