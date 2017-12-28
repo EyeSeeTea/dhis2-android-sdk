@@ -45,19 +45,26 @@ final class RuleFunctionCountIfZeroPos extends RuleFunction {
         Integer count = 0;
         if (ruleVariableValue != null && ruleVariableValue.value() != null) {
                 if (ruleVariableValue.candidates().size() > 0) {
-                    for (String candidateValue : ruleVariableValue.candidates()) {
-                        if (ifZeroPos(candidateValue)) {
-                            count++;
-                        }
-                    }
+                    count = countCandidates(ruleVariableValue);
                 } else if (ruleVariableValue.value() != null) {
-                    return countNoCandidates(ruleVariableValue);
+                    count = countValue(ruleVariableValue);
                 }
         }
         return count;
     }
 
-    private int countNoCandidates(RuleVariableValue ruleVariableValue) {
+    private Integer countCandidates(RuleVariableValue ruleVariableValue) {
+        Integer count = 0;
+
+        for (String candidateValue : ruleVariableValue.candidates()) {
+            if (ifZeroPos(candidateValue)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int countValue(RuleVariableValue ruleVariableValue) {
         String value = ruleVariableValue.value().replace("'", "");
 
         if (ifZeroPos(value)) {

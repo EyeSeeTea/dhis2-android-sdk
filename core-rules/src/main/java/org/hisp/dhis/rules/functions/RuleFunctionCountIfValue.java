@@ -49,7 +49,7 @@ final class RuleFunctionCountIfValue extends RuleFunction {
                 if (ruleVariableValue.candidates().size() > 0) {
                     count = countCandidates(ruleVariableValue, valueToCompare);
                 } else {
-                    return countNoCandidates(ruleVariableValue, valueToCompare);
+                    count = countValue(ruleVariableValue, valueToCompare);
                 }
             }
         return count;
@@ -65,7 +65,7 @@ final class RuleFunctionCountIfValue extends RuleFunction {
         return count;
     }
 
-    private static int countNoCandidates(RuleVariableValue ruleVariableValue,
+    private static int countValue(RuleVariableValue ruleVariableValue,
             String valueToCompare) {
         String value = ruleVariableValue.value().replace("'", "");
 
