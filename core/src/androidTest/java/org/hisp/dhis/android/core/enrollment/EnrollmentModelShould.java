@@ -100,6 +100,7 @@ public class EnrollmentModelShould {
     }
 
     @Test
+    @SmallTest
     public void create_content_values_when_created_from_builder(){
         EnrollmentModel model = EnrollmentModel.builder()
                 .id(ID)

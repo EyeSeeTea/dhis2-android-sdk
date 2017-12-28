@@ -31,6 +31,7 @@ package org.hisp.dhis.android.core.configuration;
 import android.content.ContentValues;
 import android.database.MatrixCursor;
 import android.support.test.filters.MediumTest;
+import android.support.test.filters.SmallTest;
 import android.support.test.runner.AndroidJUnit4;
 
 import org.hisp.dhis.android.core.configuration.ConfigurationModel.Columns;
@@ -47,7 +48,7 @@ public class ConfigurationModelShould {
     private static final String SERVER_URL = "https://testurl.org/";
 
     @Test
-    @MediumTest
+    @SmallTest
     public void create_model_when_created_from_database_cursor() {
         MatrixCursor cursor = new MatrixCursor(new String[]{
                 Columns.ID, Columns.SERVER_URL
@@ -64,7 +65,7 @@ public class ConfigurationModelShould {
     }
 
     @Test
-    @MediumTest
+    @SmallTest
     public void create_content_values_when_created_from_builder() {
         ConfigurationModel configurationModel = ConfigurationModel.builder()
                 .id(ID).serverUrl(HttpUrl.parse(SERVER_URL)).build();

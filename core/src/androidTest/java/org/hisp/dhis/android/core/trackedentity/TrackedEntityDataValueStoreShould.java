@@ -139,19 +139,19 @@ public class TrackedEntityDataValueStoreShould extends AbsStoreTestCase {
         ContentValues dataElement1 = CreateDataElementUtils.create(1L, DATA_ELEMENT_1, null);
         ContentValues dataElement2 = CreateDataElementUtils.create(2L, DATA_ELEMENT_2, null);
 
-        long trackedEntityId = database().insert(TrackedEntityModel.TABLE, null, trackedEntity);
-        long relationshipTypeId = database().insert(RelationshipTypeModel.TABLE, null,
+        database().insert(TrackedEntityModel.TABLE, null, trackedEntity);
+        database().insert(RelationshipTypeModel.TABLE, null,
                 relationshipType);
-        long programId = database().insert(ProgramModel.TABLE, null, program);
-        long orgUnitId = database().insert(OrganisationUnitModel.TABLE, null, organisationUnit);
-        long programStageId = database().insert(ProgramStageModel.TABLE, null, programStage);
-        long dataElement1Id = database().insert(DataElementModel.TABLE, null, dataElement1);
-        long dataElement2Id = database().insert(DataElementModel.TABLE, null, dataElement2);
-        long trackedEntityInstanceId = database().insert(TrackedEntityInstanceModel.TABLE, null,
+        database().insert(ProgramModel.TABLE, null, program);
+        database().insert(OrganisationUnitModel.TABLE, null, organisationUnit);
+        database().insert(ProgramStageModel.TABLE, null, programStage);
+        database().insert(DataElementModel.TABLE, null, dataElement1);
+        database().insert(DataElementModel.TABLE, null, dataElement2);
+        database().insert(TrackedEntityInstanceModel.TABLE, null,
                 trackedEntityInstance);
-        long enrollmentId = database().insert(EnrollmentModel.TABLE, null, enrollment);
-        long event1Id = database().insert(EventModel.TABLE, null, event1);
-        long event2Id = database().insert(EventModel.TABLE, null, event2);
+        database().insert(EnrollmentModel.TABLE, null, enrollment);
+        database().insert(EventModel.TABLE, null, event1);
+        database().insert(EventModel.TABLE, null, event2);
     }
 
     @Test

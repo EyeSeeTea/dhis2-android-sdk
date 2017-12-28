@@ -108,6 +108,7 @@ public class OptionStoreShould extends AbsStoreTestCase {
     }
 
     @Test
+    @MediumTest
     public void insert_in_data_base_deferrable_option_when_insert() {
 
         database().beginTransaction();
@@ -128,11 +129,13 @@ public class OptionStoreShould extends AbsStoreTestCase {
     }
 
     @Test(expected = SQLiteConstraintException.class)
+    @MediumTest
     public void throw_sqlite_constraint_exception_when_persist_option_without_foreign_key() {
         store.insert(UID, CODE, NAME, DISPLAY_NAME, date, date, OPTION_SET_UID);
     }
 
     @Test
+    @MediumTest
     public void delete_options_in_data_base_when_delete_option_set() {
         ContentValues optionSet = CreateOptionSetUtils.create(OPTION_SET_ID, OPTION_SET_UID);
         database().insert(OptionSetModel.TABLE, null, optionSet);
@@ -168,6 +171,7 @@ public class OptionStoreShould extends AbsStoreTestCase {
     }
 
     @Test
+    @MediumTest
     public void update_option_in_data_base_when_update() throws Exception {
         ContentValues optionSet = CreateOptionSetUtils.create(OPTION_SET_ID, OPTION_SET_UID);
         database().insert(OptionSetModel.TABLE, null, optionSet);
@@ -192,6 +196,7 @@ public class OptionStoreShould extends AbsStoreTestCase {
     }
 
     @Test
+    @MediumTest
     public void delete_option_in_data_base_when_delete() throws Exception {
         ContentValues optionSet = CreateOptionSetUtils.create(OPTION_SET_ID, OPTION_SET_UID);
         database().insert(OptionSetModel.TABLE, null, optionSet);
@@ -215,31 +220,37 @@ public class OptionStoreShould extends AbsStoreTestCase {
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @MediumTest
     public void throw_illegal_argument_exception_when_insert_null_uid() {
         store.insert(null, CODE, NAME, DISPLAY_NAME, date, date, OPTION_SET_UID);
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @MediumTest
     public void throw_illegal_argument_exception_when_insert_null_optionSet() {
         store.insert(UID, CODE, NAME, DISPLAY_NAME, date, date, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @MediumTest
     public void throw_illegal_argument_exception_when_update_null_uid() {
         store.update(null, CODE, NAME, DISPLAY_NAME, date, date, OPTION_SET_UID, UID);
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @MediumTest
     public void throw_illegal_argument_exception_when_update_null_OptionSet() {
         store.update(UID, CODE, NAME, DISPLAY_NAME, date, date, null, UID);
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @MediumTest
     public void throw_illegal_argument_exceptioN_when_update_null_whereUid() {
         store.update(UID, CODE, NAME, DISPLAY_NAME, date, date, OPTION_SET_UID, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
+    @MediumTest
     public void throw_illegal_argument_exception_when_delete_null_uid() {
         store.delete(null);
     }

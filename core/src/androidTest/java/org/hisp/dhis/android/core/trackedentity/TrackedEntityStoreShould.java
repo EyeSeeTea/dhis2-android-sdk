@@ -119,7 +119,7 @@ public class TrackedEntityStoreShould extends AbsStoreTestCase {
     }
 
     @Test
-    @SmallTest
+    @MediumTest
     public void update_shouldUpdateRowInDatabase() {
         ContentValues trackedEntity = CreateTrackedEntityUtils.create(1L, UID);
 

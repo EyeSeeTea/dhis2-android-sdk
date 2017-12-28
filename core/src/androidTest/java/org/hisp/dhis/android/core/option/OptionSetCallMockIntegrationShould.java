@@ -63,7 +63,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.hisp.dhis.android.core.data.database.CursorAssert.assertThatCursor;
 
 @RunWith(AndroidJUnit4.class)
-public class OptionSetCallShould extends AbsStoreTestCase {
+public class OptionSetCallMockIntegrationShould extends AbsStoreTestCase {
     private static final String[] OPTION_SET_PROJECTION = {
             OptionSetModel.Columns.ID,
             OptionSetModel.Columns.UID,
