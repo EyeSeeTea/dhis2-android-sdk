@@ -655,6 +655,8 @@ public final class MetaDataController extends ResourceController {
 
         }
         SystemInfo serverSystemInfo = dhisApi.getSystemInfo();
+        serverSystemInfo.save();
+
         AppPreferencesImpl appPreferences = new AppPreferencesImpl(context);
         appPreferences.setApiVersion(serverSystemInfo.getVersion());
         DateTime serverDateTime = serverSystemInfo.getServerDate();

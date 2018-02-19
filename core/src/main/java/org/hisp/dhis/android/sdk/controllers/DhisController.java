@@ -44,6 +44,7 @@ import org.hisp.dhis.android.sdk.network.DhisApi;
 import org.hisp.dhis.android.sdk.network.RepoManager;
 import org.hisp.dhis.android.sdk.network.Session;
 import org.hisp.dhis.android.sdk.persistence.Dhis2Application;
+import org.hisp.dhis.android.sdk.persistence.models.SystemInfo;
 import org.hisp.dhis.android.sdk.persistence.models.UserAccount;
 import org.hisp.dhis.android.sdk.persistence.preferences.DateTimeManager;
 import org.hisp.dhis.android.sdk.persistence.preferences.LastUpdatedManager;
@@ -63,7 +64,6 @@ import org.hisp.dhis.android.sdk.synchronization.domain.app.SyncAppUseCase;
 import org.hisp.dhis.android.sdk.synchronization.domain.enrollment.IEnrollmentRepository;
 import org.hisp.dhis.android.sdk.synchronization.domain.trackedentityinstance
         .ITrackedEntityInstanceRepository;
-import org.hisp.dhis.android.sdk.synchronization.domain.trackedentityinstance.SyncTrackedEntityInstanceUseCase;
 import org.hisp.dhis.android.sdk.utils.SyncDateWrapper;
 import org.hisp.dhis.client.sdk.ui.AppPreferencesImpl;
 
@@ -82,6 +82,7 @@ public final class DhisController {
     private final static String PASSWORD = "password";
     private final static String SERVER = "server";
     private final static String CREDENTIALS = "credentials";
+    public static final Float START_LATEST_API_VERSION =2.29f;
 
     /**
      * Variable hasUnSynchronizedDatavalues
@@ -178,6 +179,8 @@ public final class DhisController {
     static UserAccount signInUser(HttpUrl serverUrl, Credentials credentials) throws APIException {
         DhisApi dhisApi = RepoManager
                 .createService(serverUrl, credentials);
+        SystemInfo systemInfo = dhisApi.getSystemInfo();
+        systemInfo.save();
         UserAccount user = (new UserController(dhisApi)
                 .logInUser(serverUrl, credentials));
 
@@ -239,4 +242,9 @@ public final class DhisController {
         return getInstance().syncDateWrapper;
     }
 
+    public boolean isLoggedInServerWithLatestApiVersion() {
+        SystemInfo systemInfo = MetaDataController.getSystemInfo();
+        Float serverVersion = systemInfo.getVersionAsFloat();
+        return serverVersion>= START_LATEST_API_VERSION;
+    }
 }
