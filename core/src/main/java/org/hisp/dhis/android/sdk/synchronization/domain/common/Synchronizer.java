@@ -89,7 +89,6 @@ public class Synchronizer {
                 }
                 failedItem.setItemId(id);
                 failedItem.setItemType(type);
-                failedItem.setHttpStatusCode(apiException.getResponse().getStatus());
                 failedItem.setFailCount(failedItem.getFailCount() + 1);
                 mFailedItemRepository.save(failedItem);
             }
