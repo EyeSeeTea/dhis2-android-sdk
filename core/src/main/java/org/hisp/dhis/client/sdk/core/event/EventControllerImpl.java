@@ -28,6 +28,8 @@
 
 package org.hisp.dhis.client.sdk.core.event;
 
+import static org.hisp.dhis.client.sdk.core.common.utils.CollectionUtils.isEmpty;
+
 import org.hisp.dhis.client.sdk.core.common.Fields;
 import org.hisp.dhis.client.sdk.core.common.StateStore;
 import org.hisp.dhis.client.sdk.core.common.controllers.AbsDataController;
@@ -54,8 +56,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static org.hisp.dhis.client.sdk.core.common.utils.CollectionUtils.isEmpty;
 
 public final class EventControllerImpl extends AbsDataController<Event> implements EventController {
 
@@ -210,6 +210,7 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
         List<Event> events = eventStore.queryByUids(eventUids);
 
         try {
+            events = removeInvalidEvents(events);
             ApiMessage apiMessage = eventApiClient.postEvents(events);
 
             System.out.println("ApiResponse: " + apiMessage);
@@ -234,6 +235,16 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
             handleApiException(apiException, null);
         }
         return null;
+    }
+
+    private List<Event> removeInvalidEvents(List<Event> events) {
+        List<Event> validateEvents = new ArrayList<>();
+        for(Event event:events){
+            if(event.getDataValues()!=null && event.getDataValues().size()>0){
+                validateEvents.add(event);
+            }
+        }
+        return validateEvents;
     }
 
     private void deleteEvents(Set<String> uids) throws ApiException {
