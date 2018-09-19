@@ -28,6 +28,7 @@
 
 package org.hisp.dhis.client.sdk.core.event;
 
+import org.hisp.dhis.client.sdk.core.categoryoption.CategoryOptionStore;
 import org.hisp.dhis.client.sdk.core.common.Fields;
 import org.hisp.dhis.client.sdk.core.common.StateStore;
 import org.hisp.dhis.client.sdk.core.common.controllers.AbsDataController;
@@ -43,6 +44,7 @@ import org.hisp.dhis.client.sdk.core.common.preferences.LastUpdatedPreferences;
 import org.hisp.dhis.client.sdk.core.common.preferences.ResourceType;
 import org.hisp.dhis.client.sdk.core.common.utils.ModelUtils;
 import org.hisp.dhis.client.sdk.core.systeminfo.SystemInfoController;
+import org.hisp.dhis.client.sdk.models.category.CategoryOption;
 import org.hisp.dhis.client.sdk.models.common.importsummary.ImportSummary;
 import org.hisp.dhis.client.sdk.models.common.state.Action;
 import org.hisp.dhis.client.sdk.models.event.Event;
@@ -71,6 +73,7 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
     /* Persistence */
     private final EventStore eventStore;
     private final StateStore stateStore;
+    private final CategoryOptionStore categoryOptionStore;
 
     /* Utilities */
     private final TransactionManager transactionManager;
@@ -79,6 +82,7 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
                                EventApiClient eventApiClient,
                                LastUpdatedPreferences lastUpdatedPreferences,
                                EventStore eventStore, StateStore stateStore,
+                               CategoryOptionStore categoryOptionStore,
                                TransactionManager transactionManager,
                                Logger logger) {
         super(logger, eventStore);
@@ -88,6 +92,7 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
         this.lastUpdatedPreferences = lastUpdatedPreferences;
         this.eventStore = eventStore;
         this.stateStore = stateStore;
+        this.categoryOptionStore = categoryOptionStore;
         this.transactionManager = transactionManager;
     }
 
@@ -215,7 +220,7 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
         Set<String> eventUids = ModelUtils.toUidSet(eventStates);
         */
 
-        List<Event> events = eventStore.queryByUids(eventUids);
+        List<Event> events = getEventToSend(eventUids);
 
 
         try {
@@ -247,6 +252,20 @@ public final class EventControllerImpl extends AbsDataController<Event> implemen
             handleApiException(apiException, null);
         }
         return null;
+    }
+
+    private List<Event> getEventToSend(Set<String> eventUids) {
+        List<Event> events = eventStore.queryByUids(eventUids);
+
+        CategoryOption defaultCategoryOption = categoryOptionStore.queryDefault();
+
+        for (Event event:events) {
+            if (event.getAttributeCategoryOptions() == null ||
+                    event.getAttributeCategoryOptions().isEmpty())
+                event.setAttributeCategoryOptions(defaultCategoryOption.getUId());
+        }
+
+        return events;
     }
 
     private void deleteEvents(Set<String> uids) throws ApiException {

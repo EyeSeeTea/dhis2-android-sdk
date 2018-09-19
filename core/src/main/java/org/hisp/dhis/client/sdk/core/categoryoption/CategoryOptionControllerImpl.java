@@ -55,4 +55,20 @@ public class CategoryOptionControllerImpl implements CategoryOptionController {
 
         lastUpdatedPreferences.save(ResourceType.CATEGORYOPTIONS, DateType.SERVER, serverTime);
     }
+
+    @Override
+    public void pullDefault() throws ApiException {
+
+        DateTime serverTime = systemInfoController.getSystemInfo().getServerDate();
+        CategoryOption defaultCategoryOption = categoryOptionApiClient
+                .getDefaultCategoryOption();
+
+        List<DbOperation> dbOperations = new ArrayList<>();
+        dbOperations.add(DbOperationImpl.with(categoryOptionStore)
+                .save(defaultCategoryOption));
+
+        transactionManager.transact(dbOperations);
+
+        lastUpdatedPreferences.save(ResourceType.CATEGORYOPTIONS, DateType.SERVER, serverTime);
+    }
 }

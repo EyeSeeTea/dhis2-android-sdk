@@ -282,6 +282,7 @@ public class ControllersModuleImpl implements ControllersModule {
                 preferencesModule.getLastUpdatedPreferences(),
                 persistenceModule.getEventStore(),
                 persistenceModule.getStateStore(),
+                persistenceModule.getCategoryOptionStore(),
                 persistenceModule.getTransactionManager(), logger);
 
         enrollmentController = new EnrollmentControllerImpl(networkModule.getEnrollmentApiClient(),

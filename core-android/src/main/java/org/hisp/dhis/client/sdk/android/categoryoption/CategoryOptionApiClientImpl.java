@@ -4,7 +4,11 @@ package org.hisp.dhis.client.sdk.android.categoryoption;
 import static android.R.attr.id;
 import static android.R.attr.level;
 
+import static org.hisp.dhis.client.sdk.android.api.network.NetworkUtils.call;
 import static org.hisp.dhis.client.sdk.android.api.network.NetworkUtils.getCollection;
+
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import org.hisp.dhis.client.sdk.android.api.network.ApiResource;
 import org.hisp.dhis.client.sdk.android.attributes.AttributeApiClientRetrofit;
@@ -16,6 +20,8 @@ import org.hisp.dhis.client.sdk.models.attribute.Attribute;
 import org.hisp.dhis.client.sdk.models.category.CategoryOption;
 import org.joda.time.DateTime;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,5 +72,36 @@ public class CategoryOptionApiClientImpl implements CategoryOptionApiClient {
         List<CategoryOption> categoryOptions = getCollection(apiResource, fields, null, null);
 
         return categoryOptions;
+    }
+
+    @Override
+    public CategoryOption getDefaultCategoryOption()
+            throws ApiException {
+
+        Map<String, String> queryMap = new HashMap<>();
+        List<String> filters = new ArrayList<>();
+
+        /* disable paging */
+        queryMap.put("paging", "false");
+
+        queryMap.put("fields","id,shortName,displayName,created,lastUpdated,code");
+
+        List<CategoryOption> categoryOptions = new ArrayList<>();
+
+        categoryOptions.addAll(unwrap(call(categoryOptionApiClientRetrofit.getDefaultCategoryOption(queryMap)), "categoryOptions"));
+
+        if (categoryOptions.size() == 1)
+            return categoryOptions.get(0);
+        else
+            return null;
+    }
+
+    @NonNull
+    public static <T> List<T> unwrap(@Nullable Map<String, List<T>> response, @NonNull String key) {
+        if (response != null && response.containsKey(key) && response.get(key) != null) {
+            return response.get(key);
+        } else {
+            return new ArrayList<>();
+        }
     }
 }

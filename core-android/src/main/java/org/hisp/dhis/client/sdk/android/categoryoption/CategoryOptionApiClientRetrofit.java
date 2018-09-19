@@ -15,4 +15,8 @@ public interface CategoryOptionApiClientRetrofit {
     @GET("categoryOptions")
     Call<Map<String, List<CategoryOption>>> getCategoryOptions(
             @QueryMap Map<String, String> queryMap);
+
+    @GET("categoryOptions?&filter=displayName:eq:default")
+    Call<Map<String, List<CategoryOption>>> getDefaultCategoryOption(
+            @QueryMap Map<String, String> queryMap);
 }

@@ -13,4 +13,6 @@ import java.util.Set;
 public interface CategoryOptionApiClient {
     List<CategoryOption> getCategoryOptions(
             Fields fields, DateTime lastUpdated, Set<String> uids) throws ApiException;
+
+    CategoryOption getDefaultCategoryOption() throws ApiException;
 }

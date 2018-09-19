@@ -288,6 +288,7 @@ public class D2 {
                 preferencesModule.getUserPreferences(),
                 servicesModule.getUserAccountService(),
                 controllersModule.getUserAccountController(),
+                controllersModule.getCategoryOptionController(),
                 userAccountInteractor,
                 userProgramInteractor,
                 userOrganisationUnitInteractor,

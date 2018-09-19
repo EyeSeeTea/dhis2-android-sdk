@@ -32,6 +32,8 @@ package org.hisp.dhis.client.sdk.android.user;
 import org.hisp.dhis.client.sdk.android.api.utils.DefaultOnSubscribe;
 import org.hisp.dhis.client.sdk.android.organisationunit.UserOrganisationUnitInteractor;
 import org.hisp.dhis.client.sdk.android.program.UserProgramInteractor;
+import org.hisp.dhis.client.sdk.core.categoryoption.CategoryOptionController;
+import org.hisp.dhis.client.sdk.core.categoryoption.CategoryOptionControllerImpl;
 import org.hisp.dhis.client.sdk.core.common.network.UserCredentials;
 import org.hisp.dhis.client.sdk.core.common.persistence.PersistenceModule;
 import org.hisp.dhis.client.sdk.core.common.preferences.PreferencesModule;
@@ -51,6 +53,7 @@ public class CurrentUserInteractorImpl implements CurrentUserInteractor {
 
     // controllers
     private final UserAccountController userAccountController;
+    private final CategoryOptionController categoryOptionController;
 
     // interactors
     private final UserAccountInteractor userAccountInteractor;
@@ -64,6 +67,7 @@ public class CurrentUserInteractorImpl implements CurrentUserInteractor {
     public CurrentUserInteractorImpl(UserPreferences userPreferences,
                                      UserAccountService userAccountService,
                                      UserAccountController userAccountController,
+                                     CategoryOptionController categoryOptionController,
                                      UserAccountInteractor userAccountInteractor,
                                      UserProgramInteractor userProgramInteractor,
                                      UserOrganisationUnitInteractor organisationUnitInteractor,
@@ -72,6 +76,7 @@ public class CurrentUserInteractorImpl implements CurrentUserInteractor {
         this.userPreferences = userPreferences;
         this.userAccountService = userAccountService;
         this.userAccountController = userAccountController;
+        this.categoryOptionController = categoryOptionController;
         this.userAccountInteractor = userAccountInteractor;
         this.userProgramInteractor = userProgramInteractor;
         this.organisationUnitInteractor = organisationUnitInteractor;
@@ -92,9 +97,17 @@ public class CurrentUserInteractorImpl implements CurrentUserInteractor {
                 userPreferences.save(userCredentials);
 
                 userAccountController.pull();
+
+                pullDefaultCategoryOption();
+
                 return userAccountService.get();
             }
         });
+    }
+
+    private void pullDefaultCategoryOption() {
+        //Default category option is necessary to push events
+        categoryOptionController.pullDefault();
     }
 
     @Override
