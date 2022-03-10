@@ -45,11 +45,11 @@ internal object LocalDataStoreStore {
         w.bind(2, o.value())
     }
 
-    private val WHERE_UPDATE_BINDER = WhereStatementBinder { o: KeyValuePair, w: StatementWrapper ->
+    private val WHERE_UPDATE_BINDER = WhereStatementBinder<KeyValuePair> { o: KeyValuePair, w: StatementWrapper ->
         w.bind(3, o.key())
     }
 
-    private val WHERE_DELETE_BINDER = WhereStatementBinder { o: KeyValuePair, w: StatementWrapper ->
+    private val WHERE_DELETE_BINDER = WhereStatementBinder<KeyValuePair> { o: KeyValuePair, w: StatementWrapper ->
         w.bind(1, o.key())
     }
 

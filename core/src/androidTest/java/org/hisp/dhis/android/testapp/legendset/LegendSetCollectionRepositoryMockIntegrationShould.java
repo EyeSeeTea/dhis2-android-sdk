@@ -45,7 +45,7 @@ public class LegendSetCollectionRepositoryMockIntegrationShould extends BaseMock
     public void find_all() {
         List<LegendSet> legendSets = d2.legendSetModule().legendSets()
                 .blockingGet();
-        assertThat(legendSets.size()).isEqualTo(3);
+        assertThat(legendSets.size()).isEqualTo(5);
     }
 
     @Test
@@ -53,7 +53,7 @@ public class LegendSetCollectionRepositoryMockIntegrationShould extends BaseMock
         List<LegendSet> legendSets = d2.legendSetModule().legendSets()
                 .bySymbolizer().eq("color")
                 .blockingGet();
-        assertThat(legendSets.size()).isEqualTo(3);
+        assertThat(legendSets.size()).isEqualTo(5);
     }
 
     @Test
@@ -62,6 +62,6 @@ public class LegendSetCollectionRepositoryMockIntegrationShould extends BaseMock
                 .withLegends()
                 .one()
                 .blockingGet();
-        assertThat(legendSet.legends().size()).isEqualTo(3);
+        assertThat(legendSet.legends().size()).isEqualTo(2);
     }
 }

@@ -1,12 +1,12 @@
 package org.hisp.dhis.android.core.analytics
 
+import javax.inject.Inject
 import org.hisp.dhis.android.core.dataelement.DataElementCollectionRepository
 import org.hisp.dhis.android.core.indicator.IndicatorCollectionRepository
-import org.hisp.dhis.android.core.legendset.Legend
 import org.hisp.dhis.android.core.legendset.LegendCollectionRepository
 import org.hisp.dhis.android.core.program.ProgramIndicatorCollectionRepository
-import javax.inject.Inject
 
+@Suppress("TooGenericExceptionCaught")
 internal class LegendEvaluator @Inject constructor(
     private val dataElementRepository: DataElementCollectionRepository,
     private val programIndicatorRepository: ProgramIndicatorCollectionRepository,
@@ -16,7 +16,7 @@ internal class LegendEvaluator @Inject constructor(
     fun getLegendByProgramIndicator(
         programIndicatorUid: String,
         value: String?
-    ): Legend? {
+    ): String? {
         return if (value == null) {
             null
         } else try {
@@ -36,7 +36,7 @@ internal class LegendEvaluator @Inject constructor(
     fun getLegendByDataElement(
         dataElementUid: String,
         value: String?
-    ): Legend? {
+    ): String? {
         return if (value == null) {
             null
         } else try {
@@ -48,8 +48,6 @@ internal class LegendEvaluator @Inject constructor(
             val legendSet = dataElement.legendSets()!![0]
 
             return getLegendByLegendSet(legendSet.uid(), value)
-            
-            null
         } catch (e: Exception) {
             null
         }
@@ -58,7 +56,7 @@ internal class LegendEvaluator @Inject constructor(
     fun getLegendByIndicator(
         indicatorUid: String,
         value: String?
-    ): Legend? {
+    ): String? {
         return if (value == null) {
             null
         } else try {
@@ -78,21 +76,17 @@ internal class LegendEvaluator @Inject constructor(
     fun getLegendByLegendSet(
         legendSetUid: String,
         value: String?
-    ): Legend? {
+    ): String? {
 
         return if (value == null || value.toDouble().isNaN()) {
             null
         } else try {
             return legendRepository
                 .byStartValue().smallerThan(value.toDouble())
-                .byEndValue().biggerThan(value.toDouble())
+                .byEndValue().biggerOrEqualTo(value.toDouble())
                 .byLegendSet().eq(legendSetUid)
                 .one()
-                .blockingGet() ?: legendRepository
-                .byEndValue().eq(value.toDouble())
-                .byLegendSet().eq(legendSetUid)
-                .one()
-                .blockingGet()
+                .blockingGet().uid()
         } catch (e: Exception) {
             null
         }

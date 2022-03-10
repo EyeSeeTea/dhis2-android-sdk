@@ -27,7 +27,6 @@
  */
 package org.hisp.dhis.android.core.analytics.linelist
 
-import org.hisp.dhis.android.core.legendset.Legend
 import java.util.Date
 import org.hisp.dhis.android.core.period.Period
 
@@ -44,5 +43,5 @@ data class LineListResponseValue(
     val uid: String,
     val displayName: String,
     val value: String?,
-    val legend: Legend?
+    val legend: String?
 )

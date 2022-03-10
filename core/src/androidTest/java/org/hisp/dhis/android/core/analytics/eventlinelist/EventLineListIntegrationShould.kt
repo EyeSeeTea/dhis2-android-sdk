@@ -28,8 +28,8 @@
 package org.hisp.dhis.android.core.analytics.eventlinelist
 
 import com.google.common.truth.Truth.assertThat
-import org.hisp.dhis.android.core.analytics.LegendEvaluator
 import org.hisp.dhis.android.core.analytics.AnalyticsLegendStrategy
+import org.hisp.dhis.android.core.analytics.LegendEvaluator
 import org.hisp.dhis.android.core.analytics.aggregated.internal.AnalyticsOrganisationUnitHelper
 import org.hisp.dhis.android.core.analytics.eventlinelist.EventLineListSamples.categoryCombo
 import org.hisp.dhis.android.core.analytics.eventlinelist.EventLineListSamples.categoryOptionCombo
@@ -57,7 +57,6 @@ import org.hisp.dhis.android.core.enrollment.internal.EnrollmentStoreImpl
 import org.hisp.dhis.android.core.event.Event
 import org.hisp.dhis.android.core.event.internal.EventStoreImpl
 import org.hisp.dhis.android.core.legendset.DataElementLegendSetLink
-import org.hisp.dhis.android.core.legendset.LegendSet
 import org.hisp.dhis.android.core.legendset.ProgramIndicatorLegendSetLink
 import org.hisp.dhis.android.core.legendset.internal.DataElementLegendSetLinkStore
 import org.hisp.dhis.android.core.legendset.internal.LegendSetStore
@@ -133,7 +132,8 @@ class EventLineListIntegrationShould : BaseMockIntegrationTestEmptyDispatcher() 
             dataElementRepository = d2.dataElementModule().dataElements(),
             programIndicatorRepository = d2.programModule().programIndicators(),
             legendRepository = d2.legendSetModule().legends(),
-            indicatorRepository = d2.indicatorModule().indicators())
+            indicatorRepository = d2.indicatorModule().indicators()
+        )
     )
 
     @Before
@@ -481,7 +481,7 @@ class EventLineListIntegrationShould : BaseMockIntegrationTestEmptyDispatcher() 
 
         assertThat(values.size == 1).isTrue()
         assertThat(values[0].uid == programIndicator.uid()).isTrue()
-        assertThat(values[0].legend?.color() == legendSet1.legends()?.get(0)?.color()).isTrue()
+        assertThat(values[0].legend == legendSet1.legends()?.get(0)?.uid()).isTrue()
     }
 
     @Test
@@ -508,7 +508,7 @@ class EventLineListIntegrationShould : BaseMockIntegrationTestEmptyDispatcher() 
 
         assertThat(values.size == 1).isTrue()
         assertThat(values[0].uid == programIndicator.uid()).isTrue()
-        assertThat(values[0].legend?.color() == legendSet2.legends()?.get(1)?.color()).isTrue()
+        assertThat(values[0].legend == legendSet2.legends()?.get(1)?.uid()).isTrue()
     }
 
     @Test
@@ -551,11 +551,11 @@ class EventLineListIntegrationShould : BaseMockIntegrationTestEmptyDispatcher() 
         assertThat(values.size == 2).isTrue()
         assertThat(values[0].uid == dataElement1.uid()).isTrue()
         assertThat(values[0].value == "10.0").isTrue()
-        assertThat(values[0].legend?.color() == legendSet1.legends()?.get(0)?.color()).isTrue()
+        assertThat(values[0].legend == legendSet1.legends()?.get(0)?.uid()).isTrue()
 
         assertThat(values[1].uid == dataElement2.uid()).isTrue()
         assertThat(values[1].value == "30.0").isTrue()
-        assertThat(values[1].legend?.color() == legendSet1.legends()?.get(1)?.color()).isTrue()
+        assertThat(values[1].legend == legendSet1.legends()?.get(1)?.uid()).isTrue()
     }
 
     @Test
@@ -579,11 +579,11 @@ class EventLineListIntegrationShould : BaseMockIntegrationTestEmptyDispatcher() 
         assertThat(values.size == 2).isTrue()
         assertThat(values[0].uid == dataElement1.uid()).isTrue()
         assertThat(values[0].value == "10.0").isTrue()
-        assertThat(values[0].legend?.color() == legendSet2.legends()?.get(0)?.color()).isTrue()
+        assertThat(values[0].legend == legendSet2.legends()?.get(0)?.uid()).isTrue()
 
         assertThat(values[1].uid == dataElement2.uid()).isTrue()
         assertThat(values[1].value == "30.0").isTrue()
-        assertThat(values[1].legend?.color() == legendSet2.legends()?.get(0)?.color()).isTrue()
+        assertThat(values[1].legend == legendSet2.legends()?.get(0)?.uid()).isTrue()
     }
 
     private fun createTei() {
@@ -630,7 +630,7 @@ class EventLineListIntegrationShould : BaseMockIntegrationTestEmptyDispatcher() 
         return programIndicator
     }
 
-    private fun createDataElementLegendSetLinks(dataElement: String, legendSets: List<LegendSet>) {
+    private fun createDataElementLegendSetLinks(dataElement: String, legendSets: List<ObjectWithUid>) {
         legendSets.forEach {
             val dataElementLegendSetLink =
                 DataElementLegendSetLink.builder().dataElement(dataElement).legendSet(it.uid()).build()

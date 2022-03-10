@@ -27,9 +27,9 @@
  */
 package org.hisp.dhis.android.core.analytics.linelist
 
-import org.hisp.dhis.android.core.analytics.LegendEvaluator
-import org.hisp.dhis.android.core.analytics.AnalyticsLegendStrategy
 import javax.inject.Inject
+import org.hisp.dhis.android.core.analytics.AnalyticsLegendStrategy
+import org.hisp.dhis.android.core.analytics.LegendEvaluator
 import org.hisp.dhis.android.core.analytics.aggregated.internal.AnalyticsOrganisationUnitHelper
 import org.hisp.dhis.android.core.arch.repositories.scope.RepositoryScope
 import org.hisp.dhis.android.core.common.DateFilterPeriodHelper
@@ -64,6 +64,7 @@ internal class EventLineListServiceImpl @Inject constructor(
         return evaluateEvents(params)
     }
 
+    @Suppress("LongMethod", "ComplexMethod")
     private fun evaluateEvents(params: EventLineListParams): List<LineListResponse> {
 
         val events = getEvents(params)
@@ -93,7 +94,9 @@ internal class EventLineListServiceImpl @Inject constructor(
 
                     val legend = when (params.analyticsLegendStrategy) {
                         is AnalyticsLegendStrategy.None -> null
-                        is AnalyticsLegendStrategy.ByDataItem -> legendEvaluator.getLegendByDataElement(de.uid, dv?.value())
+                        is AnalyticsLegendStrategy.ByDataItem -> legendEvaluator.getLegendByDataElement(
+                            de.uid, dv?.value()
+                        )
                         is AnalyticsLegendStrategy.Fixed -> legendEvaluator.getLegendByLegendSet(
                             params.analyticsLegendStrategy.legendSetUid,
                             dv?.value()
@@ -114,7 +117,9 @@ internal class EventLineListServiceImpl @Inject constructor(
 
                     val legend = when (params.analyticsLegendStrategy) {
                         is AnalyticsLegendStrategy.None -> null
-                        is AnalyticsLegendStrategy.ByDataItem -> legendEvaluator.getLegendByProgramIndicator(pi.uid, value)
+                        is AnalyticsLegendStrategy.ByDataItem -> legendEvaluator.getLegendByProgramIndicator(
+                            pi.uid, value
+                        )
                         is AnalyticsLegendStrategy.Fixed -> legendEvaluator.getLegendByLegendSet(
                             params.analyticsLegendStrategy.legendSetUid, value
                         )

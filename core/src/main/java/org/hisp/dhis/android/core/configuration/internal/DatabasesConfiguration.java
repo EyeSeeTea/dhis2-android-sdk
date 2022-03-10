@@ -35,22 +35,31 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.auto.value.AutoValue;
 
+import org.hisp.dhis.android.BuildConfig;
+
+import java.util.Collections;
 import java.util.List;
 
 @AutoValue
 @JsonDeserialize(builder = AutoValue_DatabasesConfiguration.Builder.class)
 public abstract class DatabasesConfiguration {
 
-    @JsonProperty()
-    @NonNull
-    public abstract String loggedServerUrl();
+    @JsonProperty
+    public abstract long versionCode();
 
     @JsonProperty()
     @NonNull
-    public abstract List<DatabaseServerConfiguration> servers();
+    public abstract Integer maxAccounts();
+
+    @JsonProperty()
+    @NonNull
+    public abstract List<DatabaseAccount> accounts();
 
     public static Builder builder() {
-        return new AutoValue_DatabasesConfiguration.Builder();
+        return new AutoValue_DatabasesConfiguration.Builder()
+                .versionCode(BuildConfig.VERSION_CODE)
+                .maxAccounts(MultiUserDatabaseManager.DefaultMaxAccounts)
+                .accounts(Collections.emptyList());
     }
 
     public abstract Builder toBuilder();
@@ -59,9 +68,11 @@ public abstract class DatabasesConfiguration {
     @JsonPOJOBuilder(withPrefix = "")
     public abstract static class Builder {
 
-        public abstract Builder loggedServerUrl(String loggedServerUrl);
+        public abstract Builder versionCode(long versionCode);
 
-        public abstract Builder servers(List<DatabaseServerConfiguration> servers);
+        public abstract Builder maxAccounts(Integer maxAccounts);
+
+        public abstract Builder accounts(List<DatabaseAccount> accounts);
 
         public abstract DatabasesConfiguration build();
     }

@@ -41,7 +41,7 @@ ext {
     configuration = [
             buildToolsVersion: "30.0.2",
             minSdkVersion    : 19,
-            targetSdkVersion : 30,
+            targetSdkVersion : 31,
             versionCode      : 260,
             versionName      : "1.6.0-SNAPSHOT"
     ]
@@ -65,7 +65,7 @@ ext {
             jexl            : "2.1.1",
             jodaTime        : "2.10.6",
             smsCompression  : "0.2.0",
-            expressionParser: "1.0.18",
+            expressionParser: "1.0.25",
 
             // test dependencies
             coreTesting     : "2.1.0",
