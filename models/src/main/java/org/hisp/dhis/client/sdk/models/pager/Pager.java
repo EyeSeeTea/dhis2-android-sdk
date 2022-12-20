@@ -7,6 +7,9 @@ public class Pager {
     @JsonProperty("page")
     private String page;
 
+    @JsonProperty("isLastPage")
+    private String isLastPage;
+
     @JsonProperty("pageCount")
     private String pageCount;
 
@@ -49,5 +52,13 @@ public class Pager {
 
     public void setPageSize(String pageSize) {
         this.pageSize = pageSize;
+    }
+
+    public String getIsLastPage() {
+        return isLastPage;
+    }
+
+    public void setIsLastPage(String isLastPage) {
+        this.isLastPage = isLastPage;
     }
 }
