@@ -8,10 +8,11 @@
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
 
     <application>
         <!-- stub Authenticator service -->
-        <service android:name="org.hisp.dhis.client.sdk.ui.bindings.commons.AuthenticatorService">
+        <service android:name="org.hisp.dhis.client.sdk.ui.bindings.commons.AuthenticatorService" android:exported="false">
 
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
