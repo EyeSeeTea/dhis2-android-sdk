@@ -32,7 +32,6 @@ import android.util.Log
 import dagger.Reusable
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
-import javax.inject.Inject
 import okhttp3.ResponseBody
 import org.hisp.dhis.android.core.arch.api.executors.internal.APICallExecutor
 import org.hisp.dhis.android.core.arch.api.executors.internal.RxAPICallExecutor
@@ -40,7 +39,6 @@ import org.hisp.dhis.android.core.arch.call.D2Progress
 import org.hisp.dhis.android.core.arch.call.internal.D2ProgressManager
 import org.hisp.dhis.android.core.arch.db.stores.internal.IdentifiableDataObjectStore
 import org.hisp.dhis.android.core.arch.handlers.internal.HandlerWithTransformer
-import org.hisp.dhis.android.core.arch.helpers.FileResizerHelper
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.fileresource.FileResource
 import org.hisp.dhis.android.core.fileresource.FileResourceDomainType
@@ -49,6 +47,7 @@ import org.hisp.dhis.android.core.fileresource.FileResourceInternalAccessor
 import org.hisp.dhis.android.core.fileresource.FileResourceRoutine
 import org.hisp.dhis.android.core.maintenance.D2Error
 import retrofit2.Call
+import javax.inject.Inject
 
 @Reusable
 internal class FileResourceDownloadCall @Inject constructor(
@@ -92,8 +91,9 @@ internal class FileResourceDownloadCall @Inject constructor(
                         v.dataElement()!!,
                         v.period()!!,
                         v.organisationUnit()!!,
-                        v.attributeOptionCombo()!!,
-                        FileResizerHelper.Dimension.MEDIUM.name
+                        v.attributeOptionCombo()!!
+                        //Eyeseetea customization - No resize
+                        //,FileResizerHelper.Dimension.MEDIUM.name
                     )
                 },
                 getUid = { v -> v.value() }
@@ -112,8 +112,10 @@ internal class FileResourceDownloadCall @Inject constructor(
                     download = { v ->
                         fileResourceService.getFileFromTrackedEntityAttribute(
                             v.trackedEntityInstance()!!,
-                            v.trackedEntityAttribute()!!,
-                            FileResizerHelper.Dimension.MEDIUM.name
+                            v.trackedEntityAttribute()!!
+                            //Eyeseetea customization - No resize
+                            //,FileResizerHelper.Dimension.MEDIUM.name,
+
                         )
                     },
                     getUid = { v -> v.value() }
@@ -130,7 +132,8 @@ internal class FileResourceDownloadCall @Inject constructor(
                         fileResourceService.getFileFromEventValue(
                             v.event()!!,
                             v.dataElement()!!,
-                            FileResizerHelper.Dimension.MEDIUM.name
+                            //Eyeseetea customization - No resize
+                            //FileResizerHelper.Dimension.MEDIUM.name
                         )
                     },
                     getUid = { v -> v.value() }

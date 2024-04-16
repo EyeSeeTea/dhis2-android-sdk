@@ -46,14 +46,16 @@ internal interface FileResourceService {
     fun getFileFromTrackedEntityAttribute(
         @Path(TRACKED_ENTITY_INSTANCE) trackedEntityInstanceUid: String,
         @Path(TRACKED_ENTITY_ATTRIBUTE) trackedEntityAttributeUid: String,
-        @Query("dimension") dimension: String
+        //Eyeseetea customization - No resize
+        //   @Query("dimension") dimension: String
     ): Call<ResponseBody>
 
     @GET("$EVENTS/files")
     fun getFileFromEventValue(
         @Query("eventUid") eventUid: String,
         @Query("dataElementUid") dataElementUid: String,
-        @Query("dimension") dimension: String
+        //Eyeseetea customization - No resize
+        //@Query("dimension") dimension: String
     ): Call<ResponseBody>
 
     @GET("$DATA_VALUES/files")
@@ -62,7 +64,8 @@ internal interface FileResourceService {
         @Query("pe") period: String,
         @Query("ou") organisationUnit: String,
         @Query("co") categoryOptionCombo: String,
-        @Query("dimension") dimension: String
+        //Eyeseetea customization - No resize
+        //@Query("dimension") dimension: String?
     ): Call<ResponseBody>
 
     companion object {
