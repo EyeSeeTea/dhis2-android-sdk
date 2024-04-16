@@ -35,7 +35,6 @@ import okhttp3.ResponseBody
 import org.hisp.dhis.android.core.arch.api.executors.internal.CoroutineAPICallExecutor
 import org.hisp.dhis.android.core.arch.call.D2Progress
 import org.hisp.dhis.android.core.arch.call.internal.D2ProgressManager
-import org.hisp.dhis.android.core.arch.helpers.FileResizerHelper
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.fileresource.FileResource
@@ -94,7 +93,8 @@ internal class FileResourceDownloadCall(
                         v.period()!!,
                         v.organisationUnit()!!,
                         v.attributeOptionCombo()!!,
-                        FileResizerHelper.Dimension.MEDIUM.name,
+                        //Eyeseetea customization - No resize
+                        //,FileResizerHelper.Dimension.MEDIUM.name
                     )
                 },
                 getUid = { v -> v.value() },
@@ -116,7 +116,8 @@ internal class FileResourceDownloadCall(
                                 fileResourceService.getImageFromTrackedEntityAttribute(
                                     v.value.trackedEntityInstance()!!,
                                     v.value.trackedEntityAttribute()!!,
-                                    FileResizerHelper.Dimension.MEDIUM.name,
+                                    //Eyeseetea customization - No resize
+                                    //,FileResizerHelper.Dimension.MEDIUM.name
                                 )
 
                             ValueType.FILE_RESOURCE ->
@@ -142,7 +143,8 @@ internal class FileResourceDownloadCall(
                         fileResourceService.getFileFromEventValue(
                             v.event()!!,
                             v.dataElement()!!,
-                            FileResizerHelper.Dimension.MEDIUM.name,
+                            //Eyeseetea customization - No resize
+                            //,FileResizerHelper.Dimension.MEDIUM.name
                         )
                     },
                     getUid = { v -> v.value() },
