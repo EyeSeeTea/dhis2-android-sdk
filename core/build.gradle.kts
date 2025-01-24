@@ -31,8 +31,8 @@ plugins {
     id("com.google.devtools.ksp") version "${libs.versions.kotlin.get()}-1.0.24"
     id("kotlin-android")
     id("kotlin-kapt")
-    id("maven-publish-conventions")
-    id("jacoco-conventions")
+    //id("maven-publish-conventions")
+    //id("jacoco-conventions")
     alias(libs.plugins.detekt)
 }
 
@@ -203,7 +203,7 @@ detekt {
     buildUponDefaultConfig = false
 }
 
-tasks.dokkaJavadoc.configure {
+/*tasks.dokkaJavadoc.configure {
     dependsOn("kaptReleaseKotlin")
 
     dokkaSourceSets {
@@ -214,4 +214,4 @@ tasks.dokkaJavadoc.configure {
             }
         }
     }
-}
+}*/
