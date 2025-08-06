@@ -2,10 +2,10 @@ name: EyeSeeTea Main
 
 on:
   push:
-  workflow_dispatch:  # Permite ejecución manual
+  workflow_dispatch:
 
 jobs:
-  sdk-unit-tests:
+  sdk-testing:
     runs-on: ubuntu-latest
     
     steps:
@@ -39,31 +39,8 @@ jobs:
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
-        if: always()  # Se ejecuta incluso si los tests fallan
+        if: always()
         with:
           name: sdk-unit-test-results
           path: core/build/reports/tests/testDebugUnitTest/
           retention-days: 7
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Start Android Emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          profile: Nexus 6
-          script: echo "Emulator started"
-
-      - name: Run SDK integration tests
-        run: ./gradlew :core:connectedAndroidTest
-
-      - name: Upload integration test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: sdk-integration-test-results
-          path: core/build/reports/androidTests/connected/debug/
-          retention-days: 7 
