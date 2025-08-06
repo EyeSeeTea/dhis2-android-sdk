@@ -1,0 +1,69 @@
+name: EyeSeeTea Main
+
+on:
+  push:
+  workflow_dispatch:  # Permite ejecución manual
+
+jobs:
+  sdk-unit-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Change wrapper permissions
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run SDK unit tests
+        run: ./gradlew :core:testDebugUnitTest
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()  # Se ejecuta incluso si los tests fallan
+        with:
+          name: sdk-unit-test-results
+          path: core/build/reports/tests/testDebugUnitTest/
+          retention-days: 7
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Start Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: Nexus 6
+          script: echo "Emulator started"
+
+      - name: Run SDK integration tests
+        run: ./gradlew :core:connectedAndroidTest
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sdk-integration-test-results
+          path: core/build/reports/androidTests/connected/debug/
+          retention-days: 7 
