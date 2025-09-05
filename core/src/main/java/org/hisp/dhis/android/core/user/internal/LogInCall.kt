@@ -212,12 +212,7 @@ internal class LogInCall(
                 )
             }.getOrThrow()
 
-            if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE.toString()) {
-                throw D2Error.builder()
-                    .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE)
-                    .errorDescription("Incorrect two factor code")
-                    .build()
-            }
+            generate2FAErrorIfRequired(response)
 
             credentialsSecureStore.set(credentials)
 
@@ -261,4 +256,24 @@ internal class LogInCall(
             throw e
         }
     }
+
+    private fun generate2FAErrorIfRequired(response: LoginResponse) {
+        // 2.41 error
+        if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE)
+                .errorDescription("Incorrect two factor code")
+                .build()
+
+        }
+
+        // 2.42 errors
+        if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP)
+                .errorDescription("Incorrect two factor code (TOTP)")
+                .build()
+        }
+    }
+
 }

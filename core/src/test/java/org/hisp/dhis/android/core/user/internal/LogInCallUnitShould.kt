@@ -238,6 +238,13 @@ class LogInCallUnitShould : BaseCallShould() {
         assertD2Error(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE) { login(TWO_FACTOR_CODE) }
     }
 
+    @Test
+    fun throw_d2_error_if_two_factor_code_totp_is_invalid() = runTest {
+        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP.toString()) }
+
+        assertD2Error(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP) { login(TWO_FACTOR_CODE) }
+    }
+
     // Offline support
     @Test
     fun succeed_for_login_offline_if_database_exists_and_authenticated_user_too() = runTest {
