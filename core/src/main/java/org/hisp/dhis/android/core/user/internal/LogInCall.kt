@@ -283,6 +283,11 @@ internal class LogInCall(
                 .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL)
                 .errorDescription("Incorrect two factor code (email)")
                 .build()
+        }  else if (response.loginStatus == D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS)
+                .errorDescription("Two factor many send attempts")
+                .build()
         }
     }
 

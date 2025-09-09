@@ -270,6 +270,13 @@ class LogInCallUnitShould : BaseCallShould() {
         assertD2Error(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL) { login(TWO_FACTOR_CODE) }
     }
 
+    @Test
+    fun throw_d2_error_if_two_factor_many_send_attempts() = runTest {
+        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS.toString()) }
+
+        assertD2Error(D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS) { login(TWO_FACTOR_CODE) }
+    }
+
     // Offline support
     @Test
     fun succeed_for_login_offline_if_database_exists_and_authenticated_user_too() = runTest {
