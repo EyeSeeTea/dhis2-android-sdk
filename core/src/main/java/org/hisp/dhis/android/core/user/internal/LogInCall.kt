@@ -273,6 +273,16 @@ internal class LogInCall(
                 .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP)
                 .errorDescription("Incorrect two factor code (TOTP)")
                 .build()
+        } else if (response.loginStatus == D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT)
+                .errorDescription("Email two factor code sent")
+                .build()
+        } else if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL)
+                .errorDescription("Incorrect two factor code (email)")
+                .build()
         }
     }
 

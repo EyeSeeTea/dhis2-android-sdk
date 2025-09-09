@@ -28,7 +28,18 @@
 package org.hisp.dhis.android.core.user.internal
 
 import com.google.common.truth.Truth.assertThat
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.KArgumentCaptor
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.stub
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
+import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.arch.api.executors.internal.CoroutineAPICallExecutor
@@ -243,6 +254,20 @@ class LogInCallUnitShould : BaseCallShould() {
         whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP.toString()) }
 
         assertD2Error(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP) { login(TWO_FACTOR_CODE) }
+    }
+
+    @Test
+    fun throw_d2_error_if_two_factor_code_email_is_sent() = runTest {
+        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT.toString()) }
+
+        assertD2Error(D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT) { login(TWO_FACTOR_CODE) }
+    }
+
+    @Test
+    fun throw_d2_error_if_two_factor_code_email_is_invalid() = runTest {
+        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL.toString()) }
+
+        assertD2Error(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL) { login(TWO_FACTOR_CODE) }
     }
 
     // Offline support
