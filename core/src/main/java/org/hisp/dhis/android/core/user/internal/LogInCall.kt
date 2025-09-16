@@ -212,12 +212,7 @@ internal class LogInCall(
                 )
             }.getOrThrow()
 
-            if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE.toString()) {
-                throw D2Error.builder()
-                    .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE)
-                    .errorDescription("Incorrect two factor code")
-                    .build()
-            }
+            generate2FAErrorIfRequired(response)
 
             credentialsSecureStore.set(credentials)
 
@@ -261,4 +256,49 @@ internal class LogInCall(
             throw e
         }
     }
+
+    private fun generate2FAErrorIfRequired(response: LoginResponse) {
+        // 2.41 error
+        if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE)
+                .errorDescription("Incorrect two factor code")
+                .build()
+
+        }
+
+        // 2.42 errors
+        if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP)
+                .errorDescription("Incorrect two factor code (TOTP)")
+                .build()
+        } else if (response.loginStatus == D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT)
+                .errorDescription("Email two factor code sent")
+                .build()
+        } else if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL)
+                .errorDescription("Incorrect two factor code (email)")
+                .build()
+        }  else if (response.loginStatus == D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS)
+                .errorDescription("Two factor many send attempts")
+                .build()
+        } else if (response.loginStatus == D2ErrorCode.SMS_TWO_FACTOR_CODE_SENT.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.SMS_TWO_FACTOR_CODE_SENT)
+                .errorDescription("SMS two factor code sent")
+                .build()
+        } else if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_SMS.toString()) {
+            throw D2Error.builder()
+                .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_SMS)
+                .errorDescription("Incorrect two factor code (SMS)")
+                .build()
+        }
+    }
+
 }
