@@ -39,12 +39,10 @@ internal class TransactionalResourceSyncCallProcessor<O>(
     private val resourceType: Resource.Type,
 ) : CallProcessor<O> {
     @Throws(D2Error::class)
-    override fun process(objectList: List<O>) {
-        if (objectList.isNotEmpty()) {
-            create(data.databaseAdapter).executeD2CallTransactionally<Unit>({
-                handler.handleMany(objectList)
-                data.handleResource(resourceType)
-            })
+    override suspend fun process(objectList: List<O>) {
+        create(data.databaseAdapter).executeD2Call {
+            handler.handleMany(objectList)
+            data.handleResource(resourceType)
         }
     }
 }

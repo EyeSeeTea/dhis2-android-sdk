@@ -27,7 +27,6 @@
  */
 package org.hisp.dhis.android.core.trackedentity.search
 
-import org.hisp.dhis.android.core.arch.db.querybuilders.internal.WhereClauseBuilder
 import org.hisp.dhis.android.core.arch.helpers.CollectionsHelper
 import org.hisp.dhis.android.core.arch.helpers.DateUtils
 import org.hisp.dhis.android.core.arch.repositories.scope.RepositoryScope.OrderByDirection
@@ -40,21 +39,22 @@ import org.hisp.dhis.android.core.common.DateFilterPeriodHelper
 import org.hisp.dhis.android.core.common.FilterOperatorsHelper.strToList
 import org.hisp.dhis.android.core.common.IdentifiableColumns
 import org.hisp.dhis.android.core.common.State
-import org.hisp.dhis.android.core.enrollment.EnrollmentTableInfo
 import org.hisp.dhis.android.core.event.EventStatus
-import org.hisp.dhis.android.core.event.EventTableInfo
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitMode
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitTableInfo
 import org.hisp.dhis.android.core.program.AccessLevel
-import org.hisp.dhis.android.core.program.ProgramTableInfo
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueTableInfo
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueTableInfo
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceTableInfo
-import org.hisp.dhis.android.core.trackedentity.ownership.ProgramOwnerTableInfo
-import org.hisp.dhis.android.core.trackedentity.ownership.ProgramTempOwnerTableInfo
-import org.hisp.dhis.android.core.user.AuthenticatedUserTableInfo
-import org.hisp.dhis.android.core.user.UserOrganisationUnitLinkTableInfo
+import org.hisp.dhis.android.persistence.common.querybuilders.WhereClauseBuilder
+import org.hisp.dhis.android.persistence.enrollment.EnrollmentTableInfo
+import org.hisp.dhis.android.persistence.event.EventTableInfo
+import org.hisp.dhis.android.persistence.organisationunit.OrganisationUnitTableInfo
+import org.hisp.dhis.android.persistence.program.ProgramTableInfo
+import org.hisp.dhis.android.persistence.trackedentity.ProgramOwnerTableInfo
+import org.hisp.dhis.android.persistence.trackedentity.ProgramTempOwnerTableInfo
+import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeValueTableInfo
+import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityDataValueTableInfo
+import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityInstanceTableInfo
+import org.hisp.dhis.android.persistence.user.AuthenticatedUserTableInfo
+import org.hisp.dhis.android.persistence.user.UserOrganisationUnitTableInfo
 import org.koin.core.annotation.Singleton
 import java.util.Date
 
@@ -140,7 +140,7 @@ internal class TrackedEntityInstanceLocalQueryHelper(
         if (hasOrgunits(scope)) {
             val joinOrgunitColum =
                 if (hasProgram(scope)) {
-                    dot(ownerAlias, ProgramOwnerTableInfo.Columns.OWNER_ORGUNIT)
+                    dot(ownerAlias, ProgramOwnerTableInfo.Columns.OWNER_ORG_UNIT)
                 } else {
                     dot(teiAlias, TrackedEntityInstanceTableInfo.Columns.ORGANISATION_UNIT)
                 }
@@ -235,7 +235,7 @@ internal class TrackedEntityInstanceLocalQueryHelper(
         }
         if (scope.followUp() != null) {
             val value = if (scope.followUp() == true) 1 else 0
-            where.appendKeyNumberValue(dot(enrollmentAlias, EnrollmentTableInfo.Columns.FOLLOW_UP), value)
+            where.appendKeyNumberValue(dot(enrollmentAlias, EnrollmentTableInfo.Columns.FOLLOWUP), value)
         }
 
         val hasAnyOwnershipRecord = "SELECT 1 FROM ${ProgramTempOwnerTableInfo.TABLE_INFO.name()} $tempOwnerAlias " +
@@ -251,11 +251,11 @@ internal class TrackedEntityInstanceLocalQueryHelper(
             ">= '${DateUtils.DATE_FORMAT.format(Date())}'"
 
         val ownerOrguitIsInCaptureScope =
-            "SELECT 1 FROM ${UserOrganisationUnitLinkTableInfo.TABLE_INFO.name()} $userOrgunitAlias " +
-                "WHERE ${dot(userOrgunitAlias, UserOrganisationUnitLinkTableInfo.Columns.ORGANISATION_UNIT)} = " +
-                dot(ownerAlias, ProgramOwnerTableInfo.Columns.OWNER_ORGUNIT) +
+            "SELECT 1 FROM ${UserOrganisationUnitTableInfo.TABLE_INFO.name()} $userOrgunitAlias " +
+                "WHERE ${dot(userOrgunitAlias, UserOrganisationUnitTableInfo.Columns.ORGANISATION_UNIT)} = " +
+                dot(ownerAlias, ProgramOwnerTableInfo.Columns.OWNER_ORG_UNIT) +
                 " AND " +
-                "${dot(userOrgunitAlias, UserOrganisationUnitLinkTableInfo.Columns.ORGANISATION_UNIT_SCOPE)} = " +
+                "${dot(userOrgunitAlias, UserOrganisationUnitTableInfo.Columns.ORGANISATION_UNIT_SCOPE)} = " +
                 "'${OrganisationUnit.Scope.SCOPE_DATA_CAPTURE.name}'"
 
         /* Break the glass query. The condition is either of:
@@ -316,9 +316,9 @@ internal class TrackedEntityInstanceLocalQueryHelper(
                     String.format(
                         "%s IN (SELECT %s FROM %s WHERE %s = '%s')",
                         dot(orgunitAlias, IdentifiableColumns.UID),
-                        UserOrganisationUnitLinkTableInfo.Columns.ORGANISATION_UNIT,
-                        UserOrganisationUnitLinkTableInfo.TABLE_INFO.name(),
-                        UserOrganisationUnitLinkTableInfo.Columns.ORGANISATION_UNIT_SCOPE,
+                        UserOrganisationUnitTableInfo.Columns.ORGANISATION_UNIT,
+                        UserOrganisationUnitTableInfo.TABLE_INFO.name(),
+                        UserOrganisationUnitTableInfo.Columns.ORGANISATION_UNIT_SCOPE,
                         OrganisationUnit.Scope.SCOPE_DATA_CAPTURE.name,
                     ),
                 )
@@ -362,17 +362,17 @@ internal class TrackedEntityInstanceLocalQueryHelper(
 
     private fun appendFiltersWhere(where: WhereClauseBuilder, scope: TrackedEntityInstanceQueryRepositoryScope) {
         for (item in scope.filter()) {
-                val sub = String.format(
-                    "SELECT 1 FROM %s %s WHERE %s = %s AND %s = '%s' AND %s %s %s",
-                    TrackedEntityAttributeValueTableInfo.TABLE_INFO.name(), teavAlias,
-                    dot(teavAlias, trackedEntityInstance), dot(teiAlias, IdentifiableColumns.UID),
-                    dot(teavAlias, trackedEntityAttribute), escapeQuotes(item.key()),
-                    dot(teavAlias, TrackedEntityAttributeValueTableInfo.Columns.VALUE),
-                    item.operator().sqlOperator,
-                    getFilterItemValueStr(item),
-                )
+            val sub = String.format(
+                "SELECT 1 FROM %s %s WHERE %s = %s AND %s = '%s' AND %s %s %s",
+                TrackedEntityAttributeValueTableInfo.TABLE_INFO.name(), teavAlias,
+                dot(teavAlias, trackedEntityInstance), dot(teiAlias, IdentifiableColumns.UID),
+                dot(teavAlias, trackedEntityAttribute), escapeQuotes(item.key()),
+                dot(teavAlias, TrackedEntityAttributeValueTableInfo.Columns.VALUE),
+                item.operator().sqlOperator,
+                getFilterItemValueStr(item),
+            )
 
-                where.appendExistsSubQuery(sub)
+            where.appendExistsSubQuery(sub)
         }
     }
 
@@ -625,7 +625,7 @@ internal class TrackedEntityInstanceLocalQueryHelper(
                 }
 
                 TrackedEntityInstanceQueryScopeOrderColumn.Type.COMPLETION_DATE ->
-                    orderByEventField(scope.program(), EventTableInfo.Columns.COMPLETE_DATE, item.direction())
+                    orderByEventField(scope.program(), EventTableInfo.Columns.COMPLETED_DATE, item.direction())
 
                 else -> null
             }

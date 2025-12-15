@@ -29,12 +29,12 @@
 package org.hisp.dhis.android.core.fileresource
 
 import com.google.common.truth.Truth.assertThat
-import com.nhaarman.mockitokotlin2.*
 import org.hisp.dhis.android.core.arch.helpers.FileResizerHelper
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceDownloadCall
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceDownloadParams
 import org.junit.Before
 import org.junit.Test
+import org.mockito.kotlin.*
 
 class FileResourceDownloaderShould {
 

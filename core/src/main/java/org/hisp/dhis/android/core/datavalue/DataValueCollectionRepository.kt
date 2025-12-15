@@ -32,7 +32,6 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.rx2.asObservable
 import org.hisp.dhis.android.core.arch.call.D2Progress
-import org.hisp.dhis.android.core.arch.db.access.DatabaseAdapter
 import org.hisp.dhis.android.core.arch.repositories.children.internal.ChildrenAppenderGetter
 import org.hisp.dhis.android.core.arch.repositories.collection.ReadOnlyWithUploadCollectionRepository
 import org.hisp.dhis.android.core.arch.repositories.collection.internal.ReadOnlyCollectionRepositoryImpl
@@ -48,29 +47,28 @@ import org.hisp.dhis.android.core.datavalue.DataValueByDataSetQueryHelper.operat
 import org.hisp.dhis.android.core.datavalue.DataValueByDataSetQueryHelper.whereClause
 import org.hisp.dhis.android.core.datavalue.internal.DataValuePostCall
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
+import org.hisp.dhis.android.persistence.datavalue.DataValueTableInfo
 import org.koin.core.annotation.Singleton
 
 @Suppress("TooManyFunctions")
 @Singleton
 class DataValueCollectionRepository internal constructor(
     private val store: DataValueStore,
-    databaseAdapter: DatabaseAdapter,
     scope: RepositoryScope,
     private val postCall: DataValuePostCall,
 ) : ReadOnlyCollectionRepositoryImpl<DataValue, DataValueCollectionRepository>(
     store,
-    databaseAdapter,
     childrenAppenders,
     scope,
     FilterConnectorFactory(scope) { s: RepositoryScope ->
-        DataValueCollectionRepository(store, databaseAdapter, s, postCall)
+        DataValueCollectionRepository(store, s, postCall)
     },
 ),
     ReadOnlyWithUploadCollectionRepository<DataValue> {
 
     override fun upload(): Observable<D2Progress> = flow {
         val dataValues =
-            bySyncState().`in`(State.uploadableStatesIncludingError().toMutableList()).blockingGetWithoutChildren()
+            bySyncState().`in`(State.uploadableStatesIncludingError().toMutableList()).getWithoutChildrenInternal()
         emitAll(postCall.uploadDataValues(dataValues))
     }.asObservable()
 
@@ -92,7 +90,6 @@ class DataValueCollectionRepository internal constructor(
             .byAttributeOptionComboUid().eq(attributeOptionCombo).scope
         return DataValueObjectRepository(
             store,
-            databaseAdapter,
             childrenAppenders,
             updatedScope,
             period,

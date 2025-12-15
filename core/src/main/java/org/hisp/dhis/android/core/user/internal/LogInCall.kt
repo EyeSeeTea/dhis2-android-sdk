@@ -53,22 +53,16 @@ internal class LogInCall(
     private val authenticatedUserStore: AuthenticatedUserStore,
     private val systemInfoCall: SystemInfoCall,
     private val userStore: UserStore,
-    private val databaseManager: LogInDatabaseManager,
+    private val loginDatabaseManager: LogInDatabaseManager,
     private val exceptions: LogInExceptions,
     private val accountManager: AccountManagerImpl,
     private val apiCallErrorCatcher: UserAuthenticateCallErrorCatcher,
 ) {
-    suspend fun logIn(username: String?, password: String?, serverUrl: String?, twoFactorCode: String?): User {
-        return blockingLogIn(username, password, serverUrl, twoFactorCode)
-    }
-
     @Throws(D2Error::class)
-    private suspend fun blockingLogIn(
-        username: String?,
-        password: String?,
-        serverUrl: String?,
-        twoFactorCode: String?
-    ): User {
+    suspend fun logIn(username: String?,
+                      password: String?,
+                      serverUrl: String?,
+                      twoFactorCode: String?): User {
         exceptions.throwExceptionIfUsernameNull(username)
         exceptions.throwExceptionIfPasswordNull(password)
         exceptions.throwExceptionIfAlreadyAuthenticated()
@@ -81,7 +75,7 @@ internal class LogInCall(
         val credentials = Credentials(username!!, trimmedServerUrl!!, password, null)
 
         return try {
-            if (databaseManager.isPendingToImportDB(trimmedServerUrl, username)) {
+            if (loginDatabaseManager.isPendingToImportDB(trimmedServerUrl, username)) {
                 importDB(trimmedServerUrl, credentials)
             } else {
                 val user = loginInDhis2AndGetUser(credentials, twoFactorCode)
@@ -121,9 +115,9 @@ internal class LogInCall(
     private suspend fun loginOnline(user: User, credentials: Credentials): User {
         userIdStore.set(user.uid())
 
-        databaseManager.loadDatabaseOnline(credentials.serverUrl, credentials.username)
+        loginDatabaseManager.loadDatabaseOnline(credentials.serverUrl, credentials.username)
 
-        return coroutineAPICallExecutor.wrapTransactionally {
+        return coroutineAPICallExecutor.wrapTransactionallyRoom {
             try {
                 val authenticatedUser = AuthenticatedUser.builder()
                     .user(user.uid())
@@ -145,9 +139,9 @@ internal class LogInCall(
 
     @Throws(D2Error::class)
     @Suppress("ThrowsCount")
-    private fun tryLoginOffline(credentials: Credentials, originalError: D2Error): User {
+    private suspend fun tryLoginOffline(credentials: Credentials, originalError: D2Error): User {
         val existingDatabase =
-            databaseManager.loadExistingKeepingEncryption(credentials.serverUrl, credentials.username)
+            loginDatabaseManager.loadExistingKeepingEncryption(credentials.serverUrl, credentials.username)
         if (!existingDatabase) {
             throw originalError
         }
@@ -162,9 +156,9 @@ internal class LogInCall(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun importDB(serverUrl: String, credentials: Credentials): User {
+    private suspend fun importDB(serverUrl: String, credentials: Credentials): User {
         try {
-            databaseManager.importDB(serverUrl, credentials)
+            loginDatabaseManager.importDB(serverUrl, credentials)
             credentialsSecureStore.set(credentials)
             val existingUser = authenticatedUserStore.selectFirst() ?: throw exceptions.noUserOfflineError()
             userIdStore.set(existingUser.user()!!)
