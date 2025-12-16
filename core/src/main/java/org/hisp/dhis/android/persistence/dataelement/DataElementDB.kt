@@ -7,6 +7,9 @@ import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.dataelement.DataElement
 import org.hisp.dhis.android.core.util.dateFormat
 import org.hisp.dhis.android.persistence.category.CategoryComboDB
+import org.hisp.dhis.android.persistence.common.BaseNameableObjectDB
+import org.hisp.dhis.android.persistence.common.EntityDB
+import org.hisp.dhis.android.persistence.common.ObjectWithStyleDB
 import org.hisp.dhis.android.persistence.common.ObjectWithUidDB
 import org.hisp.dhis.android.persistence.common.applyBaseNameableFields
 import org.hisp.dhis.android.persistence.common.applyStyleFields
@@ -43,6 +46,7 @@ internal data class DataElementDB(
     override val displayShortName: String?,
     override val description: String?,
     override val displayDescription: String?,
+    val url: String?,
     val valueType: String?,
     val zeroIsSignificant: Boolean?,
     val aggregationType: String?,
@@ -52,7 +56,6 @@ internal data class DataElementDB(
     val optionSet: String?,
     val categoryCombo: String,
     val fieldMask: String?,
-    val url: String?,
     override val color: String?,
     override val icon: String?,
 ) : EntityDB<DataElement>, BaseNameableObjectDB, ObjectWithStyleDB {
@@ -87,6 +90,7 @@ internal fun DataElement.toDB(): DataElementDB {
         displayShortName = displayShortName(),
         description = description(),
         displayDescription = displayDescription(),
+        url = url(),
         valueType = valueType()?.name,
         zeroIsSignificant = zeroIsSignificant(),
         aggregationType = aggregationType(),
@@ -96,7 +100,6 @@ internal fun DataElement.toDB(): DataElementDB {
         optionSet = optionSet()?.uid(),
         categoryCombo = categoryCombo()?.uid() ?: CategoryComboDB.Companion.DEFAULT_UID,
         fieldMask = fieldMask(),
-        url = url(),
         color = style().color(),
         icon = style().icon(),
     )

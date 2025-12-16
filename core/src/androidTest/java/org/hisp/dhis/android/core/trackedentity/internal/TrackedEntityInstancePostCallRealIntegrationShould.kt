@@ -618,7 +618,7 @@ class TrackedEntityInstancePostCallRealIntegrationShould : BaseRealIntegrationTe
 
     @Throws(Exception::class)
     private fun downloadMetadata() {
-        d2.userModule().logIn(username, password, url).blockingGet()
+        d2.userModule().logIn(username, password, url, null).blockingGet()
 
         d2.metadataModule().blockingDownload()
     }

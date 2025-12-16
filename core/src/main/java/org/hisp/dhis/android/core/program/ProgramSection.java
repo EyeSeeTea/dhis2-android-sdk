@@ -64,7 +64,7 @@ public abstract class ProgramSection extends BaseIdentifiableObject
     public abstract SectionRendering renderType();
 
     public static Builder builder() {
-        return new $$AutoValue_ProgramSection.Builder();
+        return new AutoValue_ProgramSection.Builder();
     }
 
     public abstract Builder toBuilder();

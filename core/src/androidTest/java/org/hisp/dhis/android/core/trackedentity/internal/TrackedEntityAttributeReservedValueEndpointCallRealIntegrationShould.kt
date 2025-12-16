@@ -113,7 +113,7 @@ class TrackedEntityAttributeReservedValueEndpointCallRealIntegrationShould : Bas
 
     private fun login() {
         if (!d2.userModule().isLogged().blockingGet()) {
-            d2.userModule().logIn(username, password, url).blockingGet()
+            d2.userModule().logIn(username, password, url, null).blockingGet()
         }
     }
 

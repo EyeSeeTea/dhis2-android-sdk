@@ -168,7 +168,7 @@ class DatabaseImportExportFromDatabaseAssetsMockIntegrationShould : BaseMockInte
     @Test
     fun encrypt_and_decrypt() = runTest(timeout = 400.seconds) {
         // Load unencrypted db
-        d2.userModule().blockingLogIn(username, password, serverUrl)
+        d2.userModule().blockingLogIn(username, password, serverUrl, null)
         d2.metadataModule().blockingDownload()
         assertThat(d2.programModule().programs().blockingCount()).isEqualTo(3)
 

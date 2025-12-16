@@ -40,7 +40,7 @@ class WipeDBCallRealIntegrationShould : BaseRealIntegrationTest() {
 
     // @Test
     fun have_empty_database_when_wipe_db_after_sync_metadata() = runTest {
-        d2.userModule().logIn(username, password, url).blockingGet()
+        d2.userModule().logIn(username, password, url, null).blockingGet()
         d2.metadataModule().blockingDownload()
         assertThatDatabase(d2Dao).isNotEmpty()
         d2.wipeModule().wipeEverything()
@@ -50,7 +50,7 @@ class WipeDBCallRealIntegrationShould : BaseRealIntegrationTest() {
     // @Test
     @Throws(Exception::class)
     fun have_empty_database_when_wipe_db_after_sync_data() = runTest {
-        d2.userModule().logIn(username, password, url).blockingGet()
+        d2.userModule().logIn(username, password, url, null).blockingGet()
         d2.metadataModule().blockingDownload()
 
         create(d2.httpServiceClient(), d2.coroutineAPICallExecutor(), "DiszpKrYNg8", 0, emptyList())
@@ -65,7 +65,7 @@ class WipeDBCallRealIntegrationShould : BaseRealIntegrationTest() {
     // @Test
     @Throws(Exception::class)
     fun do_not_have_metadata_when_wipe_metadata_after_sync_metadata() = runTest {
-        d2.userModule().logIn(username, password, url).blockingGet()
+        d2.userModule().logIn(username, password, url, null).blockingGet()
         d2.metadataModule().blockingDownload()
         assertThatDatabase(d2Dao).isNotEmpty()
         d2.wipeModule().wipeMetadata()
@@ -75,7 +75,7 @@ class WipeDBCallRealIntegrationShould : BaseRealIntegrationTest() {
     // @Test
     @Throws(Exception::class)
     fun do_not_have_data_when_wipe_data_after_sync() = runTest {
-        d2.userModule().logIn(username, password, url).blockingGet()
+        d2.userModule().logIn(username, password, url, null).blockingGet()
         d2.metadataModule().blockingDownload()
         d2.trackedEntityModule().trackedEntityInstanceDownloader().limit(5).blockingDownload()
         val trackedEntityInstanceStore: TrackedEntityInstanceStore = koin.get()

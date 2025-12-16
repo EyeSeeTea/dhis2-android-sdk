@@ -95,7 +95,7 @@ class RelationshipDeletedOnServerRealIntegrationShould : BaseRealIntegrationTest
         println("========================================")
         println("STEP 1: Downloading metadata...")
         println("========================================")
-        d2.userModule().logIn(username, password, url).blockingGet()
+        d2.userModule().logIn(username, password, url, null).blockingGet()
         d2.metadataModule().blockingDownload()
 
         programUid = "IpHINAT79UW"

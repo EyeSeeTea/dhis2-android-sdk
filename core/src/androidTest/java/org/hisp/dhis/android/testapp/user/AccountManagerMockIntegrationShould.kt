@@ -198,7 +198,7 @@ class AccountManagerMockIntegrationShould : BaseMockIntegrationTestEmptyEnqueabl
             d2.userModule().blockingLogOut()
         }
         dhis2MockServer.enqueueLoginResponses()
-        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint)
+        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint, null)
 
         dhis2MockServer.enqueueMetadataResponses()
         d2.metadataModule().blockingDownload()
@@ -215,16 +215,16 @@ class AccountManagerMockIntegrationShould : BaseMockIntegrationTestEmptyEnqueabl
         }
 
         dhis2MockServer.enqueueLoginResponses()
-        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint)
+        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint, null)
         d2.userModule().blockingLogOut()
 
         val server2 = Dhis2MockServer(0)
         server2.enqueueLoginResponses()
-        d2.userModule().blockingLogIn(user2, pass2, server2.baseEndpoint)
+        d2.userModule().blockingLogIn(user2, pass2, server2.baseEndpoint, null)
         d2.userModule().blockingLogOut()
 
         dhis2MockServer.enqueueLoginResponses()
-        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint)
+        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint, null)
         val user1Name = d2.userModule().user().blockingGet()?.name()
 
         d2.userModule().accountManager().getAccounts()

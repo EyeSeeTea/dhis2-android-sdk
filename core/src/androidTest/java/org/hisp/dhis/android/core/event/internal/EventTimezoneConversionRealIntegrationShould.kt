@@ -40,7 +40,7 @@ class EventTimezoneConversionRealIntegrationShould : BaseRealIntegrationTest() {
 
     // @Test
     fun download_events_and_convert_timezones_correctly() {
-        d2.userModule().blockingLogIn(username, "Android123!", "https://android.im.dhis2.org/dev")
+        d2.userModule().blockingLogIn(username, "Android123!", "https://android.im.dhis2.org/dev", null)
         d2.metadataModule().blockingDownload()
         d2.eventModule().eventDownloader().limit(3).blockingDownload()
 

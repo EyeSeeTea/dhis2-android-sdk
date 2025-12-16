@@ -64,7 +64,7 @@ public abstract class ForeignKeyViolation implements CoreObject {
     public abstract Date created();
 
     public static Builder builder() {
-        return new $$AutoValue_ForeignKeyViolation.Builder();
+        return new AutoValue_ForeignKeyViolation.Builder();
     }
 
     public abstract Builder toBuilder();
