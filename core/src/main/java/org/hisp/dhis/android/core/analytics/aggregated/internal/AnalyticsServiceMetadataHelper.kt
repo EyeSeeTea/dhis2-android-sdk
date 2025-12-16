@@ -51,7 +51,6 @@ import org.hisp.dhis.android.core.program.internal.ProgramStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeStore
 import org.koin.core.annotation.Singleton
 
-
 @Singleton
 @Suppress("LongParameterList")
 internal class AnalyticsServiceMetadataHelper(

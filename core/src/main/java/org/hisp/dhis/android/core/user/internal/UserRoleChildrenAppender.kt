@@ -49,4 +49,3 @@ internal class UserRoleChildrenAppender(
         }
     }
 }
-

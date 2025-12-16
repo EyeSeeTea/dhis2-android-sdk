@@ -8,5 +8,5 @@ import kotlinx.serialization.Serializable
 internal class LoginPayload(
     val username: String,
     val password: String,
-    val twoFactorCode: String?
+    val twoFactorCode: String?,
 )

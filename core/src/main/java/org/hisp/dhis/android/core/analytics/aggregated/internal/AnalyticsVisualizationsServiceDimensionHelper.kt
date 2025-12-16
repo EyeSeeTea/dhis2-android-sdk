@@ -49,7 +49,6 @@ import org.hisp.dhis.android.persistence.common.querybuilders.WhereClauseBuilder
 import org.hisp.dhis.android.persistence.organisationunit.OrganisationUnitLevelTableInfo
 import org.koin.core.annotation.Singleton
 
-
 @Singleton
 internal class AnalyticsVisualizationsServiceDimensionHelper(
     private val categoryStore: CategoryStore,

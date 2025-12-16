@@ -44,7 +44,8 @@ internal class ParentAuthenticatorPlugin(
 ) {
     val instance = createClientPlugin(name = "ParentAuthenticatorPlugin") {
         on(Send) { request ->
-            val isLoginCall = request.headers[AUTHORIZATION_KEY] != null  || request.url.encodedPath.contains("auth/login")
+            val isLoginCall = request.headers[AUTHORIZATION_KEY] != null ||
+                request.url.encodedPath.contains("auth/login")
             if (isLoginCall) {
                 cookieHelper.removeCookie()
                 val call = proceed(request)

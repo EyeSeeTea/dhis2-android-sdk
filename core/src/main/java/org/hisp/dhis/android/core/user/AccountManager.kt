@@ -47,7 +47,7 @@ interface AccountManager {
     fun accountDeletionObservable(): Observable<AccountDeletionReason>
 
     @Throws(D2Error::class)
-    fun changeServerUrl(newServerURL:String)
+    fun changeServerUrl(newServerURL: String)
 
     fun logOutObservable(): Observable<Unit>
 }

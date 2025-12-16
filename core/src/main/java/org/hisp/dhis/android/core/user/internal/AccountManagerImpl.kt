@@ -32,8 +32,8 @@ import android.content.Context
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.runBlocking
-import org.hisp.dhis.android.core.arch.db.access.DatabaseManager
 import org.hisp.dhis.android.core.arch.api.internal.ServerURLWrapper
+import org.hisp.dhis.android.core.arch.db.access.DatabaseManager
 import org.hisp.dhis.android.core.arch.helpers.FileResourceDirectoryHelper
 import org.hisp.dhis.android.core.arch.storage.internal.Credentials
 import org.hisp.dhis.android.core.arch.storage.internal.CredentialsSecureStore
@@ -57,7 +57,7 @@ internal class AccountManagerImpl(
     private val credentialsSecureStore: CredentialsSecureStore,
     private val logOutCall: LogOutCall,
     private val context: Context,
-    private val connectLogoutHandler: ConnectLogoutHandler
+    private val connectLogoutHandler: ConnectLogoutHandler,
 ) : AccountManager {
     private val accountDeletionSubject = PublishSubject.create<AccountDeletionReason>()
 
@@ -172,7 +172,7 @@ internal class AccountManagerImpl(
 
         val configuration = databasesConfigurationStore.get()
 
-        if (credentials != null && configuration != null){
+        if (credentials != null && configuration != null) {
             val newDatabasesConfiguration = configuration.toBuilder().accounts(
                 configuration.accounts().map {
                     if (it.serverUrl() == credentials.serverUrl && it.username() == credentials.username) {
@@ -180,7 +180,7 @@ internal class AccountManagerImpl(
                     } else {
                         it
                     }
-                }
+                },
             ).build()
 
             databasesConfigurationStore.set(newDatabasesConfiguration)

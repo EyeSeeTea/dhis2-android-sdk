@@ -44,9 +44,10 @@ internal class PasswordAndCookieAuthenticator(
     private val userIdHelper: UserIdAuthenticatorHelper,
     private val cookieHelper: CookieAuthenticatorHelper,
     private val logoutHandler: ConnectLogoutHandler,
-    ) {
+) {
 
     companion object {
+        private const val HTTP_UNAUTHORIZED = 401
         private val LOGIN_KEY_LIST = listOf("login.action", "dhis-web-login")
         const val LOCATION_KEY = "Location"
     }
@@ -85,7 +86,9 @@ internal class PasswordAndCookieAuthenticator(
     }
 
     private fun logoutOrReturnRes(call: HttpClientCall, isFromLoginCall: Boolean) =
-        if (call.response.status.value == 401 && !isFromLoginCall && ServerURLWrapper.serverUrl?.contains(call.request.url.host) == true) {
+        if (call.response.status.value == HTTP_UNAUTHORIZED && !isFromLoginCall &&
+            ServerURLWrapper.serverUrl?.contains(call.request.url.host) == true
+        ) {
             logoutHandler.logOut()
             call
         } else {

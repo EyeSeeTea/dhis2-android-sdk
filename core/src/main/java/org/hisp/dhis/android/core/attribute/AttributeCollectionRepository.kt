@@ -52,7 +52,7 @@ class AttributeCollectionRepository internal constructor(
         )
     },
 
-    ) {
+) {
 
     internal companion object {
         val childrenAppenders: ChildrenAppenderGetter<Attribute> = emptyMap()

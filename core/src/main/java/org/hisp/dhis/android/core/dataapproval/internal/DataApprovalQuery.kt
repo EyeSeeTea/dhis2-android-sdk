@@ -40,4 +40,3 @@ internal data class DataApprovalQuery(
     pageSize = DEFAULT_PAGE_SIZE,
     paging = false,
 )
-

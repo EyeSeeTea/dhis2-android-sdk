@@ -80,15 +80,15 @@ class TrackedEntityInstanceQueryOnlineHelperShould {
         val list = listOf(
             "nom,app",
             "nom:app",
-            //"nom;app", // Comment until simprints use listToStr
+            // "nom;app", // Comment until simprints use listToStr
         )
 
         val expectedList = listOf(
-           // "filterItemIN:in:nom/,app;nom/:app;nom/;app", // Comment until simprints use listToStr
+            // "filterItemIN:in:nom/,app;nom/:app;nom/;app", // Comment until simprints use listToStr
             "filterItemIN:in:nom/,app;nom/:app",
             "filterItemLIKE1:like:nom/,app",
             "filterItemLIKE2:like:nom/:app",
-            //"filterItemLIKE3:like:nom/;app",
+            // "filterItemLIKE3:like:nom/;app",
         )
 
         val scope = queryBuilder

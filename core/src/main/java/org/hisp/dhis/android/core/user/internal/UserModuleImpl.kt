@@ -87,7 +87,7 @@ internal class UserModuleImpl(
         return user
     }
 
-    override fun logIn(username: String, password: String, serverUrl: String, twoFactorCode: String? ): Single<User> {
+    override fun logIn(username: String, password: String, serverUrl: String, twoFactorCode: String?): Single<User> {
         return rxSingle { logInCall.logIn(username, password, serverUrl, twoFactorCode) }
     }
 

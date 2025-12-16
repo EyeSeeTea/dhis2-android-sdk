@@ -62,7 +62,7 @@ class LogInCallUnitShould : BaseCallShould() {
     private val userIdStore: UserIdInMemoryStore = mock()
     private val apiErrorCatcher: UserAuthenticateCallErrorCatcher = mock()
 
-   private val credentialsCaptor: KArgumentCaptor<LoginPayload> = argumentCaptor()
+    private val credentialsCaptor: KArgumentCaptor<LoginPayload> = argumentCaptor()
 
     private val apiUser: User = mock()
     private val loginResponse: LoginResponse = mock()
@@ -114,7 +114,7 @@ class LogInCallUnitShould : BaseCallShould() {
         username: String?,
         password: String?,
         serverUrl: String?,
-        twoFactorCode: String?
+        twoFactorCode: String?,
     ): User {
         return LogInCall(
             coroutineAPICallExecutor, userNetworkHandler, credentialsSecureStore,
@@ -185,7 +185,7 @@ class LogInCallUnitShould : BaseCallShould() {
     fun invoke_server_with_correct_parameters_including_two_factor_after_call() = runTest {
         whenever(
             userNetworkHandler.login(
-                credentialsCaptor.capture()
+                credentialsCaptor.capture(),
             ),
         ).thenReturn(loginResponse)
 

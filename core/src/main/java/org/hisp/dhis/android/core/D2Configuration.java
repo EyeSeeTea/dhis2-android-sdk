@@ -36,14 +36,10 @@ import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 import org.hisp.dhis.android.core.arch.api.NetworkPlugin;
+import org.hisp.dhis.android.core.arch.helpers.FileResizerHelper;
 
 import java.util.Collections;
 import java.util.List;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import org.hisp.dhis.android.core.arch.helpers.FileResizerHelper;
 
 import okhttp3.Interceptor;
 

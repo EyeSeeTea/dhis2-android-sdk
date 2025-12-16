@@ -44,7 +44,7 @@ internal data class FileResourceDownloadParams(
     val programUids: List<String> = emptyList(),
     val dataSetUids: List<String> = emptyList(),
     val maxContentLength: Int? = null,
-    val dimension: FileResizerHelper.Dimension = FileResizerHelper.Dimension.MEDIUM
+    val dimension: FileResizerHelper.Dimension = FileResizerHelper.Dimension.MEDIUM,
 ) : BaseScope {
 
     fun hasAnyTrackerData(): Boolean {

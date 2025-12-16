@@ -127,8 +127,10 @@ internal class FileResourceDownloadCall(
                     download = { v, _ ->
                         when (v.valueType) {
                             ValueType.IMAGE ->
-                                fileResourceNetworkHandlder.getImageFromTrackedEntityAttribute(v,
-                                    FileResizerHelper.Dimension.MEDIUM.name)
+                                fileResourceNetworkHandlder.getImageFromTrackedEntityAttribute(
+                                    v,
+                                    FileResizerHelper.Dimension.MEDIUM.name,
+                                )
 
                             ValueType.FILE_RESOURCE ->
                                 fileResourceNetworkHandlder.getFileFromTrackedEntityAttribute(v)

@@ -56,6 +56,7 @@ public abstract class org/hisp/dhis/android/core/D2Configuration {
 	public static fun builder ()Lorg/hisp/dhis/android/core/D2Configuration$Builder;
 	public abstract fun connectTimeoutInSeconds ()Ljava/lang/Integer;
 	public abstract fun context ()Landroid/content/Context;
+	public abstract fun fileResizerDimension ()Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;
 	public abstract fun interceptors ()Ljava/util/List;
 	public abstract fun networkInterceptors ()Ljava/util/List;
 	public abstract fun networkPlugins ()Ljava/util/List;
@@ -71,6 +72,7 @@ public abstract class org/hisp/dhis/android/core/D2Configuration$Builder {
 	public abstract fun build ()Lorg/hisp/dhis/android/core/D2Configuration;
 	public abstract fun connectTimeoutInSeconds (Ljava/lang/Integer;)Lorg/hisp/dhis/android/core/D2Configuration$Builder;
 	public abstract fun context (Landroid/content/Context;)Lorg/hisp/dhis/android/core/D2Configuration$Builder;
+	public abstract fun fileResizerDimension (Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;)Lorg/hisp/dhis/android/core/D2Configuration$Builder;
 	public abstract fun interceptors (Ljava/util/List;)Lorg/hisp/dhis/android/core/D2Configuration$Builder;
 	public abstract fun networkInterceptors (Ljava/util/List;)Lorg/hisp/dhis/android/core/D2Configuration$Builder;
 	public abstract fun networkPlugins (Ljava/util/List;)Lorg/hisp/dhis/android/core/D2Configuration$Builder;
@@ -1639,16 +1641,8 @@ public abstract interface class org/hisp/dhis/android/core/arch/cleaners/interna
 	public abstract fun deleteNotPresentInDb (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public abstract interface class org/hisp/dhis/android/core/arch/cleaners/internal/OrphanCleaner {
-	public abstract fun deleteOrphan (Lorg/hisp/dhis/android/core/common/ObjectWithUidInterface;Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
 public abstract interface class org/hisp/dhis/android/core/arch/cleaners/internal/ParentOrphanCleaner {
 	public abstract fun deleteOrphan (Lorg/hisp/dhis/android/core/common/IdentifiableObject;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public abstract interface class org/hisp/dhis/android/core/arch/cleaners/internal/SubCollectionCleaner {
-	public abstract fun deleteNotPresent (Ljava/util/Collection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public class org/hisp/dhis/android/core/arch/dateformat/internal/SafeDateFormat {
@@ -1900,6 +1894,7 @@ public final class org/hisp/dhis/android/core/arch/helpers/FileResizerHelper {
 public final class org/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension : java/lang/Enum {
 	public static final field LARGE Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;
 	public static final field MEDIUM Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;
+	public static final field ORIGINAL Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;
 	public static final field SMALL Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;
 	public final fun getDimension ()I
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
@@ -4239,6 +4234,7 @@ public abstract class org/hisp/dhis/android/core/dataelement/DataElement : org/h
 	public fun optionSetUid ()Ljava/lang/String;
 	public synthetic fun toBuilder ()Lorg/hisp/dhis/android/core/common/ObjectWithStyle$Builder;
 	public abstract fun toBuilder ()Lorg/hisp/dhis/android/core/dataelement/DataElement$Builder;
+	public abstract fun url ()Ljava/lang/String;
 	public abstract fun valueType ()Lorg/hisp/dhis/android/core/common/ValueType;
 	public abstract fun zeroIsSignificant ()Ljava/lang/Boolean;
 }
@@ -4256,6 +4252,7 @@ public abstract class org/hisp/dhis/android/core/dataelement/DataElement$Builder
 	public abstract fun formName (Ljava/lang/String;)Lorg/hisp/dhis/android/core/dataelement/DataElement$Builder;
 	public abstract fun legendSets (Ljava/util/List;)Lorg/hisp/dhis/android/core/dataelement/DataElement$Builder;
 	public abstract fun optionSet (Lorg/hisp/dhis/android/core/common/ObjectWithUid;)Lorg/hisp/dhis/android/core/dataelement/DataElement$Builder;
+	public abstract fun url (Ljava/lang/String;)Lorg/hisp/dhis/android/core/dataelement/DataElement$Builder;
 	public abstract fun valueType (Lorg/hisp/dhis/android/core/common/ValueType;)Lorg/hisp/dhis/android/core/dataelement/DataElement$Builder;
 	public abstract fun zeroIsSignificant (Ljava/lang/Boolean;)Lorg/hisp/dhis/android/core/dataelement/DataElement$Builder;
 }
@@ -5805,6 +5802,10 @@ public final class org/hisp/dhis/android/core/fileresource/FileResourceValueType
 	public static fun values ()[Lorg/hisp/dhis/android/core/fileresource/FileResourceValueType;
 }
 
+public final class org/hisp/dhis/android/core/fileresource/internal/GetDimensionKt {
+	public static final fun getDimension (Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;)Ljava/lang/String;
+}
+
 public abstract class org/hisp/dhis/android/core/icon/CustomIcon : org/hisp/dhis/android/core/common/CoreObject {
 	public fun <init> ()V
 	public static fun builder ()Lorg/hisp/dhis/android/core/icon/CustomIcon$Builder;
@@ -6458,9 +6459,14 @@ public final class org/hisp/dhis/android/core/maintenance/D2ErrorCode : java/lan
 	public static final field DATABASE_IMPORT_LOGOUT_FIRST Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field DATABASE_IMPORT_VERSION_HIGHER_THAN_SUPPORTED Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field DIFFERENT_AUTHENTICATED_USER_OFFLINE Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
+	public static final field EMAIL_TWO_FACTOR_CODE_SENT Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field FAIL_RESIZING_IMAGE Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field FILE_NOT_FOUND Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field IMPOSSIBLE_TO_GENERATE_COORDINATES Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
+	public static final field INCORRECT_TWO_FACTOR_CODE Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
+	public static final field INCORRECT_TWO_FACTOR_CODE_EMAIL Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
+	public static final field INCORRECT_TWO_FACTOR_CODE_SMS Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
+	public static final field INCORRECT_TWO_FACTOR_CODE_TOTP Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field INVALID_CHARACTERS Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field INVALID_DHIS_VERSION Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field INVALID_GEOMETRY_VALUE Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
@@ -6489,11 +6495,13 @@ public final class org/hisp/dhis/android/core/maintenance/D2ErrorCode : java/lan
 	public static final field SETTINGS_APP_NOT_INSTALLED Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field SETTINGS_APP_NOT_SUPPORTED Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field SMS_NOT_SUPPORTED Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
+	public static final field SMS_TWO_FACTOR_CODE_SENT Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field SOCKET_TIMEOUT Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field SSL_ERROR Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field TOO_MANY_ORG_UNITS Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field TOO_MANY_PERIODS Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field TOO_MANY_REQUESTS Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
+	public static final field TWO_FACTOR_MANY_SEND_ATTEMPTS Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field UNEXPECTED Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field UNKNOWN_HOST Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field URL_NOT_FOUND Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
@@ -8036,6 +8044,7 @@ public final class org/hisp/dhis/android/core/program/ProgramStageSectionsCollec
 	public final fun byMobileRenderType ()Lorg/hisp/dhis/android/core/arch/repositories/filters/internal/StringFilterConnector;
 	public final fun byProgramStageUid ()Lorg/hisp/dhis/android/core/arch/repositories/filters/internal/StringFilterConnector;
 	public final fun bySortOrder ()Lorg/hisp/dhis/android/core/arch/repositories/filters/internal/IntegerFilterConnector;
+	public final fun orderBySortOrder (Lorg/hisp/dhis/android/core/arch/repositories/scope/RepositoryScope$OrderByDirection;)Lorg/hisp/dhis/android/core/program/ProgramStageSectionsCollectionRepository;
 	public final fun withDataElements ()Lorg/hisp/dhis/android/core/program/ProgramStageSectionsCollectionRepository;
 	public final fun withProgramIndicators ()Lorg/hisp/dhis/android/core/program/ProgramStageSectionsCollectionRepository;
 }
@@ -11553,10 +11562,12 @@ public final class org/hisp/dhis/android/core/user/AccountDeletionReason : java/
 
 public abstract interface class org/hisp/dhis/android/core/user/AccountManager {
 	public abstract fun accountDeletionObservable ()Lio/reactivex/Observable;
+	public abstract fun changeServerUrl (Ljava/lang/String;)V
 	public abstract fun deleteCurrentAccount ()V
 	public abstract fun getAccounts ()Ljava/util/List;
 	public abstract fun getCurrentAccount ()Lorg/hisp/dhis/android/core/configuration/internal/DatabaseAccount;
 	public abstract fun getMaxAccounts ()Ljava/lang/Integer;
+	public abstract fun logOutObservable ()Lio/reactivex/Observable;
 	public abstract fun setMaxAccounts (Ljava/lang/Integer;)V
 }
 
@@ -11704,10 +11715,10 @@ public abstract interface class org/hisp/dhis/android/core/user/UserModule {
 	public abstract fun authenticatedUser ()Lorg/hisp/dhis/android/core/user/AuthenticatedUserObjectRepository;
 	public abstract fun authorities ()Lorg/hisp/dhis/android/core/user/AuthorityCollectionRepository;
 	public abstract fun blockingIsLogged ()Z
-	public abstract fun blockingLogIn (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/hisp/dhis/android/core/user/User;
+	public abstract fun blockingLogIn (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lorg/hisp/dhis/android/core/user/User;
 	public abstract fun blockingLogOut ()V
 	public abstract fun isLogged ()Lio/reactivex/Single;
-	public abstract fun logIn (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/reactivex/Single;
+	public abstract fun logIn (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/reactivex/Single;
 	public abstract fun logOut ()Lio/reactivex/Completable;
 	public abstract fun openIdHandler ()Lorg/hisp/dhis/android/core/user/openid/OpenIDConnectHandler;
 	public abstract fun twoFactorAuthManager ()Lorg/hisp/dhis/android/core/user/TwoFactorAuthManager;
@@ -12842,6 +12853,7 @@ public final class org/hisp/dhis/android/persistence/dataelement/DataElementTabl
 	public static final field OPTION_SET Ljava/lang/String;
 	public static final field SHORT_NAME Ljava/lang/String;
 	public static final field UID Ljava/lang/String;
+	public static final field URL Ljava/lang/String;
 	public static final field VALUE_TYPE Ljava/lang/String;
 	public static final field ZERO_IS_SIGNIFICANT Ljava/lang/String;
 	public fun <init> ()V

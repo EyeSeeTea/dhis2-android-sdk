@@ -51,6 +51,6 @@ data class TrackedEntitySearchItem(
     val header: String? = null,
     val attributeValues: List<TrackedEntitySearchItemAttribute>? = emptyList(),
 
-    ) : ObjectWithUidInterface {
+) : ObjectWithUidInterface {
     override fun uid(): String = uid
 }

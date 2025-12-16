@@ -46,12 +46,12 @@ internal open class DataOrphanCleaner<P : ObjectWithUidInterface, C : ObjectWith
         }
         val childrenUids = commaSeparatedUidsWithSingleQuotationMarks(children)
         val clause = (
-                parentColumn + "='" + parent.uid() + "'" +
-                        " AND " +
-                        stateColumn + " IN ('" + State.SYNCED + "','" + State.SYNCED_VIA_SMS + "')" +
-                        " AND " +
-                        IdentifiableColumns.UID + " NOT IN (" + childrenUids + ");"
-                )
+            parentColumn + "='" + parent.uid() + "'" +
+                " AND " +
+                stateColumn + " IN ('" + State.SYNCED + "','" + State.SYNCED_VIA_SMS + "')" +
+                " AND " +
+                IdentifiableColumns.UID + " NOT IN (" + childrenUids + ");"
+            )
         return databaseAdapter.delete(tableName, clause, null) > 0
     }
 }

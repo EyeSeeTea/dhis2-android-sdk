@@ -90,7 +90,7 @@ class ProgramStageSectionsCollectionRepository internal constructor(
     }
 
     fun orderBySortOrder(
-        direction: OrderByDirection?
+        direction: OrderByDirection?,
     ): ProgramStageSectionsCollectionRepository {
         return cf.withOrderBy(ProgramStageSectionTableInfo.Columns.SORT_ORDER, direction)
     }

@@ -102,7 +102,7 @@ internal class TrackedEntityInstanceQueryOnlineHelper(
             includeDeleted = scope.includeDeleted(),
             trackedEntityType = scope.trackedEntityType(),
             order = scope.order(),
-            uids = scope.uids()
+            uids = scope.uids(),
         ).run {
             scope.program()?.let {
                 copy(

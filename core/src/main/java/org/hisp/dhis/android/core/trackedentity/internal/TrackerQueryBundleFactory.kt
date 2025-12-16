@@ -51,7 +51,7 @@ internal class TrackerQueryBundleFactory(
     commonHelper,
     ProgramType.WITH_REGISTRATION,
     { params: ProgramDataDownloadParams,
-      programSettings: ProgramSettings?,
+            programSettings: ProgramSettings?,
         ->
         TrackerQueryBundleInternalFactory(
             commonHelper,
