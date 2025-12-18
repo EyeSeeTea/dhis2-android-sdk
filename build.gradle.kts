@@ -2,7 +2,9 @@ import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 import org.jetbrains.kotlin.gradle.dsl.*
 import com.android.build.api.dsl.*
 
-group = "org.hisp.dhis"
+// EyeSeeTea customization
+//group = "org.hisp.dhis"
+group = "com.github.EyeSeeTea"
 version = libs.versions.dhis2AndroidSdkVersion.get()
 
 /**

@@ -31,10 +31,18 @@ object Props {
     const val POM_ARTIFACT_ID = "android-core"
     const val POM_PACKAGING = "aar"
     const val POM_DESCRIPTION = "Android SDK for DHIS 2."
+    //EyeSeeTea customization
+    /*
     const val POM_URL = "https://github.com/dhis2/dhis2-android-sdk"
     const val POM_SCM_URL = "https://github.com/dhis2/dhis2-android-sdk"
     const val POM_SCM_CONNECTION = "scm:git:git://github.com/dhis2/dhis2-android-sdk.git"
     const val POM_SCM_DEV_CONNECTION = "scm:git:ssh://git@github.com/dhis2/dhis2-android-sdk.git"
+    */
+    const val POM_URL = "https://github.com/EyeSeeTea/dhis2-android-sdk"
+    const val POM_SCM_URL = "https://github.com/EyeSeeTea/dhis2-android-sdk"
+    const val POM_SCM_CONNECTION = "scm:git:git://github.com/EyeSeeTea/dhis2-android-sdk.git"
+    const val POM_SCM_DEV_CONNECTION = "scm:git:ssh://git@github.com/EyeSeeTea/dhis2-android-sdk.git"
+
     const val POM_LICENCE_NAME = "BSD"
     const val POM_LICENCE_URL = "https://opensource.org/licenses/BSD-3-Clause"
     const val POM_LICENCE_DIST = "repo"
