@@ -7,8 +7,9 @@ before_install:
   - echo "Gradle version:"
   - ./gradlew --version
 
-# For multi-module projects, JitPack needs to build the specific module
-# The :core module is the one that gets published (according to maven-publish-conventions.gradle.kts)
+# JitPack automatically detects and publishes modules with maven-publish plugin
+# We need to build the project first, then JitPack will publish :core automatically
+# Build all dependencies first, then build :core (which will trigger KSP for all variants)
 install:
-  - ./gradlew :core:build :core:publishToMavenLocal -x test --no-daemon
+  - ./gradlew build -x test -x ktlintCheck -x detekt -x checkstyleDebug -x pmdDebug --no-daemon
 
