@@ -1,0 +1,14 @@
+jdk:
+  - openjdk17
+
+before_install:
+  - echo "Java version:"
+  - java -version
+  - echo "Gradle version:"
+  - ./gradlew --version
+
+# For multi-module projects, JitPack needs to build the specific module
+# The :core module is the one that gets published (according to maven-publish-conventions.gradle.kts)
+install:
+  - ./gradlew :core:build :core:publishToMavenLocal -x test --no-daemon
+
