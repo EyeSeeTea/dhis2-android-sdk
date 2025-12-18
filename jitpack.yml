@@ -8,8 +8,9 @@ before_install:
   - ./gradlew --version
 
 # JitPack automatically detects and publishes modules with maven-publish plugin
-# We need to build the project first, then JitPack will publish :core automatically
-# Build all dependencies first, then build :core (which will trigger KSP for all variants)
+# Use 'assemble' instead of 'build' to skip all verification tasks (ktlint, detekt, etc.)
+# Build dependencies first, then assemble release (JitPack will auto-publish)
 install:
-  - ./gradlew build -x test -x ktlintCheck -x detekt -x checkstyleDebug -x pmdDebug --no-daemon
+  - ./gradlew :annotations:assemble :processor:assemble --no-daemon
+  - ./gradlew :core:assembleRelease --no-daemon
 
