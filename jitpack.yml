@@ -12,6 +12,11 @@ before_install:
 # Build dependencies first, then assemble release and publish to Maven Local
 # JitPack will find the published artifacts in ~/.m2
 install:
-  - ./gradlew :annotations:assemble :processor:assemble --no-daemon
-  - ./gradlew :core:assembleRelease :core:publishToMavenLocal --no-daemon
+  # Clean to avoid cache issues
+  - ./gradlew clean --no-daemon || true
+  # Build dependencies first with increased memory
+  - export GRADLE_OPTS="-Xmx2048m -XX:MaxMetaspaceSize=512m"
+  - ./gradlew :annotations:assemble :processor:assemble --no-daemon --stacktrace
+  # Build and publish core module
+  - ./gradlew :core:assembleRelease :core:publishToMavenLocal --no-daemon --stacktrace
 
