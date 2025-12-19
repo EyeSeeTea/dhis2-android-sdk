@@ -1,0 +1,17 @@
+jdk:
+  - openjdk17
+
+before_install:
+  - echo "Java version:"
+  - java -version
+  - echo "Gradle version:"
+  - ./gradlew --version
+
+# JitPack automatically detects and publishes modules with maven-publish plugin
+# Use 'assemble' instead of 'build' to skip all verification tasks (ktlint, detekt, etc.)
+# Build dependencies first, then assemble release and publish to Maven Local
+# JitPack will find the published artifacts in ~/.m2
+install:
+  - ./gradlew :annotations:assemble :processor:assemble --no-daemon
+  - ./gradlew :core:assembleRelease :core:publishToMavenLocal --no-daemon
+
