@@ -67,7 +67,7 @@ internal class DatabaseConfigurationHelper(
         }
 
         val existedAccount = configuration?.accounts()?.find {
-            equalsIgnoreProtocol(it.serverUrl(), serverUrl) && it.username() == username
+            equalsNormalized(it.serverUrl(), serverUrl) && it.username() == username
         }
 
         val newAccount = if (existedAccount != null && existedAccount.encrypted() == encrypt) {
@@ -92,7 +92,7 @@ internal class DatabaseConfigurationHelper(
         account: DatabaseAccount,
     ): DatabasesConfiguration {
         val otherAccounts = configuration?.accounts()?.filterNot {
-            equalsIgnoreProtocol(it.serverUrl(), account.serverUrl()) && it.username() == account.username()
+            equalsNormalized(it.serverUrl(), account.serverUrl()) && it.username() == account.username()
         } ?: emptyList()
 
         return (configuration?.toBuilder() ?: DatabasesConfiguration.builder())
@@ -107,7 +107,7 @@ internal class DatabaseConfigurationHelper(
             username: String,
         ): DatabaseAccount? {
             return configuration?.accounts()?.find {
-                equalsIgnoreProtocol(it.serverUrl(), serverUrl) && it.username() == username
+                equalsNormalized(it.serverUrl(), serverUrl) && it.username() == username
             }
         }
 
@@ -144,13 +144,8 @@ internal class DatabaseConfigurationHelper(
             }
         }
 
-        private fun equalsIgnoreProtocol(s1: String, s2: String): Boolean {
-            return removeProtocol(s1) == removeProtocol(s2)
-        }
-
-        private fun removeProtocol(s: String): String {
-            return s.replace("https://", "").replace("http://", "")
-                .replace('\\', '/')
+        private fun equalsNormalized(s1: String, s2: String): Boolean {
+            return ServerUrlNormalizer.areEquivalent(s1, s2)
         }
     }
 }
