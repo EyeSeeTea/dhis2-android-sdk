@@ -67,7 +67,7 @@ class HttpHttpsProtocolSwitchRealIntegrationShould : BaseRealIntegrationTest() {
         val lowercaseUrl = "https://play.im.dhis2.org/stable-2-42-3-1/"
         val uppercaseUrl = "https://PLAY.IM.DHIS2.ORG/stable-2-42-3-1/"
 
-        d2.userModule().blockingLogIn(testUsername, testPassword, lowercaseUrl)
+        d2.userModule().blockingLogIn(testUsername, testPassword, lowercaseUrl, null)
 
         val accountsFirst = d2.userModule().accountManager().getAccounts()
         assertThat(accountsFirst).hasSize(1)
@@ -76,7 +76,7 @@ class HttpHttpsProtocolSwitchRealIntegrationShould : BaseRealIntegrationTest() {
         d2.userModule().blockingLogOut()
         D2Factory.clear()
         d2 = D2Factory.forNewDatabase(isRealIntegration = true)
-        d2.userModule().blockingLogIn(testUsername, testPassword, uppercaseUrl)
+        d2.userModule().blockingLogIn(testUsername, testPassword, uppercaseUrl, null)
 
         val accountsSecond = d2.userModule().accountManager().getAccounts()
 
