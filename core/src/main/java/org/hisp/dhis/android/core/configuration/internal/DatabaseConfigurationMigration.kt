@@ -42,6 +42,7 @@ import org.hisp.dhis.android.persistence.configuration.ConfigurationStoreImpl
 import org.koin.core.annotation.Singleton
 
 @Singleton
+
 internal class DatabaseConfigurationMigration(
     private val context: Context,
     private val databaseConfigurationStore: DatabaseConfigurationInsecureStore,
@@ -50,6 +51,8 @@ internal class DatabaseConfigurationMigration(
     private val nameGenerator: DatabaseNameGenerator,
     private val renamer: DatabaseRenamer,
     private val databaseManager: DatabaseManager,
+    // EyeSeeTea customization
+    private val passwordManager: DatabaseEncryptionPasswordManager,
 ) {
     @Suppress("TooGenericExceptionCaught")
     suspend fun apply() {
@@ -98,7 +101,7 @@ internal class DatabaseConfigurationMigration(
         }
 
         runMigrationIfNeeded(existingVersionCode, Migration301.VERSION) {
-            Migration301(context, databaseConfigurationStore, nameGenerator, renamer).apply()
+            Migration301(context, databaseConfigurationStore, nameGenerator, renamer, passwordManager).apply()
         }
     }
 
