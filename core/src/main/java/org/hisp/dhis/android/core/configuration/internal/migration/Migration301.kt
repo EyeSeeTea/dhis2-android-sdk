@@ -33,9 +33,8 @@ import org.hisp.dhis.android.core.arch.storage.internal.ObjectKeyValueStore
 import org.hisp.dhis.android.core.configuration.internal.DatabaseAccount
 import org.hisp.dhis.android.core.configuration.internal.DatabaseAccountImport
 import org.hisp.dhis.android.core.configuration.internal.DatabaseAccountImportStatus
-import org.hisp.dhis.android.core.configuration.internal.DatabaseNameGenerator
-// EyeSeeTea customization
 import org.hisp.dhis.android.core.configuration.internal.DatabaseEncryptionPasswordManager
+import org.hisp.dhis.android.core.configuration.internal.DatabaseNameGenerator
 import org.hisp.dhis.android.core.configuration.internal.DatabaseRenamer
 import org.hisp.dhis.android.core.configuration.internal.DatabasesConfiguration
 import java.io.File
@@ -59,7 +58,6 @@ internal class Migration301(
     private val databaseConfigurationStore: ObjectKeyValueStore<DatabasesConfiguration>,
     private val nameGenerator: DatabaseNameGenerator,
     private val databaseRenamer: DatabaseRenamer,
-    // EyeSeeTea customization
     private val passwordManager: DatabaseEncryptionPasswordManager,
 ) {
 
@@ -70,7 +68,10 @@ internal class Migration301(
             return
         }
 
-        Log.i(TAG, "Migration301: starting database name hash migration for ${configuration.accounts().size} account(s)")
+        Log.i(
+            TAG,
+            "Migration301: starting database name hash migration for ${configuration.accounts().size} account(s)",
+        )
 
         val migratedAccounts = configuration.accounts().mapNotNull { account ->
             migrateAccount(account)

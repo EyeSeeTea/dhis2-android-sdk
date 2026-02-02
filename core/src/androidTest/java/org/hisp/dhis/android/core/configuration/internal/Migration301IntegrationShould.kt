@@ -31,7 +31,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.arch.helpers.FileResourceDirectoryHelper
-// EyeSeeTea customization
 import org.hisp.dhis.android.core.arch.storage.internal.InMemorySecureStore
 import org.hisp.dhis.android.core.arch.storage.internal.InMemoryUnsecureStore
 import org.hisp.dhis.android.core.configuration.internal.migration.Migration301
@@ -48,7 +47,7 @@ class Migration301IntegrationShould {
     private val databaseConfigurationStore = DatabaseConfigurationInsecureStoreImpl(InMemoryUnsecureStore())
     private val nameGenerator = DatabaseNameGenerator()
     private val renamer = DatabaseRenamer(context)
-    // EyeSeeTea customization
+
     private val passwordManager = DatabaseEncryptionPasswordManager.create(InMemorySecureStore())
 
     private lateinit var migration: Migration301
