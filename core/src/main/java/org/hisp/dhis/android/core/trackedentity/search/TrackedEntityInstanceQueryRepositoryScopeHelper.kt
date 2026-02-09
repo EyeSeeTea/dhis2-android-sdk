@@ -27,25 +27,23 @@
  */
 package org.hisp.dhis.android.core.trackedentity.search
 
-import org.hisp.dhis.android.core.arch.helpers.DateUtils
 import org.hisp.dhis.android.core.arch.repositories.scope.RepositoryScope
 import org.hisp.dhis.android.core.arch.repositories.scope.internal.FilterItemOperator
 import org.hisp.dhis.android.core.arch.repositories.scope.internal.RepositoryScopeFilterItem
 import org.hisp.dhis.android.core.common.DateFilterPeriod
 import org.hisp.dhis.android.core.common.DateFilterPeriodHelper
-import org.hisp.dhis.android.core.common.FilterOperators
-import org.hisp.dhis.android.core.common.FilterOperatorsHelper
 import org.hisp.dhis.android.core.programstageworkinglist.ProgramStageWorkingList
 import org.hisp.dhis.android.core.programstageworkinglist.ProgramStageWorkingListEventDataFilter
 import org.hisp.dhis.android.core.programstageworkinglist.internal.AttributeValueFilterHelper
 import org.hisp.dhis.android.core.trackedentity.AttributeValueFilter
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceEventFilter
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceFilter
+import org.hisp.dhis.android.core.tracker.TrackerExporterVersion
 import org.koin.core.annotation.Singleton
 
 @Singleton
 internal class TrackedEntityInstanceQueryRepositoryScopeHelper(
-    private val dateFilterPeriodHelper: DateFilterPeriodHelper,
+    private val filterOperatorHelper: FilterOperatorHelper,
 ) {
 
     @Suppress("ComplexMethod")
@@ -115,7 +113,7 @@ internal class TrackedEntityInstanceQueryRepositoryScopeHelper(
         filter?.let {
             val existingFilters = builder.build().filter()
             val filterBuilder = RepositoryScopeFilterItem.builder().key(filter.attribute())
-            val newFilters = getCommonFilterOperators(filterBuilder, filter) +
+            val newFilters = filterOperatorHelper.getFilterItems(filter.attribute(), filter) +
                 getAttributeValueFilterOperators(filterBuilder, filter)
 
             builder.filter(existingFilters + newFilters)
@@ -159,55 +157,10 @@ internal class TrackedEntityInstanceQueryRepositoryScopeHelper(
     ) {
         filter?.let {
             val existingFilters = builder.build().dataValue()
-            val filterBuilder = RepositoryScopeFilterItem.builder().key(filter.dataItem())
-            val newFilters = getCommonFilterOperators(filterBuilder, filter)
+            val newFilters = filterOperatorHelper.getFilterItems(filter.dataItem(), filter)
 
             builder.dataValue(existingFilters + newFilters)
         }
-    }
-
-    private fun getCommonFilterOperators(
-        filterBuilder: RepositoryScopeFilterItem.Builder,
-        filter: FilterOperators,
-    ): List<RepositoryScopeFilterItem> {
-        val filterItems: MutableList<RepositoryScopeFilterItem> = mutableListOf()
-
-        filter.eq()?.let {
-            filterItems.add(filterBuilder.operator(FilterItemOperator.EQ).value(it).build())
-        }
-        filter.like()?.let {
-            filterItems.add(filterBuilder.operator(FilterItemOperator.LIKE).value(it).build())
-        }
-        filter.le()?.let {
-            filterItems.add(filterBuilder.operator(FilterItemOperator.LE).value(it).build())
-        }
-        filter.lt()?.let {
-            filterItems.add(filterBuilder.operator(FilterItemOperator.LT).value(it).build())
-        }
-        filter.ge()?.let {
-            filterItems.add(filterBuilder.operator(FilterItemOperator.GE).value(it).build())
-        }
-        filter.gt()?.let {
-            filterItems.add(filterBuilder.operator(FilterItemOperator.GT).value(it).build())
-        }
-        filter.`in`()?.let {
-            if (it.isNotEmpty()) {
-                val strValue = FilterOperatorsHelper.listToStr(it)
-                filterItems.add(filterBuilder.operator(FilterItemOperator.IN).value(strValue).build())
-            }
-        }
-        filter.dateFilter()?.let { dateFilter ->
-            dateFilterPeriodHelper.getStartDate(dateFilter)?.let {
-                val dateValue = DateUtils.DATE_FORMAT.format(it)
-                filterItems.add(filterBuilder.operator(FilterItemOperator.GE).value(dateValue).build())
-            }
-            dateFilterPeriodHelper.getEndDate(dateFilter)?.let {
-                val dateValue = DateUtils.DATE_FORMAT.format(it)
-                filterItems.add(filterBuilder.operator(FilterItemOperator.LE).value(dateValue).build())
-            }
-        }
-
-        return filterItems
     }
 
     private fun getAttributeValueFilterOperators(
@@ -235,12 +188,7 @@ internal class TrackedEntityInstanceQueryRepositoryScopeHelper(
             val columnStr = orderTokens.getOrNull(0)
             val directionStr = orderTokens.getOrNull(1) ?: "desc"
 
-            val column = when (columnStr) {
-                "created" -> TrackedEntityInstanceQueryScopeOrderColumn.CREATED
-                "lastupdated" -> TrackedEntityInstanceQueryScopeOrderColumn.LAST_UPDATED
-                "ouname" -> TrackedEntityInstanceQueryScopeOrderColumn.ORGUNIT_NAME
-                else -> null
-            }
+            val column = parseOrderColumn(columnStr)
 
             if (column != null) {
                 val direction =
@@ -263,6 +211,30 @@ internal class TrackedEntityInstanceQueryRepositoryScopeHelper(
             val existingOrder = builder.build().order()
             builder.order(existingOrder + items)
         }
+    }
+
+    @Suppress("ReturnCount")
+    private fun parseOrderColumn(
+        columnStr: String?,
+    ): TrackedEntityInstanceQueryScopeOrderColumn? {
+        if (columnStr == null) return null
+
+        // Special case: orgunit name doesn't have version-specific names
+        if (columnStr == "ouname") {
+            return TrackedEntityInstanceQueryScopeOrderColumn.ORGUNIT_NAME
+        }
+
+        // List of fixed columns with API names
+        val fixedColumns = listOf(
+            TrackedEntityInstanceQueryScopeOrderColumn.CREATED,
+            TrackedEntityInstanceQueryScopeOrderColumn.LAST_UPDATED,
+            TrackedEntityInstanceQueryScopeOrderColumn.ENROLLMENT_DATE,
+        )
+
+        return sequenceOf(TrackerExporterVersion.V2, TrackerExporterVersion.V1)
+            .firstNotNullOfOrNull { version ->
+                fixedColumns.find { it.apiName()?.getApiName(version) == columnStr }
+            }
     }
 
     fun addFilter(

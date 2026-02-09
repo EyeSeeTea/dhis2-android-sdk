@@ -28,6 +28,11 @@
 package org.hisp.dhis.android.core.trackedentity.internal
 
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
+import org.hisp.dhis.android.core.common.ObjectWithUid
+import org.hisp.dhis.android.core.event.EventStatus
+import org.hisp.dhis.android.core.programstageworkinglist.ProgramStageQueryCriteria
+import org.hisp.dhis.android.core.programstageworkinglist.ProgramStageWorkingList
 import org.hisp.dhis.android.core.utils.integration.mock.BaseMockIntegrationTestMetadataEnqueable
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
 import org.junit.After
@@ -40,7 +45,7 @@ class TrackedEntityInstanceDownloadCallEnqueableMockIntegrationShould : BaseMock
 
     @Before
     fun setUp() {
-        d2.wipeModule().wipeData()
+        runBlocking { d2.wipeModule().wipeData() }
     }
 
     @Test
@@ -58,8 +63,32 @@ class TrackedEntityInstanceDownloadCallEnqueableMockIntegrationShould : BaseMock
         assertThat(existingTeisInDB).isNotEmpty()
     }
 
+    @Test
+    fun should_continue_on_empty_page_from_working_list() {
+        val programTeis = "trackedentity/new_tracker_importer_tracked_entities_empty.json"
+
+        dhis2MockServer.enqueueSystemInfoResponse()
+        dhis2MockServer.enqueueMockResponse(programTeis)
+
+        d2.trackedEntityModule().trackedEntityInstanceDownloader()
+            .byProgramStageWorkingList().eq(
+                ProgramStageWorkingList.builder()
+                    .uid("aprI6ATr9RW")
+                    .program(ObjectWithUid.create("IpHINAT79UW"))
+                    .programStage(ObjectWithUid.create("dBwrot7S421"))
+                    .programStageQueryCriteria(
+                        ProgramStageQueryCriteria.builder().eventStatus(EventStatus.OVERDUE).build(),
+                    )
+                    .build(),
+            ).blockingDownload()
+
+        val existingTeisInDB = d2.trackedEntityModule().trackedEntityInstances().blockingGet()
+
+        assertThat(existingTeisInDB).isEmpty()
+    }
+
     @After
     fun tearDown() {
-        d2.wipeModule().wipeData()
+        runBlocking { d2.wipeModule().wipeData() }
     }
 }

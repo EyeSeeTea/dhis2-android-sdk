@@ -50,7 +50,8 @@ data class TrackedEntitySearchItem(
     val type: TrackedEntityType,
     val header: String? = null,
     val attributeValues: List<TrackedEntitySearchItemAttribute>? = emptyList(),
+    val programOwners: List<TrackedEntitySearchItemProgramOwner>? = emptyList(),
 
-    ) : ObjectWithUidInterface {
+) : ObjectWithUidInterface {
     override fun uid(): String = uid
 }

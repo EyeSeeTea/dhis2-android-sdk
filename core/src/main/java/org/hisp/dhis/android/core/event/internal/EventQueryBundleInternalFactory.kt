@@ -27,22 +27,25 @@
  */
 package org.hisp.dhis.android.core.event.internal
 
+import org.hisp.dhis.android.core.event.EventFilterCollectionRepository
 import org.hisp.dhis.android.core.program.internal.ProgramDataDownloadParams
 import org.hisp.dhis.android.core.settings.ProgramSettings
 import org.hisp.dhis.android.core.trackedentity.internal.TrackerQueryCommonParams
 import org.hisp.dhis.android.core.trackedentity.internal.TrackerQueryFactoryCommonHelper
 import org.hisp.dhis.android.core.trackedentity.internal.TrackerQueryInternalFactory
+import org.hisp.dhis.android.core.trackedentity.internal.WorkingListsHashHelper
 
-internal class EventQueryBundleInternalFactory constructor(
+internal class EventQueryBundleInternalFactory(
     commonHelper: TrackerQueryFactoryCommonHelper,
     params: ProgramDataDownloadParams,
     programSettings: ProgramSettings?,
+    val eventFilterCollectionRepository: EventFilterCollectionRepository,
 ) : TrackerQueryInternalFactory<EventQueryBundle>(commonHelper, params, programSettings) {
 
-    override fun queryInternal(
+    override suspend fun queryInternal(
         programs: List<String>,
         programUid: String?,
-        orgUnitByLimitExtractor: () -> List<String>,
+        orgUnitByLimitExtractor: suspend () -> List<String>,
     ): List<EventQueryBundle> {
         val limit = commonHelper.getLimit(
             params,
@@ -61,10 +64,30 @@ internal class EventQueryBundleInternalFactory constructor(
             orgUnitByLimitExtractor,
         ) { it?.eventDateDownload() }
 
-        val builder = EventQueryBundle.builder()
-            .commonParams(commonParams)
+        val eventFilters = (params.eventFilters()?.filter { it.program() == programUid } ?: emptyList())
 
-        return commonHelper.divideByOrgUnits(commonParams.orgUnitsBeforeDivision, commonParams.hasLimitByOrgUnit) {
+        val eventFilterSettings = programSettings?.specificSettings()?.get(programUid)?.filters()?.map { it.uid() }
+
+        val programSettingFilters = eventFilterSettings.takeIf { !it.isNullOrEmpty() }?.let {
+            eventFilterCollectionRepository
+                .byUid().`in`(it)
+                .withEventDataFilters()
+                .getInternal()
+        }
+
+        val finalFilters = eventFilters.takeIf { it.isNotEmpty() } ?: programSettingFilters
+
+        val workingListsHash = WorkingListsHashHelper.calculateHashFromObjects(finalFilters)
+        val commonParamsWithHash = commonParams.copy(workingListsHash = workingListsHash)
+
+        val builder = EventQueryBundle.builder()
+            .eventFilters(finalFilters)
+            .commonParams(commonParamsWithHash)
+
+        return commonHelper.divideByOrgUnits(
+            commonParams.orgUnitsBeforeDivision,
+            commonParams.hasLimitByOrgUnit,
+        ) {
             builder.orgUnits(it).build()
         }
     }

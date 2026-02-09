@@ -27,8 +27,7 @@
  */
 package org.hisp.dhis.android.core.trackedentity.internal
 
-import org.hisp.dhis.android.core.arch.db.querybuilders.internal.WhereClauseBuilder
-import org.hisp.dhis.android.core.arch.db.stores.internal.ObjectWithoutUidStore
+import org.hisp.dhis.android.core.arch.db.stores.internal.TrackerBaseSyncStore
 import org.hisp.dhis.android.core.arch.helpers.DateUtils
 import org.hisp.dhis.android.core.arch.helpers.DateUtils.toJavaDate
 import org.hisp.dhis.android.core.arch.helpers.DateUtils.toKtxInstant
@@ -37,20 +36,19 @@ import org.hisp.dhis.android.core.program.internal.ProgramDataDownloadParams
 import org.hisp.dhis.android.core.settings.DownloadPeriod
 import org.hisp.dhis.android.core.settings.ProgramSetting
 import org.hisp.dhis.android.core.settings.ProgramSettings
-import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityInstanceSyncTableInfo.Columns
 import java.util.Date
 
-internal open class TrackerSyncLastUpdatedManager<S : TrackerBaseSync>(private val store: ObjectWithoutUidStore<S>) {
-    private lateinit var syncMap: Map<Pair<String?, Int>, S>
+internal open class TrackerSyncLastUpdatedManager<S : TrackerBaseSync>(private val store: TrackerBaseSyncStore<S>) {
+    private lateinit var syncMap: Map<Triple<String?, Int, Int?>, S>
     private var programSettings: ProgramSettings? = null
     private lateinit var params: ProgramDataDownloadParams
 
-    fun prepare(programSettings: ProgramSettings?, params: ProgramDataDownloadParams) {
+    suspend fun prepare(programSettings: ProgramSettings?, params: ProgramDataDownloadParams) {
         this.programSettings = programSettings
         this.params = params
-        this.syncMap = store.selectAll()
-            .map { Pair(it.program(), it.organisationUnitIdsHash()) to it }
-            .toMap()
+        this.syncMap = store.selectAll().associateBy {
+            Triple(it.program(), it.organisationUnitIdsHash(), it.workingListsHash())
+        }
     }
 
     fun getLastUpdatedStr(commonParams: TrackerQueryCommonParams): String? {
@@ -58,14 +56,24 @@ internal open class TrackerSyncLastUpdatedManager<S : TrackerBaseSync>(private v
     }
 
     private fun getLastUpdated(commonParams: TrackerQueryCommonParams): Date? {
-        return getLastUpdated(commonParams.program, commonParams.orgUnitsBeforeDivision.toSet(), commonParams.limit)
+        return getLastUpdated(
+            commonParams.program,
+            commonParams.orgUnitsBeforeDivision.toSet(),
+            commonParams.limit,
+            commonParams.workingListsHash,
+        )
     }
 
-    private fun getLastUpdated(programId: String?, organisationUnits: Set<String>, limit: Int): Date? {
+    private fun getLastUpdated(
+        programId: String?,
+        organisationUnits: Set<String>,
+        limit: Int,
+        workingListsHash: Int?,
+    ): Date? {
         val orgUnitHashCode = organisationUnits.toSet().hashCode()
         return if (params.uids().isEmpty()) {
-            val programSync = syncMap[Pair(programId, orgUnitHashCode)]
-            val globalSync = syncMap[Pair(null, orgUnitHashCode)]
+            val programSync = syncMap[Triple(programId, orgUnitHashCode, workingListsHash)]
+            val globalSync = syncMap[Triple(null, orgUnitHashCode, workingListsHash)]
 
             return getLastUpdatedIfValid(programSync, limit)
                 ?: getLastUpdatedIfValid(globalSync, limit)
@@ -105,17 +113,12 @@ internal open class TrackerSyncLastUpdatedManager<S : TrackerBaseSync>(private v
         return programSetting?.updateDownload() != null
     }
 
-    fun update(sync: S) {
-        val builder = WhereClauseBuilder().appendKeyNumberValue(
-            Columns.ORGANISATION_UNIT_IDS_HASH,
-            sync.organisationUnitIdsHash(),
-        )
-        val finalBuilder = sync.program()?.let {
-            builder.appendKeyStringValue(Columns.PROGRAM, it)
+    suspend fun update(sync: S) {
+        sync.program()?.let {
+            store.deleteByProgram(it, sync.organisationUnitIdsHash(), sync.workingListsHash())
         } ?: run {
-            builder.appendIsNullValue(Columns.PROGRAM)
+            store.deleteByNullProgram(sync.organisationUnitIdsHash(), sync.workingListsHash())
         }
-        store.deleteWhere(finalBuilder.build())
         store.insert(sync)
     }
 }

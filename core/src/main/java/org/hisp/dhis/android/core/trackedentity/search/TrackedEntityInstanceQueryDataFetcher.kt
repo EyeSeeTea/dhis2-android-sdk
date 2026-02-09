@@ -27,9 +27,6 @@
  */
 package org.hisp.dhis.android.core.trackedentity.search
 
-import kotlinx.coroutines.runBlocking
-import org.hisp.dhis.android.core.arch.db.access.DatabaseAdapter
-import org.hisp.dhis.android.core.arch.cache.internal.D2Cache
 import org.hisp.dhis.android.core.arch.helpers.Result
 import org.hisp.dhis.android.core.arch.repositories.children.internal.ChildrenAppenderExecutor
 import org.hisp.dhis.android.core.arch.repositories.children.internal.ChildrenAppenderGetter
@@ -38,14 +35,14 @@ import org.hisp.dhis.android.core.arch.repositories.scope.internal.RepositoryMod
 import org.hisp.dhis.android.core.maintenance.D2Error
 import org.hisp.dhis.android.core.maintenance.D2ErrorCode
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceCollectionRepository.Companion.PROGRAM_OWNERS
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceCollectionRepository.Companion.TRACKED_ENTITY_ATTRIBUTE_VALUES
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityInstanceStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackerParentCallFactory
 
 @Suppress("TooManyFunctions")
-internal class TrackedEntityInstanceQueryDataFetcher constructor(
+internal class TrackedEntityInstanceQueryDataFetcher(
     private val store: TrackedEntityInstanceStore,
-    private val databaseAdapter: DatabaseAdapter,
     private val trackerParentCallFactory: TrackerParentCallFactory,
     private val scope: TrackedEntityInstanceQueryRepositoryScope,
     private val childrenAppenders: ChildrenAppenderGetter<TrackedEntityInstance>,
@@ -73,7 +70,7 @@ internal class TrackedEntityInstanceQueryDataFetcher constructor(
         returnedErrorCodes = HashSet()
     }
 
-    fun loadPages(requestedLoadSize: Int): List<Result<TrackedEntityInstance, D2Error>> {
+    suspend fun loadPages(requestedLoadSize: Int): List<Result<TrackedEntityInstance, D2Error>> {
         val result: MutableList<Result<TrackedEntityInstance, D2Error>> = ArrayList()
 
         if (scope.mode() == RepositoryMode.OFFLINE_ONLY || scope.mode() == RepositoryMode.OFFLINE_FIRST) {
@@ -97,20 +94,20 @@ internal class TrackedEntityInstanceQueryDataFetcher constructor(
         return result
     }
 
-    fun queryAllOffline(): List<Result<TrackedEntityInstance, D2Error>> {
+    suspend fun queryAllOffline(): List<Result<TrackedEntityInstance, D2Error>> {
         return queryOffline(-1)
     }
 
-    fun queryAllOfflineUids(): List<String> {
+    suspend fun queryAllOfflineUids(): List<String> {
         val sqlQuery = localQueryHelper.getUidsWhereClause(scope, scope.excludedUids(), -1)
         return store.selectUidsWhere(sqlQuery)
     }
 
-    fun queryAllOnline(): List<Result<TrackedEntityInstance, D2Error>> {
+    suspend fun queryAllOnline(): List<Result<TrackedEntityInstance, D2Error>> {
         return queryOnline(-1)
     }
 
-    private fun queryOffline(requestedLoadSize: Int): List<Result<TrackedEntityInstance, D2Error>> {
+    private suspend fun queryOffline(requestedLoadSize: Int): List<Result<TrackedEntityInstance, D2Error>> {
         val sqlQuery = localQueryHelper.getSqlQuery(
             scope,
             returnedUidsOffline,
@@ -119,13 +116,13 @@ internal class TrackedEntityInstanceQueryDataFetcher constructor(
         val instances = store.selectRawQuery(sqlQuery)
         returnedUidsOffline.addAll(instances.map { it.uid() })
 
-        return appendAttributes(instances).map {
+        return appendChildren(instances).map {
             Result.Success(it)
         }
     }
 
     @Suppress("ComplexCondition")
-    private fun queryOnline(requestLoadSize: Int): List<Result<TrackedEntityInstance, D2Error>> {
+    private suspend fun queryOnline(requestLoadSize: Int): List<Result<TrackedEntityInstance, D2Error>> {
         val result: MutableList<Result<TrackedEntityInstance, D2Error>> = ArrayList()
 
         do {
@@ -143,7 +140,7 @@ internal class TrackedEntityInstanceQueryDataFetcher constructor(
         return result
     }
 
-    private fun getOnlineQueryResults(
+    private suspend fun getOnlineQueryResults(
         baseOnlineQuery: TrackedEntityInstanceQueryOnline,
         requestLoadSize: Int,
     ): List<Result<TrackedEntityInstance, D2Error>> {
@@ -190,17 +187,14 @@ internal class TrackedEntityInstanceQueryDataFetcher constructor(
             }
     }
 
-    private fun queryOnline(
+    private suspend fun queryOnline(
         onlineQuery: TrackedEntityInstanceQueryOnline,
     ): TrackedEntityInstanceOnlineResult {
         return try {
             val cachedInstances = if (scope.allowOnlineCache()) onlineCache[onlineQuery] else null
 
-            cachedInstances ?: runBlocking {
-                trackerParentCallFactory.getTrackedEntityCall()
-                    .getQueryCall(onlineQuery)
-            }
-                .let { result ->
+            cachedInstances ?: trackerParentCallFactory.getTrackedEntityCall()
+                .getQueryCall(onlineQuery).let { result ->
                     TrackedEntityInstanceOnlineResult(
                         items = result.trackedEntities.map { Result.Success(it) },
                         exhausted = result.exhausted,
@@ -215,14 +209,14 @@ internal class TrackedEntityInstanceQueryDataFetcher constructor(
         }
     }
 
-    private fun appendAttributes(withoutChildren: List<TrackedEntityInstance>): List<TrackedEntityInstance> {
+    private suspend fun appendChildren(withoutChildren: List<TrackedEntityInstance>): List<TrackedEntityInstance> {
         return ChildrenAppenderExecutor.appendInObjectCollection(
             withoutChildren,
-            databaseAdapter,
             childrenAppenders,
             ChildrenSelection(
                 setOf(
                     TRACKED_ENTITY_ATTRIBUTE_VALUES,
+                    PROGRAM_OWNERS,
                 ),
             ),
         )

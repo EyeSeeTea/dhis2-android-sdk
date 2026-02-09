@@ -85,7 +85,7 @@ internal class FileResourceDownloadCall(
         downloadCustomIcons(paramsWithCorrectedMaxContentLength, existingFileResources)
         emit(progressManager.increaseProgress(FileResource::class.java, isComplete = false))
 
-        fileResourceRoutine.blockingDeleteOutdatedFileResources()
+        fileResourceRoutine.internalDeleteOutdatedFileResources()
         emit(progressManager.increaseProgress(FileResource::class.java, isComplete = true))
     }
 
@@ -127,8 +127,10 @@ internal class FileResourceDownloadCall(
                     download = { v, _ ->
                         when (v.valueType) {
                             ValueType.IMAGE ->
-                                fileResourceNetworkHandlder.getImageFromTrackedEntityAttribute(v,
-                                    FileResizerHelper.Dimension.MEDIUM.name)
+                                fileResourceNetworkHandlder.getImageFromTrackedEntityAttribute(
+                                    v,
+                                    FileResizerHelper.Dimension.MEDIUM.name,
+                                )
 
                             ValueType.FILE_RESOURCE ->
                                 fileResourceNetworkHandlder.getFileFromTrackedEntityAttribute(v)

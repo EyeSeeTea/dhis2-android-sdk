@@ -28,19 +28,24 @@
 
 package org.hisp.dhis.android.core.event.search;
 
+import androidx.annotation.NonNull;
+
 import com.google.auto.value.AutoValue;
 
 import org.hisp.dhis.android.core.arch.repositories.scope.RepositoryScope;
+import org.hisp.dhis.android.core.trackedentity.search.QueryScopeOrderByItem;
+import org.hisp.dhis.android.core.tracker.TrackerExporterVersion;
 
 @AutoValue
-public abstract class EventQueryScopeOrderByItem {
+public abstract class EventQueryScopeOrderByItem implements QueryScopeOrderByItem {
 
     public abstract EventQueryScopeOrderColumn column();
 
     public abstract RepositoryScope.OrderByDirection direction();
 
-    String toAPIString() {
-        return column().hasApiName() ? column().apiName() + ":" + direction().getApi() : null;
+    public String toAPIString(@NonNull TrackerExporterVersion version) {
+        String apiName = column().apiName() == null ? null : column().apiName().getApiName(version);
+        return apiName == null ? null : apiName + ":" + direction().getApi();
     }
 
     static Builder builder() {

@@ -175,7 +175,156 @@ class DatabasesConfigurationHelperShould {
         assertThat(DatabaseConfigurationHelper.getOldestAccounts(emptyList(), 1)).isEmpty()
     }
 
+    @Test
+    fun not_find_account_with_different_protocol() {
+        val account = DatabaseAccount.builder()
+            .username("admin")
+            .serverUrl("https://dhis2.org")
+            .databaseName("test.db")
+            .encrypted(true)
+            .databaseCreationDate("2024-01-01")
+            .build()
+
+        val configuration = DatabasesConfiguration.builder()
+            .accounts(listOf(account))
+            .build()
+
+        // Search with http instead of https - should NOT find (different servers)
+        val found = DatabaseConfigurationHelper.getAccount(
+            configuration,
+            "http://dhis2.org",
+            "admin",
+        )
+
+        assertThat(found).isNull()
+    }
+
+    @Test
+    fun find_account_with_normalized_url_trailing_slash() {
+        val account = DatabaseAccount.builder()
+            .username("admin")
+            .serverUrl("https://dhis2.org")
+            .databaseName("test.db")
+            .encrypted(true)
+            .databaseCreationDate("2024-01-01")
+            .build()
+
+        val configuration = DatabasesConfiguration.builder()
+            .accounts(listOf(account))
+            .build()
+
+        // Search with trailing slash
+        val found = DatabaseConfigurationHelper.getAccount(
+            configuration,
+            "https://dhis2.org/",
+            "admin",
+        )
+
+        assertThat(found).isNotNull()
+        assertThat(found).isEqualTo(account)
+    }
+
+    @Test
+    fun find_account_with_normalized_url_api_suffix() {
+        val account = DatabaseAccount.builder()
+            .username("admin")
+            .serverUrl("https://dhis2.org")
+            .databaseName("test.db")
+            .encrypted(true)
+            .databaseCreationDate("2024-01-01")
+            .build()
+
+        val configuration = DatabasesConfiguration.builder()
+            .accounts(listOf(account))
+            .build()
+
+        // Search with /api suffix
+        val found = DatabaseConfigurationHelper.getAccount(
+            configuration,
+            "https://dhis2.org/api",
+            "admin",
+        )
+
+        assertThat(found).isNotNull()
+        assertThat(found).isEqualTo(account)
+    }
+
+    @Test
+    fun find_account_with_normalized_url_case_insensitive() {
+        val account = DatabaseAccount.builder()
+            .username("admin")
+            .serverUrl("https://DHIS2.org")
+            .databaseName("test.db")
+            .encrypted(true)
+            .databaseCreationDate("2024-01-01")
+            .build()
+
+        val configuration = DatabasesConfiguration.builder()
+            .accounts(listOf(account))
+            .build()
+
+        // Search with different case
+        val found = DatabaseConfigurationHelper.getAccount(
+            configuration,
+            "https://dhis2.ORG",
+            "admin",
+        )
+
+        assertThat(found).isNotNull()
+        assertThat(found).isEqualTo(account)
+    }
+
+    @Test
+    fun get_account_with_backslashes_matches_forward_slashes() {
+        val config = createConfigWithAccount(URL_WITH_SLASHES)
+        val foundAccount = DatabaseConfigurationHelper.getAccount(config, URL_WITH_BACKSLASHES, username1)
+
+        assertThat(foundAccount).isNotNull()
+        assertThat(foundAccount?.serverUrl()).isEqualTo(URL_WITH_SLASHES)
+    }
+
+    @Test
+    fun get_account_with_forward_slashes_matches_backslashes() {
+        val config = createConfigWithAccount(URL_WITH_BACKSLASHES)
+        val foundAccount = DatabaseConfigurationHelper.getAccount(config, URL_WITH_SLASHES, username1)
+
+        assertThat(foundAccount).isNotNull()
+        assertThat(foundAccount?.serverUrl()).isEqualTo(URL_WITH_BACKSLASHES)
+    }
+
+    @Test
+    fun add_account_with_backslashes_updates_existing_account_with_forward_slashes() {
+        val config = createConfigWithAccount(URL_WITH_SLASHES)
+        val updatedConfig = helper.addOrUpdateAccount(config, URL_WITH_BACKSLASHES, username1, false)
+
+        assertThat(updatedConfig.accounts().size).isEqualTo(1)
+    }
+
+    @Test
+    fun add_account_with_forward_slashes_updates_existing_account_with_backslashes() {
+        val config = createConfigWithAccount(URL_WITH_BACKSLASHES)
+        val updatedConfig = helper.addOrUpdateAccount(config, URL_WITH_SLASHES, username1, false)
+
+        assertThat(updatedConfig.accounts().size).isEqualTo(1)
+    }
+
+    private fun createConfigWithAccount(serverUrl: String): DatabasesConfiguration {
+        val account = DatabaseAccount.builder()
+            .username(username1)
+            .serverUrl(serverUrl)
+            .databaseName(nameGenerator.getDatabaseName(serverUrl, username1, false))
+            .encrypted(false)
+            .databaseCreationDate(DATE)
+            .build()
+
+        return DatabasesConfiguration.builder()
+            .accounts(listOf(account))
+            .build()
+    }
+
     companion object {
         private const val DATE = "2014-06-06T20:44:21.375"
+        private const val URL_WITH_SLASHES = "https://play.im.dhis2.org/stable-2-42-2"
+        private const val URL_WITH_BACKSLASHES = "https://play.im.dhis2.org\\stable-2-42-2"
     }
 }

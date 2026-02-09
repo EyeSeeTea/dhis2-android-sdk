@@ -53,21 +53,17 @@ internal class LogInCall(
     private val authenticatedUserStore: AuthenticatedUserStore,
     private val systemInfoCall: SystemInfoCall,
     private val userStore: UserStore,
-    private val databaseManager: LogInDatabaseManager,
+    private val loginDatabaseManager: LogInDatabaseManager,
     private val exceptions: LogInExceptions,
     private val accountManager: AccountManagerImpl,
     private val apiCallErrorCatcher: UserAuthenticateCallErrorCatcher,
 ) {
-    suspend fun logIn(username: String?, password: String?, serverUrl: String?, twoFactorCode: String?): User {
-        return blockingLogIn(username, password, serverUrl, twoFactorCode)
-    }
-
     @Throws(D2Error::class)
-    private suspend fun blockingLogIn(
+    suspend fun logIn(
         username: String?,
         password: String?,
         serverUrl: String?,
-        twoFactorCode: String?
+        twoFactorCode: String?,
     ): User {
         exceptions.throwExceptionIfUsernameNull(username)
         exceptions.throwExceptionIfPasswordNull(password)
@@ -81,7 +77,7 @@ internal class LogInCall(
         val credentials = Credentials(username!!, trimmedServerUrl!!, password, null)
 
         return try {
-            if (databaseManager.isPendingToImportDB(trimmedServerUrl, username)) {
+            if (loginDatabaseManager.isPendingToImportDB(trimmedServerUrl, username)) {
                 importDB(trimmedServerUrl, credentials)
             } else {
                 val user = loginInDhis2AndGetUser(credentials, twoFactorCode)
@@ -121,9 +117,9 @@ internal class LogInCall(
     private suspend fun loginOnline(user: User, credentials: Credentials): User {
         userIdStore.set(user.uid())
 
-        databaseManager.loadDatabaseOnline(credentials.serverUrl, credentials.username)
+        loginDatabaseManager.loadDatabaseOnline(credentials.serverUrl, credentials.username)
 
-        return coroutineAPICallExecutor.wrapTransactionally {
+        return coroutineAPICallExecutor.wrapTransactionallyRoom {
             try {
                 val authenticatedUser = AuthenticatedUser.builder()
                     .user(user.uid())
@@ -145,9 +141,9 @@ internal class LogInCall(
 
     @Throws(D2Error::class)
     @Suppress("ThrowsCount")
-    private fun tryLoginOffline(credentials: Credentials, originalError: D2Error): User {
+    private suspend fun tryLoginOffline(credentials: Credentials, originalError: D2Error): User {
         val existingDatabase =
-            databaseManager.loadExistingKeepingEncryption(credentials.serverUrl, credentials.username)
+            loginDatabaseManager.loadExistingKeepingEncryption(credentials.serverUrl, credentials.username)
         if (!existingDatabase) {
             throw originalError
         }
@@ -162,9 +158,9 @@ internal class LogInCall(
     }
 
     @Suppress("TooGenericExceptionCaught")
-    private fun importDB(serverUrl: String, credentials: Credentials): User {
+    private suspend fun importDB(serverUrl: String, credentials: Credentials): User {
         try {
-            databaseManager.importDB(serverUrl, credentials)
+            loginDatabaseManager.importDB(serverUrl, credentials)
             credentialsSecureStore.set(credentials)
             val existingUser = authenticatedUserStore.selectFirst() ?: throw exceptions.noUserOfflineError()
             userIdStore.set(existingUser.user()!!)
@@ -202,10 +198,9 @@ internal class LogInCall(
 
     private suspend fun loginInDhis2AndGetUser(
         credentials: Credentials,
-        twoFactorCode: String?
+        twoFactorCode: String?,
     ): User {
         try {
-
             val response = coroutineAPICallExecutor.wrap(errorCatcher = apiCallErrorCatcher) {
                 networkHandler.login(
                     LoginPayload(credentials.username, credentials.password!!, twoFactorCode),
@@ -221,16 +216,16 @@ internal class LogInCall(
             }.getOrThrow()
 
             return user
-
         } catch (d2Error: D2Error) {
             if (d2Error.errorCode() == D2ErrorCode.NO_DHIS2_SERVER ||
-                d2Error.errorCode() == D2ErrorCode.UNEXPECTED) {
+                d2Error.errorCode() == D2ErrorCode.UNEXPECTED
+            ) {
                 credentialsSecureStore.set(credentials)
 
                 val user = oldLogin(credentials)
 
                 return user
-            } else{
+            } else {
                 credentialsSecureStore.remove()
                 userIdStore.remove()
                 throw d2Error
@@ -250,55 +245,47 @@ internal class LogInCall(
             }.getOrThrow()
 
             return user
-        } catch (e: Exception) {
+        } catch (d2Error: D2Error) {
             credentialsSecureStore.remove()
             userIdStore.remove()
-            throw e
+            throw d2Error
         }
     }
 
     private fun generate2FAErrorIfRequired(response: LoginResponse) {
-        // 2.41 error
-        if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE.toString()) {
-            throw D2Error.builder()
+        val error = when (response.loginStatus) {
+            // 2.41 error
+            D2ErrorCode.INCORRECT_TWO_FACTOR_CODE.toString() -> D2Error.builder()
                 .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE)
                 .errorDescription("Incorrect two factor code")
                 .build()
-
-        }
-
-        // 2.42 errors
-        if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP.toString()) {
-            throw D2Error.builder()
+            // 2.42 errors
+            D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP.toString() -> D2Error.builder()
                 .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP)
                 .errorDescription("Incorrect two factor code (TOTP)")
                 .build()
-        } else if (response.loginStatus == D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT.toString()) {
-            throw D2Error.builder()
+            D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT.toString() -> D2Error.builder()
                 .errorCode(D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT)
                 .errorDescription("Email two factor code sent")
                 .build()
-        } else if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL.toString()) {
-            throw D2Error.builder()
+            D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL.toString() -> D2Error.builder()
                 .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL)
                 .errorDescription("Incorrect two factor code (email)")
                 .build()
-        }  else if (response.loginStatus == D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS.toString()) {
-            throw D2Error.builder()
+            D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS.toString() -> D2Error.builder()
                 .errorCode(D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS)
                 .errorDescription("Two factor many send attempts")
                 .build()
-        } else if (response.loginStatus == D2ErrorCode.SMS_TWO_FACTOR_CODE_SENT.toString()) {
-            throw D2Error.builder()
+            D2ErrorCode.SMS_TWO_FACTOR_CODE_SENT.toString() -> D2Error.builder()
                 .errorCode(D2ErrorCode.SMS_TWO_FACTOR_CODE_SENT)
                 .errorDescription("SMS two factor code sent")
                 .build()
-        } else if (response.loginStatus == D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_SMS.toString()) {
-            throw D2Error.builder()
+            D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_SMS.toString() -> D2Error.builder()
                 .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_SMS)
                 .errorDescription("Incorrect two factor code (SMS)")
                 .build()
+            else -> null
         }
+        error?.let { throw it }
     }
-
 }

@@ -38,7 +38,7 @@ object FilterOperatorsHelper {
     }
 
     fun strToList(string: String): Collection<String> {
-        if (string.contains(strListSeparatorAlt)){
+        if (string.contains(strListSeparatorAlt)) {
             return string.split(strListSeparatorAlt)
         } else {
             return string.split(strListSeparator)

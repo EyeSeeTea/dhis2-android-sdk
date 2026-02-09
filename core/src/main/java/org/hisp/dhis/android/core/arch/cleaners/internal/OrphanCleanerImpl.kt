@@ -38,16 +38,16 @@ internal open class OrphanCleanerImpl<P : ObjectWithUidInterface, C : ObjectWith
     private val databaseAdapter: DatabaseAdapter,
 ) : OrphanCleaner<P, C> {
 
-    override fun deleteOrphan(parent: P?, children: Collection<C>?): Boolean {
+    override suspend fun deleteOrphan(parent: P?, children: Collection<C>?): Boolean {
         if (parent == null || children == null) {
             return false
         }
         val childrenUids = commaSeparatedUidsWithSingleQuotationMarks(children)
         val clause = (
-                parentColumn + "='" + parent.uid() + "'" +
-                        " AND " +
-                        IdentifiableColumns.UID + " NOT IN (" + childrenUids + ");"
-                )
+            parentColumn + "='" + parent.uid() + "'" +
+                " AND " +
+                IdentifiableColumns.UID + " NOT IN (" + childrenUids + ");"
+            )
         return databaseAdapter.delete(tableName, clause, null) > 0
     }
 }

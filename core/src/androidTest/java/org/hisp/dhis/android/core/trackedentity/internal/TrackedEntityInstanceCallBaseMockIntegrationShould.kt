@@ -29,18 +29,19 @@ package org.hisp.dhis.android.core.trackedentity.internal
 
 import com.google.common.truth.Truth.assertThat
 import junit.framework.Assert.fail
-import org.hisp.dhis.android.core.arch.db.querybuilders.internal.WhereClauseBuilder
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
+import org.hisp.dhis.android.core.arch.d2.internal.DhisAndroidSdkKoinContext.koin
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.enrollment.Enrollment
 import org.hisp.dhis.android.core.enrollment.EnrollmentInternalAccessor
-import org.hisp.dhis.android.core.enrollment.EnrollmentTableInfo
-import org.hisp.dhis.android.core.enrollment.internal.EnrollmentStoreImpl
+import org.hisp.dhis.android.core.enrollment.internal.EnrollmentStore
 import org.hisp.dhis.android.core.event.Event
-import org.hisp.dhis.android.core.event.internal.EventStoreImpl
+import org.hisp.dhis.android.core.event.internal.EventStore
 import org.hisp.dhis.android.core.maintenance.D2Error
 import org.hisp.dhis.android.core.maintenance.D2ErrorCode
 import org.hisp.dhis.android.core.settings.SynchronizationSettings
-import org.hisp.dhis.android.core.settings.internal.SynchronizationSettingStoreImpl
+import org.hisp.dhis.android.core.settings.internal.SynchronizationSettingStore
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance
@@ -48,6 +49,8 @@ import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceInternalAcc
 import org.hisp.dhis.android.core.tracker.TrackerExporterVersion
 import org.hisp.dhis.android.core.tracker.TrackerImporterVersion
 import org.hisp.dhis.android.core.utils.integration.mock.BaseMockIntegrationTestMetadataEnqueable
+import org.hisp.dhis.android.persistence.common.querybuilders.WhereClauseBuilder
+import org.hisp.dhis.android.persistence.enrollment.EnrollmentTableInfo
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -63,24 +66,29 @@ abstract class TrackedEntityInstanceCallBaseMockIntegrationShould : BaseMockInte
     abstract val teiWithRemovedDataFile: String
     abstract val teiWithRelationshipFile: String
     abstract val teiAsRelationshipFile: String
+    abstract val teiWithSearchOnlyOrgUnitFile: String
 
     private lateinit var initSyncParams: SynchronizationSettings
-    private val syncStore = SynchronizationSettingStoreImpl(databaseAdapter)
+    private val syncStore: SynchronizationSettingStore = koin.get()
 
     @Before
     fun setUp() {
-        initSyncParams = syncStore.selectFirst()!!
-        val testParams = initSyncParams.toBuilder().trackerImporterVersion(importerVersion)
-            .trackerExporterVersion(exporterVersion).build()
-        syncStore.delete()
-        syncStore.insert(testParams)
+        runBlocking {
+            initSyncParams = syncStore.selectFirst()!!
+            val testParams = initSyncParams.toBuilder().trackerImporterVersion(importerVersion)
+                .trackerExporterVersion(exporterVersion).build()
+            syncStore.delete()
+            syncStore.insert(testParams)
+        }
     }
 
     @After
     fun tearDown() {
-        d2.wipeModule().wipeData()
-        syncStore.delete()
-        syncStore.insert(initSyncParams)
+        runBlocking {
+            d2.wipeModule().wipeData()
+            syncStore.delete()
+            syncStore.insert(initSyncParams)
+        }
     }
 
     @Test
@@ -176,7 +184,50 @@ abstract class TrackedEntityInstanceCallBaseMockIntegrationShould : BaseMockInte
         assertThat(relationships.first().to()).isNotNull()
     }
 
-    private fun verifyDownloadedTrackedEntityInstanceSingle(file: String, teiUid: String) {
+    @Test
+    fun download_glass_protected_tei_with_legacy_403_response() {
+        val teiUid = "PgmUFEQYZdt"
+        val program = "lxAQ7Zs9VYR"
+
+        dhis2MockServer.enqueueSystemInfoResponse()
+        // Old servers (< v42) return 403 with OWNERSHIP_ACCESS_DENIED message
+        dhis2MockServer.enqueueMockResponse(403, "trackedentity/glass/glass_protected_tei_failure_403.json")
+
+        try {
+            d2.trackedEntityModule().trackedEntityInstanceDownloader()
+                .byUid().eq(teiUid)
+                .byProgramUid(program)
+                .blockingDownload()
+            fail("It should throw ownership error")
+        } catch (e: RuntimeException) {
+            assertThat(e.cause is D2Error).isTrue()
+            assertThat((e.cause as D2Error).errorCode()).isEqualTo(D2ErrorCode.OWNERSHIP_ACCESS_DENIED)
+        }
+    }
+
+    @Test
+    fun download_glass_protected_tei_with_v42_not_found_response() {
+        val teiUid = "PgmUFEQYZdt"
+        val program = "lxAQ7Zs9VYR"
+
+        dhis2MockServer.enqueueSystemInfoResponse()
+        // v42+ servers return 404 to hide ownership information
+        dhis2MockServer.enqueueMockResponse(404, "trackedentity/glass/glass_v42_not_found.json")
+        dhis2MockServer.enqueueMockResponse(teiWithSearchOnlyOrgUnitFile)
+
+        try {
+            d2.trackedEntityModule().trackedEntityInstanceDownloader()
+                .byUid().eq(teiUid)
+                .byProgramUid(program)
+                .blockingDownload()
+            fail("It should throw ownership error")
+        } catch (e: RuntimeException) {
+            assertThat(e.cause is D2Error).isTrue()
+            assertThat((e.cause as D2Error).errorCode()).isEqualTo(D2ErrorCode.OWNERSHIP_ACCESS_DENIED)
+        }
+    }
+
+    private fun verifyDownloadedTrackedEntityInstanceSingle(file: String, teiUid: String) = runTest {
         val parsed = parseTrackedEntityInstance(file)
         val expectedEnrollmentResponse = removeDeletedData(parsed)
         val downloadedTei = getDownloadedTei(teiUid)
@@ -188,7 +239,7 @@ abstract class TrackedEntityInstanceCallBaseMockIntegrationShould : BaseMockInte
     }
 
     @Throws(IOException::class)
-    private fun verifyDownloadedTrackedEntityInstance(file: String, teiUid: String) {
+    private fun verifyDownloadedTrackedEntityInstance(file: String, teiUid: String) = runTest {
         val parsed = parseTrackedEntityInstance(file)
         val expectedEnrollmentResponse = removeDeletedData(parsed)
         val downloadedTei = getDownloadedTei(teiUid)
@@ -215,31 +266,32 @@ abstract class TrackedEntityInstanceCallBaseMockIntegrationShould : BaseMockInte
             .build()
     }
 
-    private fun getDownloadedTei(teiUid: String): TrackedEntityInstance? {
-        val teiAttributeValuesStore = TrackedEntityAttributeValueStoreImpl(databaseAdapter)
+    private suspend fun getDownloadedTei(teiUid: String): TrackedEntityInstance? {
+        val teiAttributeValuesStore: TrackedEntityAttributeValueStore = koin.get()
         val attValues = teiAttributeValuesStore.queryByTrackedEntityInstance(teiUid)
         val attValuesWithoutIdAndTEI = attValues.map {
-            it.toBuilder().id(null).trackedEntityInstance(null).build()
+            it.toBuilder().trackedEntityInstance(null).build()
         }
 
-        val teiStore = TrackedEntityInstanceStoreImpl(databaseAdapter)
+        val teiStore: TrackedEntityInstanceStore = koin.get()
         val downloadedTei = teiStore.selectByUid(teiUid)
-        val enrollmentStore = EnrollmentStoreImpl(databaseAdapter)
+        val enrollmentStore: EnrollmentStore = koin.get()
         val downloadedEnrollments = enrollmentStore.selectWhere(
             WhereClauseBuilder()
                 .appendKeyStringValue(EnrollmentTableInfo.Columns.TRACKED_ENTITY_INSTANCE, teiUid).build(),
         )
         val downloadedEnrollmentsWithoutIdAndDeleteFalse = downloadedEnrollments.map {
-            it.toBuilder().id(null).deleted(false).notes(ArrayList()).build()
+            it.toBuilder().deleted(false).notes(ArrayList()).build()
         }
 
-        val eventStore = EventStoreImpl(databaseAdapter)
+        val eventStore: EventStore = koin.get()
         val downloadedEventsWithoutValues = eventStore.selectAll()
         val downloadedEventsWithoutValuesAndDeleteFalse = downloadedEventsWithoutValues.map {
-            it.toBuilder().id(null).deleted(false).build()
+            it.toBuilder().deleted(false).build()
         }
 
-        val dataValueList = TrackedEntityDataValueStoreImpl(databaseAdapter).selectAll()
+        val dataValueStore: TrackedEntityDataValueStore = koin.get()
+        val dataValueList = dataValueStore.selectAll()
         val downloadedValues = dataValueList.groupBy { it.event() }
 
         return createTei(
@@ -260,7 +312,7 @@ abstract class TrackedEntityInstanceCallBaseMockIntegrationShould : BaseMockInte
     ): TrackedEntityInstance? {
         val downloadedEvents = downloadedEventsWithoutValues.map { event ->
             val trackedEntityDataValuesWithNullIdsAndEvents = downloadedValues[event.uid()]!!.map {
-                it.toBuilder().id(null).event(null).build()
+                it.toBuilder().event(null).build()
             }
 
             event.toBuilder().trackedEntityDataValues(trackedEntityDataValuesWithNullIdsAndEvents).build()
@@ -284,7 +336,6 @@ abstract class TrackedEntityInstanceCallBaseMockIntegrationShould : BaseMockInte
             ),
             downloadedEnrollments,
         )
-            .id(null)
             .deleted(false)
             .trackedEntityAttributeValues(attValuesWithoutIdAndTEI)
             .build()

@@ -33,8 +33,8 @@ import org.hisp.dhis.android.core.user.UserOrganisationUnitLink
 
 internal interface UserOrganisationUnitLinkStore : LinkStore<UserOrganisationUnitLink> {
     @Throws(RuntimeException::class)
-    fun queryRootCaptureOrganisationUnitUids(): List<String>
-    fun queryOrganisationUnitUidsByScope(scope: OrganisationUnit.Scope): List<String>
-    fun queryAssignedOrganisationUnitUidsByScope(scope: OrganisationUnit.Scope): List<String>
-    fun isCaptureScope(organisationUnit: String): Boolean
+    suspend fun queryRootCaptureOrganisationUnitUids(): List<String>
+    suspend fun queryOrganisationUnitUidsByScope(scope: OrganisationUnit.Scope): List<String>
+    suspend fun queryAssignedOrganisationUnitUidsByScope(scope: OrganisationUnit.Scope): List<String>
+    suspend fun isCaptureScope(organisationUnit: String): Boolean
 }

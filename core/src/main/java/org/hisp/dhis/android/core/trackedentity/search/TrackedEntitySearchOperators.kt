@@ -32,7 +32,6 @@ import org.hisp.dhis.android.core.arch.repositories.collection.BaseRepository
 import org.hisp.dhis.android.core.arch.repositories.filters.internal.BoolFilterConnector
 import org.hisp.dhis.android.core.arch.repositories.filters.internal.EqFilterConnector
 import org.hisp.dhis.android.core.arch.repositories.filters.internal.EqLikeInItemFilterConnector
-import org.hisp.dhis.android.core.arch.repositories.filters.internal.EqLikeItemFilterConnector
 import org.hisp.dhis.android.core.arch.repositories.filters.internal.ListFilterConnector
 import org.hisp.dhis.android.core.arch.repositories.filters.internal.PeriodFilterConnector
 import org.hisp.dhis.android.core.arch.repositories.filters.internal.ScopedFilterConnectorFactory
@@ -140,8 +139,8 @@ abstract class TrackedEntitySearchOperators<R : BaseRepository> internal constru
         message = "This property is ignored for online queries and will be ignored in offline queries soon. " +
             "Please use byFilter to achieve a similar functionality.",
     )
-    fun byQuery(): EqLikeItemFilterConnector<R> {
-        return connectorFactory.eqLikeItemC("") { filterItem: RepositoryScopeFilterItem ->
+    fun byQuery(): EqLikeInItemFilterConnector<R> {
+        return connectorFactory.eqLikeInItemC("") { filterItem: RepositoryScopeFilterItem ->
             scope.toBuilder().query(filterItem).build()
         }
     }
@@ -153,8 +152,8 @@ abstract class TrackedEntitySearchOperators<R : BaseRepository> internal constru
      * @param dataElement DataElement uid to use in the filter
      * @return Repository connector
      */
-    fun byDataValue(dataElement: String): EqLikeItemFilterConnector<R> {
-        return connectorFactory.eqLikeItemC(dataElement) { filterItem: RepositoryScopeFilterItem ->
+    fun byDataValue(dataElement: String): EqLikeInItemFilterConnector<R> {
+        return connectorFactory.eqLikeInItemC(dataElement) { filterItem: RepositoryScopeFilterItem ->
             scope.toBuilder().dataValue(scope.dataValue() + filterItem).build()
         }
     }
@@ -345,17 +344,6 @@ abstract class TrackedEntitySearchOperators<R : BaseRepository> internal constru
     }
 
     /**
-     * Filter by Uids.
-     *
-     * @return Repository connector
-     */
-    fun byUIds(): ListFilterConnector<R, String> {
-        return connectorFactory.listConnector { uIds: List<String> ->
-            scope.toBuilder().uids(uIds).build()
-        }
-    }
-
-    /**
      * Whether to allow or not cached results for online queries. Its value is 'false' by default.
      *
      * @return Repository connector
@@ -386,6 +374,12 @@ abstract class TrackedEntitySearchOperators<R : BaseRepository> internal constru
         }
     }
 
+    internal fun byTrackedEntityInstanceFilterObject(): EqFilterConnector<R, TrackedEntityInstanceFilter> {
+        return connectorFactory.eqConnector { teiFilter: TrackedEntityInstanceFilter? ->
+            scopeHelper.addTrackedEntityInstanceFilter(scope, teiFilter!!)
+        }
+    }
+
     /**
      * Apply the filters defined in a [ProgramStageWorkingList]. It will overwrite previous filters in case
      * they overlap. In the same way, they could be overwritten by subsequent filters.
@@ -398,6 +392,12 @@ abstract class TrackedEntitySearchOperators<R : BaseRepository> internal constru
                 .withDataFilters()
                 .withAttributeValueFilters()
                 .uid(id).blockingGet()
+            scopeHelper.addProgramStageWorkingList(scope, workingList!!)
+        }
+    }
+
+    internal fun byProgramStageWorkingListObject(): EqFilterConnector<R, ProgramStageWorkingList> {
+        return connectorFactory.eqConnector { workingList: ProgramStageWorkingList? ->
             scopeHelper.addProgramStageWorkingList(scope, workingList!!)
         }
     }

@@ -28,21 +28,15 @@
 
 package org.hisp.dhis.android.core.trackedentity;
 
-import android.database.Cursor;
-
 import androidx.annotation.Nullable;
 
-import com.gabrielittner.auto.value.cursor.ColumnAdapter;
 import com.google.auto.value.AutoValue;
 
-import org.hisp.dhis.android.core.arch.db.adapters.custom.internal.DateFilterPeriodColumnAdapter;
-import org.hisp.dhis.android.core.arch.db.adapters.custom.internal.StringListColumnAdapter;
-import org.hisp.dhis.android.core.arch.db.adapters.enums.internal.EnrollmentStatusColumnAdapter;
-import org.hisp.dhis.android.core.arch.db.adapters.ignore.internal.IgnoreAttributeValueFilterListColumnAdapter;
 import org.hisp.dhis.android.core.common.CoreObject;
 import org.hisp.dhis.android.core.common.DateFilterPeriod;
 import org.hisp.dhis.android.core.common.FilterQueryCriteria;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
+import org.hisp.dhis.android.core.event.EventStatus;
 
 import java.util.List;
 
@@ -50,44 +44,38 @@ import java.util.List;
 public abstract class EntityQueryCriteria extends FilterQueryCriteria implements CoreObject {
 
     @Nullable
+    public abstract EventStatus eventStatus();
+
+    @Nullable
     public abstract String programStage();
 
     @Nullable
-    @ColumnAdapter(StringListColumnAdapter.class)
     public abstract List<String> trackedEntityInstances();
 
     @Nullable
     public abstract String trackedEntityType();
 
     @Nullable
-    @ColumnAdapter(EnrollmentStatusColumnAdapter.class)
     public abstract EnrollmentStatus enrollmentStatus();
 
     @Nullable
-    @ColumnAdapter(DateFilterPeriodColumnAdapter.class)
     public abstract DateFilterPeriod enrollmentIncidentDate();
 
     @Nullable
-    @ColumnAdapter(DateFilterPeriodColumnAdapter.class)
     public abstract DateFilterPeriod enrollmentCreatedDate();
 
     @Nullable
-    @ColumnAdapter(IgnoreAttributeValueFilterListColumnAdapter.class)
     public abstract List<AttributeValueFilter> attributeValueFilters();
 
     public static Builder builder() {
-        return new $$AutoValue_EntityQueryCriteria.Builder();
+        return new AutoValue_EntityQueryCriteria.Builder();
     }
 
     public abstract Builder toBuilder();
 
-    public static EntityQueryCriteria create(Cursor cursor) {
-        return $AutoValue_EntityQueryCriteria.createFromCursor(cursor);
-    }
-
     @AutoValue.Builder
     public abstract static class Builder extends FilterQueryCriteria.Builder<Builder> {
-        public abstract Builder id(Long id);
+        public abstract Builder eventStatus(EventStatus eventStatus);
 
         public abstract Builder programStage(String programStage);
 

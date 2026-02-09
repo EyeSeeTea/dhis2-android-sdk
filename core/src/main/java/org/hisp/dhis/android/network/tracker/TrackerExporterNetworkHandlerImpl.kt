@@ -32,6 +32,7 @@ import org.hisp.dhis.android.core.arch.api.HttpServiceClient
 import org.hisp.dhis.android.core.arch.api.payload.internal.Payload
 import org.hisp.dhis.android.core.enrollment.Enrollment
 import org.hisp.dhis.android.core.event.Event
+import org.hisp.dhis.android.core.event.NewTrackerImporterEvent
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitMode
 import org.hisp.dhis.android.core.relationship.internal.RelationshipItemRelative
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance
@@ -45,6 +46,7 @@ import org.hisp.dhis.android.core.tracker.exporter.TrackerExporterNetworkHandler
 import org.hisp.dhis.android.core.tracker.exporter.TrackerQueryHelper.getOrgunits
 import org.hisp.dhis.android.core.util.simpleDateFormat
 import org.hisp.dhis.android.network.common.PayloadJson
+import org.hisp.dhis.android.network.common.fields.Fields
 import org.koin.core.annotation.Singleton
 
 @Singleton
@@ -113,13 +115,29 @@ internal class TrackerExporterNetworkHandlerImpl(
         return PayloadJson(listOf(apiPayload.toDomain()))
     }
 
-    override suspend fun getEventQueryForOrgunit(
+    override suspend fun getEventQueryCall(
         query: TrackedEntityInstanceQueryOnline,
-        orgunit: String?,
-    ): List<Event> {
-        val apiPayload = service.getEvents(
+    ): Payload<Event> {
+        return getEventQueryInternal(
+            query = query,
+            fields = NewEventFields.allFields,
+        )
+    }
+
+    override suspend fun getEventQueryForSearch(query: TrackedEntityInstanceQueryOnline): List<Event> {
+        return getEventQueryInternal(
+            query = query,
             fields = NewEventFields.teiQueryFields,
-            orgUnit = orgunit,
+        ).items
+    }
+
+    private suspend fun getEventQueryInternal(
+        query: TrackedEntityInstanceQueryOnline,
+        fields: Fields<NewTrackerImporterEvent>,
+    ): Payload<Event> {
+        val apiPayload = service.getEvents(
+            fields = fields,
+            orgUnit = query.orgUnits.firstOrNull(),
             orgUnitMode = parameterManager.getOrgunitModeParameter(query.orgUnitMode),
             status = query.eventStatus?.toString(),
             program = query.program,
@@ -129,7 +147,7 @@ internal class TrackerExporterNetworkHandlerImpl(
             filterAttributes = toAPIFilterFormat(query.attributeFilter, upper = false),
             followUp = query.followUp,
             occurredAfter = query.eventStartDate.simpleDateFormat(),
-            occurredBefore = query.eventStartDate.simpleDateFormat(),
+            occurredBefore = query.eventEndDate.simpleDateFormat(),
             scheduledAfter = query.dueStartDate.simpleDateFormat(),
             scheduledBefore = query.dueEndDate.simpleDateFormat(),
             enrollmentEnrolledAfter = query.programStartDate.simpleDateFormat(),
@@ -146,14 +164,14 @@ internal class TrackerExporterNetworkHandlerImpl(
             includeDeleted = query.includeDeleted,
         )
 
-        return apiPayload.mapItems(NewEventDTO::toDomain).items
+        return apiPayload.mapItems(NewEventDTO::toDomain)
     }
 
     override suspend fun getTrackedEntityQuery(
         query: TrackedEntityInstanceQueryOnline,
     ): Payload<TrackedEntityInstance> {
         val apiPayload = service.getTrackedEntityInstances(
-            fields = NewTrackedEntityInstanceFields.asRelationshipFields,
+            fields = NewTrackedEntityInstanceFields.asSearchFields,
             trackedEntityInstances = parameterManager.getTrackedEntitiesParameter(query.uids),
             orgUnits = parameterManager.getOrgunitsParameter(getOrgunits(query)),
             orgUnitMode = parameterManager.getOrgunitModeParameter(query.orgUnitMode),

@@ -34,10 +34,10 @@ public class EventSyncSamples {
 
     public static EventSync get1() {
         return EventSync.builder()
-                .id(1L)
                 .program("program")
                 .organisationUnitIdsHash(865)
                 .downloadLimit(500)
+                .workingListsHash(12345)
                 .lastUpdated(parseDate("2017-11-29T11:27:46.935"))
                 .build();
     }

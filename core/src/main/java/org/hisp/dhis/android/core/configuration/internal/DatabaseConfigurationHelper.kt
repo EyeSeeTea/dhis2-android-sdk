@@ -27,6 +27,7 @@
  */
 package org.hisp.dhis.android.core.configuration.internal
 
+import org.hisp.dhis.android.core.server.LoginConfig
 import org.koin.core.annotation.Singleton
 
 @Singleton
@@ -48,23 +49,25 @@ internal class DatabaseConfigurationHelper(
             .build()
     }
 
+    @Suppress("LongParameterList")
     fun addOrUpdateAccount(
         configuration: DatabasesConfiguration?,
         serverUrl: String,
         username: String,
         encrypt: Boolean,
+        loginConfig: LoginConfig? = null,
         importStatus: DatabaseAccountImportStatus? = null,
     ): DatabasesConfiguration {
         val dbName = databaseNameGenerator.getDatabaseName(serverUrl, username, encrypt)
         val importDb = importStatus?.let {
-            DatabaseAccountImportDB.builder()
+            DatabaseAccountImport.builder()
                 .status(importStatus)
                 .protectedDbName("$dbName.protected")
                 .build()
         }
 
         val existedAccount = configuration?.accounts()?.find {
-            equalsIgnoreProtocol(it.serverUrl(), serverUrl) && it.username() == username
+            equalsNormalized(it.serverUrl(), serverUrl) && it.username() == username
         }
 
         val newAccount = if (existedAccount != null && existedAccount.encrypted() == encrypt) {
@@ -76,6 +79,7 @@ internal class DatabaseConfigurationHelper(
                 .databaseName(dbName)
                 .encrypted(encrypt)
                 .databaseCreationDate(dateProvider.dateStr)
+                .loginConfig(loginConfig)
                 .importDB(importDb)
                 .build()
         }
@@ -88,7 +92,7 @@ internal class DatabaseConfigurationHelper(
         account: DatabaseAccount,
     ): DatabasesConfiguration {
         val otherAccounts = configuration?.accounts()?.filterNot {
-            equalsIgnoreProtocol(it.serverUrl(), account.serverUrl()) && it.username() == account.username()
+            equalsNormalized(it.serverUrl(), account.serverUrl()) && it.username() == account.username()
         } ?: emptyList()
 
         return (configuration?.toBuilder() ?: DatabasesConfiguration.builder())
@@ -103,7 +107,7 @@ internal class DatabaseConfigurationHelper(
             username: String,
         ): DatabaseAccount? {
             return configuration?.accounts()?.find {
-                equalsIgnoreProtocol(it.serverUrl(), serverUrl) && it.username() == username
+                equalsNormalized(it.serverUrl(), serverUrl) && it.username() == username
             }
         }
 
@@ -140,12 +144,8 @@ internal class DatabaseConfigurationHelper(
             }
         }
 
-        private fun equalsIgnoreProtocol(s1: String, s2: String): Boolean {
-            return removeProtocol(s1) == removeProtocol(s2)
-        }
-
-        private fun removeProtocol(s: String): String {
-            return s.replace("https://", "").replace("http://", "")
+        private fun equalsNormalized(s1: String, s2: String): Boolean {
+            return ServerUrlNormalizer.areEquivalent(s1, s2)
         }
     }
 }

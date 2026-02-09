@@ -1,6 +1,6 @@
 # DHIS2 Android SDK
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.hisp.dhis/android-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.hisp.dhis/android-core)
+[![Maven Central](https://img.shields.io/maven-central/v/org.hisp.dhis/android-core?label=maven%20central)](https://central.sonatype.com/artifact/org.hisp.dhis/android-core)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=dhis2_dhis2-android-sdk&metric=coverage&branch=master)](https://sonarcloud.io/summary/new_code?id=dhis2_dhis2-android-sdk&branch=master)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=dhis2_dhis2-android-sdk&metric=ncloc&branch=master)](https://sonarcloud.io/summary/new_code?id=dhis2_dhis2-android-sdk&branch=master)
 [![KDoc link](https://img.shields.io/badge/API_reference-KDoc-blue)](https://dhis2.github.io/dhis2-android-sdk/api/)
@@ -12,7 +12,7 @@ DHIS2 Android SDK is a library that abstracts the complexity of interacting with
 Main goals:
 
 - **Abstract DHIS2 web api**. There is no need to perform api queries against the server. The SDK includes methods to interact with the web api.
-- **Work offline**. It implements a simplified version of DHIS2 model that is persisted in a local database (SQLite). It ensures that all the metadata required to perform data entry tasks is available at any time to build the data entry forms. Data is saved locally and upload to the server when connectivity is available.
+- **Work offline**. It implements a simplified version of DHIS2 model that is persisted in a local database (Room Database). It ensures that all the metadata required to perform data entry tasks is available at any time to build the data entry forms. Data is saved locally and upload to the server when connectivity is available.
 - **Ensure DHIS2 compatibility**. It encapsulates the changes between DHIS2 versions so the app does not have to care about them. In case the SDK introduces some changes to accommodate a new DHIS2 version, the app can safely detect these changes at compile-time.
 
 ## Documentation

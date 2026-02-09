@@ -41,7 +41,7 @@ internal open class SubCollectionCleanerImpl<P : ObjectWithUidInterface>(
     private val keyExtractor: Transformer<P, String>,
 ) : SubCollectionCleaner<P> {
 
-    override fun deleteNotPresent(objects: Collection<P>?): Boolean {
+    override suspend fun deleteNotPresent(objects: Collection<P>?): Boolean {
         if (objects == null) {
             return false
         }
@@ -50,10 +50,10 @@ internal open class SubCollectionCleanerImpl<P : ObjectWithUidInterface>(
         for ((key, value) in subLists) {
             val childrenUids = commaSeparatedUidsWithSingleQuotationMarks(value)
             val clause = (
-                    parentColumn + "='" + key + "'" +
-                            " AND " +
-                            IdentifiableColumns.UID + " NOT IN (" + childrenUids + ");"
-                    )
+                parentColumn + "='" + key + "'" +
+                    " AND " +
+                    IdentifiableColumns.UID + " NOT IN (" + childrenUids + ");"
+                )
             result = result || databaseAdapter.delete(tableName, clause, null) > 0
         }
         return result

@@ -32,25 +32,34 @@ import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue
 
 internal interface TrackedEntityAttributeValueStore : ObjectWithoutUidStore<TrackedEntityAttributeValue> {
-    fun queryTrackedEntityAttributeValueToPost(): Map<String, List<TrackedEntityAttributeValue>>
-    fun queryByTrackedEntityInstance(trackedEntityInstanceUid: String): List<TrackedEntityAttributeValue>
-    fun deleteByInstanceAndNotInAttributes(
+    suspend fun queryTrackedEntityAttributeValueToPost(): Map<String, List<TrackedEntityAttributeValue>>
+    suspend fun queryByTrackedEntityInstance(trackedEntityInstanceUid: String): List<TrackedEntityAttributeValue>
+    suspend fun deleteByInstanceAndNotInAttributes(
         trackedEntityInstanceUid: String,
         trackedEntityAttributeUids: List<String>,
     )
-    fun deleteByInstanceAndNotInProgramAttributes(
+    suspend fun deleteByInstanceAndNotInProgramAttributes(
         trackedEntityInstanceUid: String,
         trackedEntityAttributeUids: List<String>,
         program: String,
     )
-    fun deleteByInstanceAndNotInAccessibleAttributes(
+    suspend fun deleteByInstanceAndNotInAccessibleAttributes(
         trackedEntityInstanceUid: String,
         trackedEntityAttributeUids: List<String>,
         teiType: String,
         programs: List<String>,
     )
 
-    fun removeDeletedAttributeValuesByInstance(trackedEntityInstanceUid: String)
+    suspend fun removeDeletedAttributeValuesByInstanceAndAttributes(
+        trackedEntityInstanceUid: String,
+        attributeUids: List<String>,
+    )
 
-    fun setSyncStateByInstance(trackedEntityInstanceUid: String, syncState: State)
+    suspend fun setSyncStateByInstance(trackedEntityInstanceUid: String, syncState: State)
+
+    suspend fun setSyncStateByAttributes(
+        trackedEntityInstanceUid: String,
+        attributeUids: List<String>,
+        syncState: State,
+    )
 }

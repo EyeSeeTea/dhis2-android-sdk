@@ -98,7 +98,7 @@ object FileResourceDirectoryHelper {
     }
 
     internal fun getSubfolderName(databaseName: String): String {
-        return databaseName.removeSuffix(DatabaseNameGenerator.DbSuffix)
+        return databaseName.removeSuffix(DatabaseNameGenerator.DB_SUFFIX)
     }
 
     internal fun deleteFileResourceDirectories(context: Context, databaseAccount: DatabaseAccount) {
@@ -108,7 +108,7 @@ object FileResourceDirectoryHelper {
     }
 
     private fun getSubfolderName(): String {
-        val dbName = D2Manager.getD2().databaseAdapter().databaseName
+        val dbName = D2Manager.getD2().databaseAdapter().getDatabaseName()
         return getSubfolderName(dbName)
     }
 }

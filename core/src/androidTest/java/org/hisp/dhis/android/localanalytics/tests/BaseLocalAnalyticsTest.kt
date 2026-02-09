@@ -50,8 +50,8 @@ abstract class BaseLocalAnalyticsTest : BaseMockIntegrationTest() {
                 objects.d2.userModule().blockingLogIn(
                     RealServerMother.username,
                     RealServerMother.password,
-                    objects.dhis2MockServer.baseEndpoint!!,
-                    null
+                    objects.dhis2MockServer.baseEndpoint,
+                    null,
                 )
             }
 

@@ -102,7 +102,7 @@ internal class TrackedEntityInstanceQueryOnlineHelper(
             includeDeleted = scope.includeDeleted(),
             trackedEntityType = scope.trackedEntityType(),
             order = scope.order(),
-            uids = scope.uids()
+            uids = scope.uids(),
         ).run {
             scope.program()?.let {
                 copy(
@@ -130,7 +130,7 @@ internal class TrackedEntityInstanceQueryOnlineHelper(
     companion object {
 
         fun toAPIOrderFormat(
-            orders: List<TrackedEntityInstanceQueryScopeOrderByItem>,
+            orders: List<QueryScopeOrderByItem>,
             version: TrackerExporterVersion,
         ): String? {
             val apiOrders = orders.mapNotNull { it.toAPIString(version) }

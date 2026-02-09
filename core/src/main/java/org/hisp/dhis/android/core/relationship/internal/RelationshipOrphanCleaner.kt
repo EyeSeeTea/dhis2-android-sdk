@@ -42,17 +42,21 @@ internal abstract class RelationshipOrphanCleaner<O : ObjectWithUidInterface, R 
 ) : OrphanCleaner<O, R> {
     abstract fun getItem(uid: String): RelationshipItem
     abstract fun relationships(relationships: Collection<R>): Collection<Relationship>
-    override fun deleteOrphan(parent: O?, children: Collection<R>?): Boolean {
+    override suspend fun deleteOrphan(parent: O?, children: Collection<R>?): Boolean {
         if (parent == null || children == null) {
             return false
         }
-        val existingRelationships = relationshipRepository.getByItem(getItem(parent.uid()), true, false)
+        val existingRelationships = relationshipRepository.getByItemInternal(
+            getItem(parent.uid()),
+            true,
+            false,
+        )
         var count = 0
         for (existingRelationship in existingRelationships) {
             if (isSynced(existingRelationship.syncState()!!) &&
                 !isInRelationshipList(existingRelationship, relationships(children))
             ) {
-                relationshipStore.delete(existingRelationship.uid()!!)
+                relationshipStore.deleteByEntity(existingRelationship)
                 count++
             }
         }

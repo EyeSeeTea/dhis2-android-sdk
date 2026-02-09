@@ -31,13 +31,13 @@ package org.hisp.dhis.android.core.user.internal
 import android.content.Context
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.runBlocking
 import org.hisp.dhis.android.core.arch.api.internal.ServerURLWrapper
-import org.hisp.dhis.android.core.arch.db.access.internal.DatabaseAdapterFactory
+import org.hisp.dhis.android.core.arch.db.access.DatabaseManager
 import org.hisp.dhis.android.core.arch.helpers.FileResourceDirectoryHelper
 import org.hisp.dhis.android.core.arch.storage.internal.Credentials
 import org.hisp.dhis.android.core.arch.storage.internal.CredentialsSecureStore
 import org.hisp.dhis.android.core.configuration.internal.DatabaseAccount
-import org.hisp.dhis.android.core.configuration.internal.DatabaseAccountImportStatus
 import org.hisp.dhis.android.core.configuration.internal.DatabaseConfigurationHelper
 import org.hisp.dhis.android.core.configuration.internal.DatabaseConfigurationInsecureStore
 import org.hisp.dhis.android.core.configuration.internal.MultiUserDatabaseManager
@@ -48,28 +48,35 @@ import org.hisp.dhis.android.core.user.AccountDeletionReason
 import org.hisp.dhis.android.core.user.AccountManager
 import org.koin.core.annotation.Singleton
 
-
 @Singleton
 @Suppress("TooManyFunctions")
 internal class AccountManagerImpl(
     private val databasesConfigurationStore: DatabaseConfigurationInsecureStore,
     private val multiUserDatabaseManager: MultiUserDatabaseManager,
-    private val databaseAdapterFactory: DatabaseAdapterFactory,
+    private val databaseManager: DatabaseManager,
     private val credentialsSecureStore: CredentialsSecureStore,
     private val logOutCall: LogOutCall,
     private val context: Context,
-    private val connectLogoutHandler: ConnectLogoutHandler
+    private val connectLogoutHandler: ConnectLogoutHandler,
 ) : AccountManager {
     private val accountDeletionSubject = PublishSubject.create<AccountDeletionReason>()
 
     override fun getAccounts(): List<DatabaseAccount> {
-        return databasesConfigurationStore.get()?.accounts()?.map { updateSyncState(it) } ?: emptyList()
+        return runBlocking { getAccountsInternal() }
+    }
+
+    suspend fun getAccountsInternal(): List<DatabaseAccount> {
+        val accounts = databasesConfigurationStore.get()?.accounts() ?: emptyList()
+        return accounts
     }
 
     override fun getCurrentAccount(): DatabaseAccount? {
+        return runBlocking { getCurrentAccountInternal() }
+    }
+
+    suspend fun getCurrentAccountInternal(): DatabaseAccount? {
         return credentialsSecureStore.get()
             ?.let { multiUserDatabaseManager.getAccount(it.serverUrl, it.username) }
-            ?.let { updateSyncState(it) }
     }
 
     override fun setMaxAccounts(maxAccounts: Int?) {
@@ -135,13 +142,13 @@ internal class AccountManagerImpl(
             databasesConfigurationStore.set(updatedConfiguration)
 
             FileResourceDirectoryHelper.deleteFileResourceDirectories(context, loggedAccount)
-            databaseAdapterFactory.deleteDatabase(loggedAccount)
+            databaseManager.deleteDatabase(loggedAccount.databaseName(), loggedAccount.encrypted())
         }
     }
 
-    private fun updateSyncState(account: DatabaseAccount): DatabaseAccount {
+    /*private suspend fun updateSyncState(account: DatabaseAccount): DatabaseAccount {
         return if (account.importDB()?.status() != DatabaseAccountImportStatus.PENDING_TO_IMPORT) {
-            val databaseAdapter = databaseAdapterFactory.getDatabaseAdapter(account)
+            val databaseAdapter = databaseManager.createOrOpenDatabase(account)
             val syncState = AccountManagerHelper.getSyncState(databaseAdapter)
 
             account.toBuilder()
@@ -150,7 +157,7 @@ internal class AccountManagerImpl(
         } else {
             account
         }
-    }
+    }*/
 
     override fun accountDeletionObservable(): Observable<AccountDeletionReason> {
         return accountDeletionSubject
@@ -165,7 +172,7 @@ internal class AccountManagerImpl(
 
         val configuration = databasesConfigurationStore.get()
 
-        if (credentials != null && configuration != null){
+        if (credentials != null && configuration != null) {
             val newDatabasesConfiguration = configuration.toBuilder().accounts(
                 configuration.accounts().map {
                     if (it.serverUrl() == credentials.serverUrl && it.username() == credentials.username) {
@@ -173,7 +180,7 @@ internal class AccountManagerImpl(
                     } else {
                         it
                     }
-                }
+                },
             ).build()
 
             databasesConfigurationStore.set(newDatabasesConfiguration)
