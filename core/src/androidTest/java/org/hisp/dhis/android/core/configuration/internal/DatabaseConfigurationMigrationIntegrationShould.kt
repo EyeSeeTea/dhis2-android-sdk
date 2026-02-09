@@ -91,6 +91,7 @@ class DatabaseConfigurationMigrationIntegrationShould {
         databasesConfigurationStore = DatabaseConfigurationInsecureStoreImpl(insecureStore)
         credentialsSecureStore = CredentialsSecureStoreImpl(chunkedSecureStore)
 
+        // EyeSeeTea customization
         migration = DatabaseConfigurationMigration(
             context,
             databasesConfigurationStore,
@@ -99,6 +100,7 @@ class DatabaseConfigurationMigrationIntegrationShould {
             nameGenerator,
             renamer,
             databaseManager,
+            passwordManager,
         )
 
         FileResourceDirectoryHelper.deleteRootFileResourceDirectory(context)

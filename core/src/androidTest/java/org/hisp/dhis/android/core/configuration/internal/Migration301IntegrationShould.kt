@@ -31,6 +31,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.arch.helpers.FileResourceDirectoryHelper
+import org.hisp.dhis.android.core.arch.storage.internal.InMemorySecureStore
 import org.hisp.dhis.android.core.arch.storage.internal.InMemoryUnsecureStore
 import org.hisp.dhis.android.core.configuration.internal.migration.Migration301
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
@@ -47,6 +48,8 @@ class Migration301IntegrationShould {
     private val nameGenerator = DatabaseNameGenerator()
     private val renamer = DatabaseRenamer(context)
 
+    private val passwordManager = DatabaseEncryptionPasswordManager.create(InMemorySecureStore())
+
     private lateinit var migration: Migration301
 
     @Before
@@ -56,6 +59,7 @@ class Migration301IntegrationShould {
             databaseConfigurationStore,
             nameGenerator,
             renamer,
+            passwordManager,
         )
 
         cleanupTestFiles()
@@ -197,6 +201,34 @@ class Migration301IntegrationShould {
         assertHashedDbName(newDbName, encrypted = false)
         assertThat(context.getDatabasePath(newDbName).exists()).isFalse()
         assertThat(context.getDatabasePath(oldDbName).exists()).isFalse()
+    }
+
+    /**
+     * EyeSeeTea customization: Validates that when migrating an encrypted account, the
+     * encryption password is copied from the old database name to the new one in SecureStore,
+     * so the renamed database can still be opened with the same key (avoids SQLiteNotADatabaseException).
+     */
+    @Test
+    fun copy_encryption_password_to_new_db_name_when_migrating_encrypted_account() = runTest {
+        val url = "https://play.dhis2.org/encrypted-migration"
+        val username = "enc_user"
+
+        @Suppress("DEPRECATION")
+        val oldDbName = nameGenerator.getOldDatabaseName(url, username, true)
+
+        createDatabaseFile(oldDbName)
+        val passwordBeforeMigration = passwordManager.getPassword(oldDbName)
+
+        runMigration(listOf(createAccount(url, username, oldDbName, encrypted = true)))
+
+        val migratedConfig = databaseConfigurationStore.get()
+        assertThat(migratedConfig).isNotNull()
+        val newDbName = migratedConfig!!.accounts()[0].databaseName()
+        assertThat(newDbName).isNotEqualTo(oldDbName)
+        assertHashedDbName(newDbName, encrypted = true)
+
+        val passwordAfterMigration = passwordManager.getPassword(newDbName)
+        assertThat(passwordAfterMigration).isEqualTo(passwordBeforeMigration)
     }
 
     @Test

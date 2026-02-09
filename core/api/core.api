@@ -4127,6 +4127,7 @@ public class org/hisp/dhis/android/core/configuration/internal/DatabaseEncryptio
 public final class org/hisp/dhis/android/core/configuration/internal/DatabaseEncryptionPasswordManager {
 	public static final field Companion Lorg/hisp/dhis/android/core/configuration/internal/DatabaseEncryptionPasswordManager$Companion;
 	public fun <init> (Lorg/hisp/dhis/android/core/arch/storage/internal/SecureStore;Lorg/hisp/dhis/android/core/configuration/internal/DatabaseEncryptionPasswordGenerator;)V
+	public final fun copyPasswordForRenamedDatabase (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun deletePassword (Ljava/lang/String;)V
 	public final fun getPassword (Ljava/lang/String;)Ljava/lang/String;
 }

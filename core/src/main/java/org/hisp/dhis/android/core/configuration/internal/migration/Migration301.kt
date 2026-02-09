@@ -33,6 +33,7 @@ import org.hisp.dhis.android.core.arch.storage.internal.ObjectKeyValueStore
 import org.hisp.dhis.android.core.configuration.internal.DatabaseAccount
 import org.hisp.dhis.android.core.configuration.internal.DatabaseAccountImport
 import org.hisp.dhis.android.core.configuration.internal.DatabaseAccountImportStatus
+import org.hisp.dhis.android.core.configuration.internal.DatabaseEncryptionPasswordManager
 import org.hisp.dhis.android.core.configuration.internal.DatabaseNameGenerator
 import org.hisp.dhis.android.core.configuration.internal.DatabaseRenamer
 import org.hisp.dhis.android.core.configuration.internal.DatabasesConfiguration
@@ -44,26 +45,33 @@ import java.io.File
  * This migration:
  * 1. Detects and handles existing collisions
  * 2. Renames database files and their associated files (-shm, -wal, etc.)
- * 3. Renames FileResource directories (sdk_resources and sdk_cache_resources)
- * 4. Updates protectedDbName for pending imports
- * 5. Updates configuration with new database names
+ * 3. Copies encryption password from old DB name to new name (encrypted accounts only)
+ * 4. Renames FileResource directories (sdk_resources and sdk_cache_resources)
+ * 5. Updates protectedDbName for pending imports
+ * 6. Updates configuration with new database names
  *
  * The hash suffix ensures each unique URL+username combination has its own database.
  */
+
 internal class Migration301(
     private val context: Context,
     private val databaseConfigurationStore: ObjectKeyValueStore<DatabasesConfiguration>,
     private val nameGenerator: DatabaseNameGenerator,
     private val databaseRenamer: DatabaseRenamer,
+    private val passwordManager: DatabaseEncryptionPasswordManager,
 ) {
 
     fun apply() {
         val configuration = databaseConfigurationStore.get()
         if (configuration == null || configuration.accounts().isEmpty()) {
+            Log.i(TAG, "Migration301: no accounts to migrate, skipping")
             return
         }
 
-        Log.i(TAG, "Starting database name hash migration for ${configuration.accounts().size} accounts")
+        Log.i(
+            TAG,
+            "Migration301: starting database name hash migration for ${configuration.accounts().size} account(s)",
+        )
 
         val migratedAccounts = configuration.accounts().mapNotNull { account ->
             migrateAccount(account)
@@ -88,6 +96,12 @@ internal class Migration301(
 
         return try {
             val dbRenamed = renameDatabaseFile(oldDbName, newDbName)
+            Log.i(TAG, "Start fix: $oldDbName -> $newDbName")
+            // EyeSeeTea customization: copy encryption key so renamed DB can be opened
+            if (dbRenamed && account.encrypted()) {
+                passwordManager.copyPasswordForRenamedDatabase(oldDbName, newDbName)
+                Log.i(TAG, "Encryption password copied for renamed DB: $oldDbName -> $newDbName")
+            }
             renameFileResourceDirectories(oldDbName, newDbName)
             val updatedImportDB = updateImportDB(account, oldDbName, newDbName)
             val updatedAccount = account.toBuilder()

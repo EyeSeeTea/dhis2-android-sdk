@@ -51,6 +51,18 @@ class DatabaseEncryptionPasswordManager(
         secureStore.removeData(getKey(databaseName))
     }
 
+    /**
+     * EyeSeeTea customization
+     * Copies the encryption password from the old database name to the new one.
+     * Used when migrating (e.g. renaming DB file with hash suffix) so the renamed
+     * encrypted file can still be opened with the same key.
+     * No-op if there was no password stored for the old name.
+     */
+    fun copyPasswordForRenamedDatabase(oldDatabaseName: String, newDatabaseName: String) {
+        val existingPassword = secureStore.getData(getKey(oldDatabaseName)) ?: return
+        secureStore.setData(getKey(newDatabaseName), existingPassword)
+    }
+
     companion object {
         fun create(secureStore: SecureStore): DatabaseEncryptionPasswordManager {
             return DatabaseEncryptionPasswordManager(
