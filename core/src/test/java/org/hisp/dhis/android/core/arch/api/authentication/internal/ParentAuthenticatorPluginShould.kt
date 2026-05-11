@@ -43,9 +43,9 @@ import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.arch.storage.internal.Credentials
 import org.hisp.dhis.android.core.arch.storage.internal.CredentialsSecureStore
 import org.hisp.dhis.android.core.arch.storage.internal.UserIdInMemoryStore
+import org.hisp.dhis.android.core.user.internal.ConnectLogoutHandler
 import org.hisp.dhis.android.core.user.oauth2.internal.OAuth2LogoutHandler
 import org.hisp.dhis.android.core.user.oauth2.internal.OAuth2TokenRefresher
-import org.hisp.dhis.android.core.user.internal.ConnectLogoutHandler
 import org.hisp.dhis.android.core.user.openid.OpenIDConnectLogoutHandler
 import org.hisp.dhis.android.core.user.openid.OpenIDConnectTokenRefresher
 import org.junit.After
