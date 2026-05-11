@@ -200,13 +200,32 @@ jobs:
       
       - name: Make BrowserStack script executable
         run: chmod +x ./scripts/browserstackGithub.sh
+
+      - name: Check BrowserStack credentials
+        id: check_bs_creds
+        run: |
+          if [ -z "${{ secrets.BROWSERSTACK_USERNAME }}" ] || [ -z "${{ secrets.BROWSERSTACK_PASSWORD }}" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⚠️ BrowserStack credentials not configured, skipping instrumented tests"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "✅ BrowserStack credentials configured"
+          fi
       
       - name: Run instrumented tests on BrowserStack
+        if: steps.check_bs_creds.outputs.skip != 'true'
         run: ./scripts/browserstackGithub.sh
         env:
           BROWSERSTACK_USR: ${{ secrets.BROWSERSTACK_USERNAME }}
           BROWSERSTACK_PSW: ${{ secrets.BROWSERSTACK_PASSWORD }}
           SKIP_BUILD: 'true'
+
+      - name: Skip BrowserStack tests notice
+        if: steps.check_bs_creds.outputs.skip == 'true'
+        run: |
+          echo "## BrowserStack Tests Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ BrowserStack credentials not configured. Tests were skipped." >> $GITHUB_STEP_SUMMARY
+          echo "To enable BrowserStack tests, configure \`BROWSERSTACK_USERNAME\` and \`BROWSERSTACK_PASSWORD\` secrets." >> $GITHUB_STEP_SUMMARY
       
       - name: Upload coverage report
         if: always()
@@ -217,7 +236,7 @@ jobs:
           retention-days: 7
       
       - name: Add BrowserStack link to summary
-        if: always()
+        if: always() && steps.check_bs_creds.outputs.skip != 'true'
         run: |
           echo "## BrowserStack Test Results" >> $GITHUB_STEP_SUMMARY
           echo "Check the test execution at BrowserStack dashboard" >> $GITHUB_STEP_SUMMARY
@@ -227,7 +246,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [unit-tests, instrumented-tests]
-    if: always() && needs.instrumented-tests.result == 'success'
+    if: always() && (needs.instrumented-tests.result == 'success' || needs.instrumented-tests.result == 'skipped')
     
     steps:
       - name: Checkout code
