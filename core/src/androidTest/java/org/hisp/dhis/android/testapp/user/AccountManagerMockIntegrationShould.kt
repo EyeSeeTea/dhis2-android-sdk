@@ -243,7 +243,7 @@ class AccountManagerMockIntegrationShould : BaseMockIntegrationTestEmptyEnqueabl
         }
 
         dhis2MockServer.enqueueLoginResponses()
-        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint)
+        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint, null)
 
         val initialAccount = d2.userModule().accountManager().getCurrentAccount()
         val initialLastAccessDate = initialAccount?.lastAccessDate()
@@ -268,7 +268,7 @@ class AccountManagerMockIntegrationShould : BaseMockIntegrationTestEmptyEnqueabl
         }
 
         dhis2MockServer.enqueueLoginResponses()
-        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint)
+        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint, null)
 
         val initialAccount = d2.userModule().accountManager().getCurrentAccount()
         val initialLastAccessDate = initialAccount?.lastAccessDate()
@@ -293,7 +293,7 @@ class AccountManagerMockIntegrationShould : BaseMockIntegrationTestEmptyEnqueabl
 
         // Login with user1 (older account by creation date)
         dhis2MockServer.enqueueLoginResponses()
-        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint)
+        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint, null)
         d2.userModule().blockingLogOut()
 
         Thread.sleep(300)
@@ -301,14 +301,14 @@ class AccountManagerMockIntegrationShould : BaseMockIntegrationTestEmptyEnqueabl
         // Login with user2 (newer account by creation date)
         val server2 = Dhis2MockServer(0)
         server2.enqueueLoginResponses()
-        d2.userModule().blockingLogIn(user2, pass2, server2.baseEndpoint)
+        d2.userModule().blockingLogIn(user2, pass2, server2.baseEndpoint, null)
         d2.userModule().blockingLogOut()
 
         Thread.sleep(300)
 
         // Login again with user1 (should have most recent lastAccessDate now)
         dhis2MockServer.enqueueLoginResponses()
-        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint)
+        d2.userModule().blockingLogIn(user1, pass1, dhis2MockServer.baseEndpoint, null)
 
         Thread.sleep(300)
 

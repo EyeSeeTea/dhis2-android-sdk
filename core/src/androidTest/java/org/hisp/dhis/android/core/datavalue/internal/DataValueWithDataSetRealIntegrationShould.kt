@@ -109,7 +109,7 @@ class DataValueWithDataSetRealIntegrationShould : BaseRealIntegrationTest() {
 
     @SuppressLint("CheckResult")
     private fun loginAndDownloadMetadata(config: ServerConfig) {
-        d2.userModule().logIn(config.username, config.password, config.serverUrl).blockingGet()
+        d2.userModule().logIn(config.username, config.password, config.serverUrl, null).blockingGet()
         d2.metadataModule().blockingDownload()
     }
 
