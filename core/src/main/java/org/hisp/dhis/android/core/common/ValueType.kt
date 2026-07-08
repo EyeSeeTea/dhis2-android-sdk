@@ -27,26 +27,9 @@
  */
 package org.hisp.dhis.android.core.common
 
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.BooleanValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.CoordinateValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.DateTimeValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.DateValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.EmailValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.IntegerNegativeValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.IntegerPositiveValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.IntegerValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.IntegerZeroOrPositiveValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.LetterValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.LongTextValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.NumberValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.PercentageValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.PhoneNumberValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.TextValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.TimeValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.TrueOnlyValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.UidValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.UnitIntervalValidator
-import org.hisp.dhis.android.core.common.valuetype.validation.validators.ValueTypeValidator
+import org.hisp.dhis.android.core.common.valuetype.validation.validators.*
+import org.hisp.dhis.android.core.systeminfo.VERSION_2_42
+import org.hisp.dhis.android.core.systeminfo.VERSION_2_43
 
 enum class ValueType(val validator: ValueTypeValidator<*>) {
     TEXT(TextValidator),
@@ -66,6 +49,11 @@ enum class ValueType(val validator: ValueTypeValidator<*>) {
     INTEGER_POSITIVE(IntegerPositiveValidator),
     INTEGER_NEGATIVE(IntegerNegativeValidator),
     INTEGER_ZERO_OR_POSITIVE(IntegerZeroOrPositiveValidator),
+
+    @Deprecated(
+        "TRACKER_ASSOCIATE has been removed in DHIS2 v$VERSION_2_43. " +
+            "This value type is kept for backward compatibility with v$VERSION_2_42 and older versions.",
+    )
     TRACKER_ASSOCIATE(UidValidator),
     USERNAME(TextValidator),
     COORDINATE(CoordinateValidator),

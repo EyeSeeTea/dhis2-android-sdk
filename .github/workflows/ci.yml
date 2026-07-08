@@ -135,7 +135,7 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     
     steps:
       - name: Checkout code
@@ -200,7 +200,7 @@ jobs:
       
       - name: Make BrowserStack script executable
         run: chmod +x ./scripts/browserstackGithub.sh
-      
+
       - name: Check BrowserStack credentials
         id: check_bs_creds
         run: |
@@ -219,13 +219,13 @@ jobs:
           BROWSERSTACK_USR: ${{ secrets.BROWSERSTACK_USERNAME }}
           BROWSERSTACK_PSW: ${{ secrets.BROWSERSTACK_PASSWORD }}
           SKIP_BUILD: 'true'
-      
+
       - name: Skip BrowserStack tests notice
         if: steps.check_bs_creds.outputs.skip == 'true'
         run: |
           echo "## BrowserStack Tests Skipped" >> $GITHUB_STEP_SUMMARY
           echo "⚠️ BrowserStack credentials not configured. Tests were skipped." >> $GITHUB_STEP_SUMMARY
-          echo "To enable BrowserStack tests, configure `BROWSERSTACK_USERNAME` and `BROWSERSTACK_PASSWORD` secrets." >> $GITHUB_STEP_SUMMARY
+          echo "To enable BrowserStack tests, configure \`BROWSERSTACK_USERNAME\` and \`BROWSERSTACK_PASSWORD\` secrets." >> $GITHUB_STEP_SUMMARY
       
       - name: Upload coverage report
         if: always()
@@ -245,7 +245,7 @@ jobs:
     name: JaCoCo Coverage Report
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [instrumented-tests]
+    needs: [unit-tests, instrumented-tests]
     if: always() && (needs.instrumented-tests.result == 'success' || needs.instrumented-tests.result == 'skipped')
     
     steps:
@@ -392,23 +392,23 @@ jobs:
       - name: Check if SonarQube token exists
         id: sonar_check
         run: |
-          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
+          if [ -z "${{ secrets.DHIS2_BOT_SONARCLOUD_TOKEN }}" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "⚠️ SONAR_TOKEN not configured, skipping SonarQube analysis"
+            echo "⚠️ DHIS2_BOT_SONARCLOUD_TOKEN not configured, skipping SonarQube analysis"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
-            echo "✅ SONAR_TOKEN configured, running SonarQube analysis"
+            echo "✅ DHIS2_BOT_SONARCLOUD_TOKEN configured, running SonarQube analysis"
           fi
       
       - name: Run SonarQube analysis
         if: steps.sonar_check.outputs.skip != 'true'
         run: ./scripts/sonarqube.sh
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.DHIS2_BOT_SONARCLOUD_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_BRANCH: ${{ github.ref_name }}
-          GIT_BRANCH_DEST: ${{ github.base_ref }}
-          PULL_REQUEST: ${{ github.event.pull_request.number }}
+          GIT_BRANCH_DEST: ${{ github.event_name == 'pull_request' && github.base_ref || '' }}
+          PULL_REQUEST: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || '' }}
 
   deploy:
     name: Trigger Deployment
