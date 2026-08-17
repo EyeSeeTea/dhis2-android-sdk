@@ -1,5 +1,5 @@
 [versions]
-dhis2AndroidSdkVersion = "1.14.2-SNAPSHOT"
+dhis2AndroidSdkVersion = "1.14.2-eyeseetea-fork-1"
 dhis2AndroidSdkCode = "305"
 
 gradle = "8.13.2"
