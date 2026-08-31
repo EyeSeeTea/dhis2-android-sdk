@@ -44,11 +44,11 @@ green).
 
 ## 3. Tree-aware purge — TrackedEntityInstance module
 
-- [ ] 3.1 Add a behavior test: a fully synced TEI (aggregatedSyncState =
+- [x] 3.1 Add a behavior test: a fully synced TEI (aggregatedSyncState =
       SYNCED) beyond the retention limit is purged, and its attribute values
       are purged with it, when re-querying both tables afterward. Verify: test
       fails.
-- [ ] 3.2 Implement TEI purge candidate selection ordered by `lastUpdated`
+- [x] 3.2 Implement TEI purge candidate selection ordered by `lastUpdated`
       using `aggregatedSyncState`, plus cascade delete of
       `TrackedEntityAttributeValue`. Verify: the 3.1 test passes.
 

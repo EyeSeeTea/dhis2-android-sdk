@@ -9,8 +9,8 @@ import org.koin.core.annotation.Singleton
 internal class DataValueRetentionPurger(
     private val dataValueStore: DataValueStore,
     private val d2CallExecutor: D2CallExecutorInterface,
-) {
-    suspend fun purge(limit: Int) {
+) : RetentionPurger {
+    override suspend fun purge(limit: Int) {
         d2CallExecutor.executeD2CallTransactionally {
             val eligible = dataValueStore.getDataValuesWithState(State.SYNCED)
                 .sortedByDescending { it.lastUpdated() }
