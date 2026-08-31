@@ -1,0 +1,108 @@
+schema: spec-driven
+
+context: |
+  # DHIS2 Android SDK — EyeSeeTea fork
+
+  This repository is EyeSeeTea's fork of `dhis2/dhis2-android-sdk`, the Android
+  library that abstracts the DHIS2 web API and offline-first local persistence
+  (Room-backed SQLite) for DHIS2 Android apps, including `dhis2-android-capture-app`
+  and its EyeSeeTea forks (e.g. OCA).
+
+  OpenSpec is used here to:
+    - Document EyeSeeTea-specific SDK capabilities as durable specs (not just commit
+      history), since this SDK is consumed as a binary dependency (JitPack) by
+      multiple downstream app forks.
+    - Give an AI assistant enough project context to help design, implement and
+      review SDK changes without re-deriving the module layout each time.
+
+  ## Identity
+
+    - Upstream repo:  dhis2/dhis2-android-sdk
+    - Fork owner:     EyeSeeTea (EyeSeeTea/dhis2-android-sdk)
+    - Published as:   JitPack, group `com.github.EyeSeeTea`, artifact `android-core`
+    - Current version: see `dhis2AndroidSdkVersion` in `gradle/libs.versions.toml` —
+                       do not hardcode it here, it changes on every version bump.
+    - Base branch:    develop-eyeseetea is the shared fork baseline. It can lag
+                       behind pushed-but-unmerged `feature/bring_last_changes_*`
+                       branches. Before branching new work, check
+                       `git log --oneline develop-eyeseetea..origin/feature/bring_last_changes_*`
+                       for any unmerged upgrade branch and prefer branching from the
+                       most recent one over develop-eyeseetea if it is ahead and not
+                       diverged (`git merge-base --is-ancestor develop-eyeseetea <branch>`).
+    - Consumers:      dhis2-android-capture-app-extra (develop-eyeseetea branch and
+                       client forks, e.g. feature-oca/*), via
+                       `com.github.EyeSeeTea:dhis2-android-sdk:<version>`
+
+  ## Repository layout (relevant)
+
+    - core/src/main/java/org/hisp/dhis/android/core/   — SDK source, one package per
+      domain module (event, enrollment, trackedentity, datavalue, fileresource,
+      wipe, settings, ...). Each domain module typically has a `<Module>.kt` public
+      interface, `<Module>Impl.kt` internal implementation, and (where wipe support
+      exists) a `<Module>Wiper.kt` implementing the shared `ModuleWiper` interface.
+    - core/src/main/java/org/hisp/dhis/android/core/wipe/internal/ — shared wipe
+      machinery: `ModuleWiper` (interface every domain module wiper implements),
+      `TableWiper` (raw SQL delete helper over `DatabaseAdapter`), `WipeModule` /
+      `WipeModuleImpl` (public entry point, iterates all registered `ModuleWiper`s
+      inside `d2CallExecutor.executeD2CallTransactionally`).
+    - core/src/test/java/...   — unit tests (JUnit4, mockito-kotlin, `runTest`).
+      Naming convention: `<ClassUnderTest>Should.kt`, test methods in snake_case
+      describing behavior (e.g. `wipe_all_modules`, `wipe_data_in_modules`).
+    - core/src/androidTest/java/... — instrumented/integration tests that exercise
+      real Room persistence (e.g. `DataStatePropagatorIntegrationShould.kt` under
+      `common/internal/`). Use this tier for anything that needs a real database
+      (sync-state cascade behavior, actual DELETE semantics), not the unit tier.
+    - annotations/, processor/  — Koin annotation processing (`@Singleton` etc.)
+      used across the SDK's DI wiring; domain classes are typically Koin
+      `@Singleton` and resolved by constructor injection, not by manual wiring.
+    - openspec/                — this OpenSpec tree.
+
+  ## Sync-state model (relevant to retention/purge work)
+
+    - Every syncable record has a `syncState` (own state: SYNCED, TO_UPDATE,
+      TO_POST, ERROR, WARNING) and, for records with children, an
+      `aggregatedSyncState` computed recursively by `DataStatePropagatorImpl`
+      (`common/internal/`) — a single non-SYNCED descendant at any depth keeps the
+      whole ancestor chain out of SYNCED. This is the existing, tested primitive to
+      rely on for "is this whole record tree safe to delete" checks; do not
+      re-derive it manually.
+    - `ProgramSetting` (teiDBTrimming, eventsDBTrimming, settingDBTrimming) and
+      `DataSetSetting` (periodDSDBTrimming), plus `LimitScope`
+      (GLOBAL/PER_PROGRAM/PER_ORG_UNIT), already exist in the settings module and
+      are already synced/persisted from the Android Settings Web App model — but as
+      of this writing nothing in the SDK reads them to actually trim/purge data.
+
+  ## Out of scope for OpenSpec (here)
+
+    - Upstream Oslo behavior inherited unchanged.
+    - Build/publish tooling (JitPack, `EyeSeeTea.md`) — documented there, not here.
+    - Downstream app behavior (worker scheduling, Settings UI, per-fork gating) —
+      belongs to the OpenSpec tree of the consuming app repo
+      (dhis2-android-capture-app-extra), which should reference the spec here by
+      name rather than duplicating it.
+
+rules:
+  proposal:
+    - "State which domain modules (event, enrollment, trackedentity, datavalue, fileresource, relationship, ...) are affected, since each needs its own ModuleWiper change."
+    - "If the change touches the shared `ModuleWiper` interface itself, call this out explicitly under Impact — it is a change that touches every existing wiper implementation (~30+), which is the highest-conflict-surface option available and should be justified over alternatives (e.g. a separate opt-in interface)."
+
+  specs:
+    - "Spec folders and file names use kebab-case and match the `openspec/specs/<capability>/spec.md` layout."
+    - "Use SHALL and MUST for normative requirements. Avoid should/may."
+    - "Every Requirement has at least one `#### Scenario:` with WHEN/THEN."
+    - "Scenarios use exactly 4 hashtags (####). 3 hashtags or bullets fail silently."
+    - "Specs describe behavior, not implementation. Do not reference specific Kotlin classes or file paths inside requirement text. Move those to design.md or tasks.md."
+    - "Scenarios must cover failure/edge behavior explicitly (partial-tree sync state, transactional rollback on failure, missing physical file for FileResource, etc.), not only the success path."
+
+  design:
+    - "Call out whether the design relies on `aggregatedSyncState` (existing, tested) vs. introduces new sync-state computation — prefer reusing the former."
+    - "For anything reading `ProgramSetting`/`DataSetSetting` trimming fields, document the resolution order between GLOBAL and PER_PROGRAM/PER_ORG_UNIT scope explicitly."
+    - "Classify whether the change is additive (new class, new method on a narrow new interface) or modifies a shared interface/class every module depends on — prefer additive."
+
+  tasks:
+    - "Each task is small enough to complete in one focused session and to be committed independently (test-first: add a behavior-level test in `core/src/test/` first, then the minimal implementation to make it pass, as one commit)."
+    - "Tasks that would touch more than one domain module's wiper must be split one task per module."
+    - "Every task involving DB delete semantics or sync-state cascade must include at least one task/test for a failure or edge case (e.g. partial-tree protection, transactional rollback), not just the success path."
+    - "Integration tests requiring real Room persistence go in `core/src/androidTest/`; everything else (mockable collaborators) goes in `core/src/test/` following the existing `<Class>Should.kt` naming."
+    - "For anything touching real DB delete/retention semantics (row selection, cascade, transactional rollback), tests MUST assert on observable state — rows actually present/absent when re-querying a real database after the call — not on which internal method was invoked with which arguments. Do not mock `TableWiper` or per-module wiper collaborators to verify a delete happened; insert real rows, call the public API, re-read the table. Mocking collaborators is acceptable only at the true system boundary (e.g. simulating a write failure to test transactional rollback), never to observe the class under test's own delete logic."
+    - "Each behavior test states, in its name or a comment, the observable contract it verifies (e.g. \"rows exceeding the limit are gone after purge\") rather than the mechanism (e.g. \"wipeTableWhereSynced is called\") — a reviewer should be able to tell what broke for the user from the test name alone."
