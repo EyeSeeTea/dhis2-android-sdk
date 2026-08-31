@@ -15876,3 +15876,8 @@ public final class org/hisp/dhis/android/persistence/visualization/Visualization
 public final class org/hisp/dhis/android/persistence/visualization/VisualizationTableInfo$Columns$Companion {
 }
 
+public final class org/koin/ksp/generated/DefaultKt {
+	public static final fun defaultModule (Lorg/koin/core/KoinApplication;)Lorg/koin/core/KoinApplication;
+	public static final fun getDefaultModule ()Lorg/koin/core/module/Module;
+}
+
