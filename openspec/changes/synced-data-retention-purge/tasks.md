@@ -54,12 +54,17 @@ green).
 
 **Commit: 3.1 + 3.2 together.**
 
-- [ ] 3.3 Add a behavior test: a TEI that is itself fully synced but has one
-      non-synced descendant anywhere in its tree (add the descendant once
-      Enrollment/Event purge exists in section 4-5; until then, assert via a
-      directly-inserted non-SYNCED child row at the deepest currently-modeled
-      level) is not purged, even when older than the retention limit boundary.
-      Verify: test passes, confirms partial-tree protection at the TEI level.
+- [x] 3.3 Add a behavior test: a TEI whose own `aggregatedSyncState` is not
+      `SYNCED` is not purged, even when older than the retention limit
+      boundary. Revised from the original plan: `TrackedEntityAttributeValue`
+      (the only child modeled so far) does not participate in
+      `aggregatedSyncState` computation (see `DataStatePropagatorImpl` —
+      only Enrollment/Event/Relationship states feed into it), so it cannot
+      simulate a non-synced descendant. This test asserts directly against
+      `aggregatedSyncState` (the actual column the purger filters on) instead
+      of via an inserted child; the real descendant-propagation scenario is
+      covered once a real Enrollment/Event exists (task 5.3). Verify: test
+      passes, confirms the purger respects `aggregatedSyncState != SYNCED`.
 
 **Commit: 3.3 alone** (test-only, against the 3.1/3.2 implementation).
 

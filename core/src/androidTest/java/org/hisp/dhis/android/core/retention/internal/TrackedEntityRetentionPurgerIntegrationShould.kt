@@ -72,6 +72,26 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         assertThat(remainingAttributeValueTeiUids).containsExactly("teiToKeep")
     }
 
+    @Test
+    fun keep_a_tracked_entity_instance_whose_aggregated_sync_state_is_not_synced() = runTest {
+        val protectedTei =
+            givenATrackedEntityInstance("protectedTei", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+        val syncedTei = givenATrackedEntityInstance("syncedTei", State.SYNCED, "2026-02-01T00:00:00.000")
+
+        trackedEntityInstanceStore.insert(protectedTei)
+        trackedEntityInstanceStore.insert(syncedTei)
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            d2CallExecutor,
+        ).purge(limit = 0)
+
+        val remainingTeiUids = trackedEntityInstanceStore.selectUids()
+
+        assertThat(remainingTeiUids).containsExactly("protectedTei")
+    }
+
     private fun givenATrackedEntityInstance(
         uid: String,
         syncState: State,
