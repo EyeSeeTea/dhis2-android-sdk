@@ -69,6 +69,18 @@ only if it holds purgeable user data. The 5 modules (event, enrollment,
 trackedentity, datavalue, fileresource) implement it; no other module is
 touched.
 
+Sequencing: extract this interface only once a second implementation exists
+(the TrackedEntityInstance purger, task 3.2) — not from the first one
+(`DataValueRetentionPurger`, task 1.2) alone. `DataValueRetentionPurger` is a
+leaf with no cascade, so `purge(limit: Int): Unit` may not be the right shape
+for a tree root that needs to hand its selected/purged IDs down to its
+children's purgers (Enrollment, Event) for cascade. Fixing the interface with
+one data point risks designing it around the wrong case and having to break it
+once the tree-aware shape is known — the exact throwaway-layering failure mode
+this change's specs were already re-split to avoid (see the spec-splitting
+discussion this proposal's scoping went through). `DataValueRetentionPurger`
+stays a standalone class, no interface, until task 3.2 lands.
+
 ### Candidate selection: read-then-delete, not delete-with-subquery
 Selecting "the oldest N eligible rows beyond the limit" needs an ordered read
 before a delete. Two shapes were considered:
