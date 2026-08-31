@@ -129,26 +129,24 @@ test just added, not new production code).
 
 ## 7. FileResource purge
 
-- [ ] 7.1 Add a behavior test: eligible `FileResource` rows beyond the
+- [x] 7.1 Add a behavior test: eligible `FileResource` rows beyond the
       retention limit are removed from the table and their physical file (via
       the row's `path`) is deleted from disk, when re-checking both the table
       and the filesystem afterward. Verify: test fails.
-- [ ] 7.2 Implement row-by-row `FileResource` purge (select eligible rows
+- [x] 7.2 Implement row-by-row `FileResource` purge (select eligible rows
       ordered by `lastUpdated` over the limit, delete row + physical file per
       row) — do not reuse the existing directory-recursive delete from
       `wipeData()`. Verify: the 7.1 test passes.
 
 **Commit: 7.1 + 7.2 together.**
 
-- [ ] 7.3 Add a behavior test: an eligible `FileResource` row whose physical
+- [x] 7.3 Add a behavior test: an eligible `FileResource` row whose physical
       file is already missing from disk is still purged from the table, and
       the call does not raise an error to the caller. Verify: test fails
       without the missing-file tolerance, passes once added.
-
-**Commit: 7.3 alone** — unless the 7.2 implementation did not yet tolerate a
-missing file, in which case this commit also includes the small fix (still one
-commit: red test + the minimal fix that turns it green, same red-green rule as
-any other pair in this file).
+      In practice the 7.2 implementation already wrapped the physical-file
+      delete in `runCatching`, so this test passed green on first run —
+      committed together with 7.1/7.2 rather than as a separate fix commit.
 
 ## 8. Public entry point and cross-module transactionality
 
