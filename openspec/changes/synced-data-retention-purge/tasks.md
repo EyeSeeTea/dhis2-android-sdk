@@ -14,7 +14,7 @@
 **Commit: 1.1 + 1.2 together** (red test, then the implementation that turns it
 green).
 
-- [ ] 1.3 Add a test: limit of zero purges every `SYNCED` `DataValue` row,
+- [x] 1.3 Add a test: limit of zero purges every `SYNCED` `DataValue` row,
       leaving none behind (limit=0 degenerate-case scenario from the spec).
       Verify: test passes against the same implementation, no special-casing
       needed.

@@ -1,6 +1,7 @@
 package org.hisp.dhis.android.core.retention.internal
 
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
@@ -9,6 +10,8 @@ import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
 import org.hisp.dhis.android.persistence.datavalue.DataValueStoreImpl
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -17,6 +20,16 @@ class DataValueRetentionPurgerIntegrationShould {
 
     private val databaseAdapter = TestDatabaseAdapterFactory.get()
     private val dataValueStore: DataValueStore = DataValueStoreImpl(databaseAdapter)
+
+    @Before
+    fun setUp() {
+        runBlocking { dataValueStore.delete() }
+    }
+
+    @After
+    fun tearDown() {
+        runBlocking { dataValueStore.delete() }
+    }
 
     @Test
     fun keep_only_the_most_recently_updated_synced_data_values_up_to_the_limit() = runTest {
@@ -33,6 +46,22 @@ class DataValueRetentionPurgerIntegrationShould {
         val remainingDataElements = remaining.map { it.dataElement() }
 
         assertThat(remainingDataElements).containsExactly("middleSynced", "newestSynced", "pending")
+    }
+
+    @Test
+    fun purge_every_synced_data_value_when_limit_is_zero() = runTest {
+        val oldestSynced = givenAdataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
+        val newestSynced = givenAdataValue("newestSynced", State.SYNCED, "2026-02-01T00:00:00.000")
+        val pending = givenAdataValue("pending", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+
+        dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
+
+        DataValueRetentionPurger(dataValueStore).purge(limit = 0)
+
+        val remaining = dataValueStore.selectAll()
+        val remainingDataElements = remaining.map { it.dataElement() }
+
+        assertThat(remainingDataElements).containsExactly("pending")
     }
 
     private fun givenAdataValue(
