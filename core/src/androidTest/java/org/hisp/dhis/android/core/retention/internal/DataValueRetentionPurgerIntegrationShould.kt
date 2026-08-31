@@ -36,10 +36,10 @@ class DataValueRetentionPurgerIntegrationShould {
 
     @Test
     fun keep_only_the_most_recently_updated_synced_data_values_up_to_the_limit() = runTest {
-        val oldestSynced = givenAdataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
-        val middleSynced = givenAdataValue("middleSynced", State.SYNCED, "2026-02-01T00:00:00.000")
-        val newestSynced = givenAdataValue("newestSynced", State.SYNCED, "2026-03-01T00:00:00.000")
-        val pending = givenAdataValue("pending", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+        val oldestSynced = givenADataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
+        val middleSynced = givenADataValue("middleSynced", State.SYNCED, "2026-02-01T00:00:00.000")
+        val newestSynced = givenADataValue("newestSynced", State.SYNCED, "2026-03-01T00:00:00.000")
+        val pending = givenADataValue("pending", State.TO_UPDATE, "2025-01-01T00:00:00.000")
 
         dataValueStore.insert(listOf(oldestSynced, middleSynced, newestSynced, pending))
 
@@ -53,9 +53,9 @@ class DataValueRetentionPurgerIntegrationShould {
 
     @Test
     fun purge_every_synced_data_value_when_limit_is_zero() = runTest {
-        val oldestSynced = givenAdataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
-        val newestSynced = givenAdataValue("newestSynced", State.SYNCED, "2026-02-01T00:00:00.000")
-        val pending = givenAdataValue("pending", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+        val oldestSynced = givenADataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
+        val newestSynced = givenADataValue("newestSynced", State.SYNCED, "2026-02-01T00:00:00.000")
+        val pending = givenADataValue("pending", State.TO_UPDATE, "2025-01-01T00:00:00.000")
 
         dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
 
@@ -69,9 +69,9 @@ class DataValueRetentionPurgerIntegrationShould {
 
     @Test
     fun keep_every_synced_data_value_when_eligible_rows_are_at_or_below_the_limit() = runTest {
-        val oldestSynced = givenAdataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
-        val newestSynced = givenAdataValue("newestSynced", State.SYNCED, "2026-02-01T00:00:00.000")
-        val pending = givenAdataValue("pending", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+        val oldestSynced = givenADataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
+        val newestSynced = givenADataValue("newestSynced", State.SYNCED, "2026-02-01T00:00:00.000")
+        val pending = givenADataValue("pending", State.TO_UPDATE, "2025-01-01T00:00:00.000")
 
         dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
 
@@ -85,13 +85,13 @@ class DataValueRetentionPurgerIntegrationShould {
 
     @Test
     fun leave_data_values_unchanged_when_a_deletion_fails_partway_through_the_purge() = runTest {
-        val oldestSynced = givenAdataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
-        val middleSynced = givenAdataValue("middleSynced", State.SYNCED, "2026-02-01T00:00:00.000")
-        val newestSynced = givenAdataValue("newestSynced", State.SYNCED, "2026-03-01T00:00:00.000")
+        val oldestSynced = givenADataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
+        val middleSynced = givenADataValue("middleSynced", State.SYNCED, "2026-02-01T00:00:00.000")
+        val newestSynced = givenADataValue("newestSynced", State.SYNCED, "2026-03-01T00:00:00.000")
 
         dataValueStore.insert(listOf(oldestSynced, middleSynced, newestSynced))
 
-        val failingStore = FailingAfterFirstDeleteDataValueStore(dataValueStore)
+        val failingStore = GivingAFailingAfterFirstDeleteDataValueStore(dataValueStore)
 
         try {
             DataValueRetentionPurger(failingStore, d2CallExecutor).purge(limit = 0)
@@ -109,6 +109,19 @@ class DataValueRetentionPurgerIntegrationShould {
             .containsExactly("oldestSynced", "middleSynced", "newestSynced")
     }
 
+    private fun givenADataValue(
+        dataElement: String,
+        syncState: State,
+        lastUpdated: String,
+    ): DataValue {
+        return DataValueSamples.getDataValueDatabase()
+            .toBuilder()
+            .dataElement(dataElement)
+            .syncState(syncState)
+            .lastUpdated(java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))
+            .build()
+    }
+
     /**
      * Delegates every call to the real, database-backed [delegate] except
      * [deleteWhere], which throws on its second invocation. Used to simulate a
@@ -116,7 +129,7 @@ class DataValueRetentionPurgerIntegrationShould {
      * purger's own delete logic — the real database still receives the first
      * delete, so this proves the surrounding transaction rolls it back.
      */
-    private class FailingAfterFirstDeleteDataValueStore(
+    private class GivingAFailingAfterFirstDeleteDataValueStore(
         private val delegate: DataValueStore,
     ) : DataValueStore by delegate {
         private var deleteCallCount = 0
@@ -128,18 +141,5 @@ class DataValueRetentionPurgerIntegrationShould {
             }
             delegate.deleteWhere(o)
         }
-    }
-
-    private fun givenAdataValue(
-        dataElement: String,
-        syncState: State,
-        lastUpdated: String,
-    ): DataValue {
-        return DataValueSamples.getDataValueDatabase()
-            .toBuilder()
-            .dataElement(dataElement)
-            .syncState(syncState)
-            .lastUpdated(java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))
-            .build()
     }
 }
