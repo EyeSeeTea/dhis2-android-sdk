@@ -3,7 +3,6 @@ package org.hisp.dhis.android.core.retention.internal
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutor
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.event.Event
 import org.hisp.dhis.android.core.event.internal.EventStore
@@ -14,7 +13,6 @@ import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityDataValueS
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
 import org.hisp.dhis.android.persistence.event.EventStoreImpl
-import org.hisp.dhis.android.persistence.maintenance.D2ErrorStoreImpl
 import org.hisp.dhis.android.persistence.note.NoteStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityDataValueStoreImpl
 import org.junit.After
@@ -31,7 +29,6 @@ class EventRetentionPurgerIntegrationShould {
     private val trackedEntityDataValueStore: TrackedEntityDataValueStore =
         TrackedEntityDataValueStoreImpl(databaseAdapter)
     private val noteStore: NoteStore = NoteStoreImpl(databaseAdapter)
-    private val d2CallExecutor = D2CallExecutor(databaseAdapter, D2ErrorStoreImpl(databaseAdapter))
 
     @Before
     fun setUp() {
@@ -70,7 +67,7 @@ class EventRetentionPurgerIntegrationShould {
         noteStore.insert(noteToPurge)
         noteStore.insert(noteToKeep)
 
-        EventRetentionPurger(eventStore, trackedEntityDataValueStore, noteStore, d2CallExecutor).purge(limit = 1)
+        EventRetentionPurger(eventStore, trackedEntityDataValueStore, noteStore).purge(limit = 1)
 
         val remainingEventUids = eventStore.selectUids()
         val remainingDataValueEventUids = trackedEntityDataValueStore.selectAll().map { it.event() }
@@ -89,7 +86,7 @@ class EventRetentionPurgerIntegrationShould {
         eventStore.insert(protectedEvent)
         eventStore.insert(syncedEvent)
 
-        EventRetentionPurger(eventStore, trackedEntityDataValueStore, noteStore, d2CallExecutor).purge(limit = 0)
+        EventRetentionPurger(eventStore, trackedEntityDataValueStore, noteStore).purge(limit = 0)
 
         val remainingEventUids = eventStore.selectUids()
 

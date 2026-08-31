@@ -3,7 +3,6 @@ package org.hisp.dhis.android.core.retention.internal
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutor
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
 import org.hisp.dhis.android.core.datavalue.DataValue
@@ -11,7 +10,6 @@ import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
 import org.hisp.dhis.android.persistence.datavalue.DataValueStoreImpl
-import org.hisp.dhis.android.persistence.maintenance.D2ErrorStoreImpl
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -22,7 +20,6 @@ class DataValueRetentionPurgerIntegrationShould {
 
     private val databaseAdapter = TestDatabaseAdapterFactory.get()
     private val dataValueStore: DataValueStore = DataValueStoreImpl(databaseAdapter)
-    private val d2CallExecutor = D2CallExecutor(databaseAdapter, D2ErrorStoreImpl(databaseAdapter))
 
     @Before
     fun setUp() {
@@ -43,7 +40,7 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(oldestSynced, middleSynced, newestSynced, pending))
 
-        DataValueRetentionPurger(dataValueStore, d2CallExecutor).purge(limit = 2)
+        DataValueRetentionPurger(dataValueStore).purge(limit = 2)
 
         val remaining = dataValueStore.selectAll()
         val remainingDataElements = remaining.map { it.dataElement() }
@@ -59,7 +56,7 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
 
-        DataValueRetentionPurger(dataValueStore, d2CallExecutor).purge(limit = 0)
+        DataValueRetentionPurger(dataValueStore).purge(limit = 0)
 
         val remaining = dataValueStore.selectAll()
         val remainingDataElements = remaining.map { it.dataElement() }
@@ -75,38 +72,12 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
 
-        DataValueRetentionPurger(dataValueStore, d2CallExecutor).purge(limit = 2)
+        DataValueRetentionPurger(dataValueStore).purge(limit = 2)
 
         val remaining = dataValueStore.selectAll()
         val remainingDataElements = remaining.map { it.dataElement() }
 
         assertThat(remainingDataElements).containsExactly("oldestSynced", "newestSynced", "pending")
-    }
-
-    @Test
-    fun leave_data_values_unchanged_when_a_deletion_fails_partway_through_the_purge() = runTest {
-        val oldestSynced = givenADataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
-        val middleSynced = givenADataValue("middleSynced", State.SYNCED, "2026-02-01T00:00:00.000")
-        val newestSynced = givenADataValue("newestSynced", State.SYNCED, "2026-03-01T00:00:00.000")
-
-        dataValueStore.insert(listOf(oldestSynced, middleSynced, newestSynced))
-
-        val failingStore = GivingAFailingAfterFirstDeleteDataValueStore(dataValueStore)
-
-        try {
-            DataValueRetentionPurger(failingStore, d2CallExecutor).purge(limit = 0)
-        } catch (expected: Exception) {
-            // Expected: the second deleteWhere call fails. purge() itself must
-            // guarantee the transactional rollback — the test does not wrap
-            // the call in executeD2CallTransactionally itself, since that
-            // would test the executor's transactionality, not the purger's.
-        }
-
-        val remaining = dataValueStore.selectAll()
-        val remainingDataElements = remaining.map { it.dataElement() }
-
-        assertThat(remainingDataElements)
-            .containsExactly("oldestSynced", "middleSynced", "newestSynced")
     }
 
     private fun givenADataValue(
@@ -120,26 +91,5 @@ class DataValueRetentionPurgerIntegrationShould {
             .syncState(syncState)
             .lastUpdated(java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))
             .build()
-    }
-
-    /**
-     * Delegates every call to the real, database-backed [delegate] except
-     * [deleteWhere], which throws on its second invocation. Used to simulate a
-     * write failure partway through a multi-row purge without mocking the
-     * purger's own delete logic — the real database still receives the first
-     * delete, so this proves the surrounding transaction rolls it back.
-     */
-    private class GivingAFailingAfterFirstDeleteDataValueStore(
-        private val delegate: DataValueStore,
-    ) : DataValueStore by delegate {
-        private var deleteCallCount = 0
-
-        override suspend fun deleteWhere(o: DataValue) {
-            deleteCallCount++
-            if (deleteCallCount == 2) {
-                throw RuntimeException("Simulated write failure on the second delete")
-            }
-            delegate.deleteWhere(o)
-        }
     }
 }

@@ -136,10 +136,22 @@ missing file (`runCatching` or equivalent) without aborting the row's DB
 deletion — a missing physical file is a legitimate "already gone" state, not a
 purge failure.
 
-### Transactionality: reuse `d2CallExecutor.executeD2CallTransactionally`, same as `WipeModuleImpl`
-No new transaction mechanism. The same pattern `WipeModuleImpl.wipeEverything()`
-already uses wraps the new purge entry point, so partial-failure rollback is
-inherited behavior, not new code to design.
+### Transactionality: reuse `d2CallExecutor.executeD2CallTransactionally`, same as `WipeModuleImpl` — at the composed entry point only
+No new transaction mechanism. But — revised after building the first 4
+per-module purgers — the transaction wrapping belongs **only on the composed
+public entry point** (task 8.2), not inside each individual
+`XxxRetentionPurger`. Verified against the SDK's actual precedent: no
+`ModuleWiper` implementation calls `executeD2CallTransactionally` itself;
+only `WipeModuleImpl` does, wrapping the `forEach` over every wiper from the
+outside. There is no precedent anywhere in this codebase for nesting
+`executeD2CallTransactionally` calls, and nothing confirms Room's
+`immediateTransaction` would even merge nested calls into one atomic unit
+here — so per-purger transactions were removed (each purger's `purge()` no
+longer takes a `D2CallExecutorInterface` or wraps itself) and the single
+`executeD2CallTransactionally` call now lives in the composed entry point
+that calls every purger's `purge()` in sequence. This mirrors
+`WipeModuleImpl` exactly: one caller, one transaction, several transaction-free
+callees.
 
 ## Risks / Trade-offs
 

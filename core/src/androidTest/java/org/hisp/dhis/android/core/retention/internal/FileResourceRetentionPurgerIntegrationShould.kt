@@ -4,14 +4,12 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutor
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.fileresource.FileResource
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
 import org.hisp.dhis.android.persistence.fileresource.FileResourceStoreImpl
-import org.hisp.dhis.android.persistence.maintenance.D2ErrorStoreImpl
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -24,7 +22,6 @@ class FileResourceRetentionPurgerIntegrationShould {
 
     private val databaseAdapter = TestDatabaseAdapterFactory.get()
     private val fileResourceStore: FileResourceStore = FileResourceStoreImpl(databaseAdapter)
-    private val d2CallExecutor = D2CallExecutor(databaseAdapter, D2ErrorStoreImpl(databaseAdapter))
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Before
@@ -48,7 +45,7 @@ class FileResourceRetentionPurgerIntegrationShould {
         fileResourceStore.insert(fileToPurge)
         fileResourceStore.insert(fileToKeep)
 
-        FileResourceRetentionPurger(fileResourceStore, d2CallExecutor).purge(limit = 1)
+        FileResourceRetentionPurger(fileResourceStore).purge(limit = 1)
 
         val remainingUids = fileResourceStore.selectUids()
 
@@ -64,7 +61,7 @@ class FileResourceRetentionPurgerIntegrationShould {
 
         fileResourceStore.insert(fileWithMissingPhysicalFile)
 
-        FileResourceRetentionPurger(fileResourceStore, d2CallExecutor).purge(limit = 0)
+        FileResourceRetentionPurger(fileResourceStore).purge(limit = 0)
 
         val remainingUids = fileResourceStore.selectUids()
 

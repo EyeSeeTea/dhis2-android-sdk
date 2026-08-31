@@ -42,6 +42,15 @@ implementation, no production code expected to change).
 **Commit: 2.1 + 2.2 together** (red test, then the wrapping that turns it
 green).
 
+**Superseded by section 8** (see design.md "Transactionality" — revised after
+verifying no `ModuleWiper` nests `executeD2CallTransactionally`, only
+`WipeModuleImpl` calls it once from the outside): the per-purger transaction
+wrapping added here and in every following module section was removed from
+each individual `XxxRetentionPurger`; the single transaction now wraps the
+section 8 composed entry point only. The 2.1 test (write-failure rollback)
+was removed from `DataValueRetentionPurgerIntegrationShould` and its
+equivalent now belongs to task 8.3, at the composed-entry-point level.
+
 ## 3. Tree-aware purge — TrackedEntityInstance module
 
 - [x] 3.1 Add a behavior test: a fully synced TEI (aggregatedSyncState =
