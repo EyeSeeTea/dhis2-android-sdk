@@ -94,11 +94,21 @@ green).
 
 **Commit: 5.1 + 5.2 together.**
 
-- [ ] 5.3 Re-run the 3.3 test (partial-tree protection) now with a real
+- [x] 5.3 Re-run the 3.3 test (partial-tree protection) now with a real
       non-synced Event as the protecting descendant instead of the placeholder
       used in 3.3, and confirm it still passes end-to-end through the full
       TEI → Enrollment → Event tree. Verify: test passes; remove the 3.3
       placeholder assertion if it becomes redundant with this one.
+      Implemented by extending the 4.3 test (renamed
+      `keep_the_whole_tree_of_a_tei_that_is_not_eligible_...`) with a real
+      Enrollment + Event under the protected TEI, still marking
+      `aggregatedSyncState` by hand rather than driving it through
+      `DataStatePropagatorImpl` — using the real propagator here would couple
+      this purger's tests to another component's responsibility, already
+      covered by `DataStatePropagatorIntegrationShould.kt` (see design.md).
+      The 3.3 test was kept, not removed: it additionally covers a second,
+      `SYNCED` TEI coexisting with the protected one (distinguishing eligible
+      vs. protected), which this tree-shaped test does not.
 
 **Commit: 5.3 alone** (test-only; may include deleting the now-redundant 3.3
 placeholder assertion as part of the same commit, since that's tidying the

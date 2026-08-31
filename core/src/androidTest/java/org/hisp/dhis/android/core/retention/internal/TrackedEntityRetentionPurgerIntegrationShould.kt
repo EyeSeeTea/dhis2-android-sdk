@@ -163,7 +163,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
     }
 
     @Test
-    fun keep_an_enrollment_of_a_tei_that_is_not_eligible_even_if_the_enrollment_itself_is_synced() = runTest {
+    fun keep_the_whole_tree_of_a_tei_that_is_not_eligible_even_if_its_enrollment_and_event_are_synced() = runTest {
         val protectedTei =
             givenATrackedEntityInstance("protectedTei", State.TO_UPDATE, "2025-01-01T00:00:00.000")
 
@@ -172,6 +172,10 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         val enrollmentOfProtectedTei = givenAnEnrollment("enrollmentOfProtectedTei", protectedTei.uid())
 
         enrollmentStore.insert(enrollmentOfProtectedTei)
+
+        val eventOfProtectedTei = givenAnEvent("eventOfProtectedTei", enrollmentOfProtectedTei.uid())
+
+        eventStore.insert(eventOfProtectedTei)
 
         TrackedEntityRetentionPurger(
             trackedEntityInstanceStore,
@@ -185,9 +189,11 @@ class TrackedEntityRetentionPurgerIntegrationShould {
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
         val remainingEnrollmentUids = enrollmentStore.selectUids()
+        val remainingEventUids = eventStore.selectUids()
 
         assertThat(remainingTeiUids).containsExactly("protectedTei")
         assertThat(remainingEnrollmentUids).containsExactly("enrollmentOfProtectedTei")
+        assertThat(remainingEventUids).containsExactly("eventOfProtectedTei")
     }
 
     @Test
