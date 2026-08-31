@@ -29,13 +29,13 @@ implementation, no production code expected to change).
 
 ## 2. Transactional guarantee (leaf case)
 
-- [ ] 2.1 Add a test that simulates a write failure partway through a
+- [x] 2.1 Add a test that simulates a write failure partway through a
       `DataValue` purge (mock only at the true system boundary — e.g. the
       underlying write call — per design.md/config.yaml rule; do not mock the
       class under test's own collaborators to observe its delete calls) and
       asserts the table is byte-for-byte unchanged from before the attempt.
       Verify: test fails without transactional wrapping.
-- [ ] 2.2 Wrap the purge entry point in the existing
+- [x] 2.2 Wrap the purge entry point in the existing
       `d2CallExecutor.executeD2CallTransactionally` pattern (same as
       `WipeModuleImpl`). Verify: the 2.1 test passes.
 
