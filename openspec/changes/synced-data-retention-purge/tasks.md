@@ -116,12 +116,12 @@ test just added, not new production code).
 
 ## 6. Independent leaf purge — TEI-less events
 
-- [ ] 6.1 Add a behavior test: events with no tracked entity instance are
+- [x] 6.1 Add a behavior test: events with no tracked entity instance are
       purged independently under their own retention limit, ordered by
       `lastUpdated`, using their own `aggregatedSyncState` (event + its
       TrackedEntityDataValues + notes), without affecting tracker-rooted event
       purge from section 5 or being affected by it. Verify: test fails.
-- [ ] 6.2 Implement TEI-less event purge candidate selection and cascade,
+- [x] 6.2 Implement TEI-less event purge candidate selection and cascade,
       reusing the selection building block from section 1/3 rather than
       duplicating it. Verify: the 6.1 test passes.
 
