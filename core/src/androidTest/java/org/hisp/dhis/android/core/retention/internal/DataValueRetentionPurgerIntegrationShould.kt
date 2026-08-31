@@ -64,6 +64,22 @@ class DataValueRetentionPurgerIntegrationShould {
         assertThat(remainingDataElements).containsExactly("pending")
     }
 
+    @Test
+    fun keep_every_synced_data_value_when_eligible_rows_are_at_or_below_the_limit() = runTest {
+        val oldestSynced = givenAdataValue("oldestSynced", State.SYNCED, "2026-01-01T00:00:00.000")
+        val newestSynced = givenAdataValue("newestSynced", State.SYNCED, "2026-02-01T00:00:00.000")
+        val pending = givenAdataValue("pending", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+
+        dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
+
+        DataValueRetentionPurger(dataValueStore).purge(limit = 2)
+
+        val remaining = dataValueStore.selectAll()
+        val remainingDataElements = remaining.map { it.dataElement() }
+
+        assertThat(remainingDataElements).containsExactly("oldestSynced", "newestSynced", "pending")
+    }
+
     private fun givenAdataValue(
         dataElement: String,
         syncState: State,

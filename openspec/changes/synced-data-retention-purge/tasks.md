@@ -22,7 +22,7 @@ green).
 **Commit: 1.3 alone** (test-only — asserts an existing behavior of the 1.1/1.2
 implementation, no production code expected to change).
 
-- [ ] 1.4 Add a test: number of eligible rows at or below the limit purges
+- [x] 1.4 Add a test: number of eligible rows at or below the limit purges
       nothing — table is unchanged after the call. Verify: test passes.
 
 **Commit: 1.4 alone** (test-only, same reason as 1.3).
