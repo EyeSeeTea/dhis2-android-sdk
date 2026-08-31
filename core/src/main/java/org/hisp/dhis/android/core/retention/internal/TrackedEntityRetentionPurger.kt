@@ -3,15 +3,20 @@ package org.hisp.dhis.android.core.retention.internal
 import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutorInterface
 import org.hisp.dhis.android.core.common.DataColumns
 import org.hisp.dhis.android.core.common.State
+import org.hisp.dhis.android.core.enrollment.internal.EnrollmentStore
+import org.hisp.dhis.android.core.note.internal.NoteStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeValueStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityInstanceStore
 import org.hisp.dhis.android.persistence.common.querybuilders.WhereClauseBuilder
+import org.hisp.dhis.android.persistence.enrollment.EnrollmentTableInfo
 import org.koin.core.annotation.Singleton
 
 @Singleton
 internal class TrackedEntityRetentionPurger(
     private val trackedEntityInstanceStore: TrackedEntityInstanceStore,
     private val trackedEntityAttributeValueStore: TrackedEntityAttributeValueStore,
+    private val enrollmentStore: EnrollmentStore,
+    private val noteStore: NoteStore,
     private val d2CallExecutor: D2CallExecutorInterface,
 ) : RetentionPurger {
     override suspend fun purge(limit: Int) {
@@ -28,6 +33,17 @@ internal class TrackedEntityRetentionPurger(
             toPurge.forEach { tei ->
                 trackedEntityAttributeValueStore.queryByTrackedEntityInstance(tei.uid())
                     .forEach { trackedEntityAttributeValueStore.deleteWhere(it) }
+
+                val enrollmentsWhereClause = WhereClauseBuilder()
+                    .appendKeyStringValue(EnrollmentTableInfo.Columns.TRACKED_ENTITY_INSTANCE, tei.uid())
+                    .build()
+                val enrollments = enrollmentStore.selectWhere(enrollmentsWhereClause)
+
+                enrollments.forEach { enrollment ->
+                    noteStore.getForEnrollment(enrollment.uid()).forEach { noteStore.delete(it.uid()) }
+                    enrollmentStore.delete(enrollment.uid())
+                }
+
                 trackedEntityInstanceStore.delete(tei.uid())
             }
         }

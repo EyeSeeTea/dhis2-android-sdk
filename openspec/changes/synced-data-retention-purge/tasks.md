@@ -70,10 +70,10 @@ green).
 
 ## 4. Tree-aware purge — Enrollment module
 
-- [ ] 4.1 Add a behavior test: an eligible TEI's enrollments (and their notes)
+- [x] 4.1 Add a behavior test: an eligible TEI's enrollments (and their notes)
       are purged together with the TEI when the TEI is purged. Verify: test
       fails.
-- [ ] 4.2 Implement Enrollment (+ Note) cascade delete keyed off the same
+- [x] 4.2 Implement Enrollment (+ Note) cascade delete keyed off the same
       selected TEI id set from section 3. Verify: the 4.1 test passes.
 
 **Commit: 4.1 + 4.2 together.**
