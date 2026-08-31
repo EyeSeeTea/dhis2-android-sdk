@@ -101,6 +101,7 @@ rules:
 
   tasks:
     - "Each task is small enough to complete in one focused session and to be committed independently (test-first: add a behavior-level test in `core/src/test/` first, then the minimal implementation to make it pass, as one commit)."
+    - "Commit granularity MUST be explicit in tasks.md, not left implicit: a 'test' task immediately followed by an 'implement' task for the same behavior are one commit (red -> green); a standalone 'test' task with no implementation task next to it (added coverage over an already-passing implementation) is its own, separate commit. State this per task group as a short 'Commit:' note (e.g. after each numbered group, or inline per task) so an agent picking up tasks.md without prior conversation context can tell where commit boundaries fall without having to infer them."
     - "Tasks that would touch more than one domain module's wiper must be split one task per module."
     - "Every task involving DB delete semantics or sync-state cascade must include at least one task/test for a failure or edge case (e.g. partial-tree protection, transactional rollback), not just the success path."
     - "Integration tests requiring real Room persistence go in `core/src/androidTest/`; everything else (mockable collaborators) goes in `core/src/test/` following the existing `<Class>Should.kt` naming."
