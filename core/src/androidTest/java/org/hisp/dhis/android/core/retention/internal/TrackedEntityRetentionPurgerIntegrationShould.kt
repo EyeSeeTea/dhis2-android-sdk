@@ -7,18 +7,24 @@ import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutor
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.enrollment.Enrollment
 import org.hisp.dhis.android.core.enrollment.internal.EnrollmentStore
+import org.hisp.dhis.android.core.event.Event
+import org.hisp.dhis.android.core.event.internal.EventStore
 import org.hisp.dhis.android.core.note.Note
 import org.hisp.dhis.android.core.note.internal.NoteStore
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeValueStore
+import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityDataValueStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityInstanceStore
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
 import org.hisp.dhis.android.persistence.enrollment.EnrollmentStoreImpl
+import org.hisp.dhis.android.persistence.event.EventStoreImpl
 import org.hisp.dhis.android.persistence.maintenance.D2ErrorStoreImpl
 import org.hisp.dhis.android.persistence.note.NoteStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeValueStoreImpl
+import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityDataValueStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityInstanceStoreImpl
 import org.junit.After
 import org.junit.Before
@@ -35,13 +41,18 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         TrackedEntityAttributeValueStoreImpl(databaseAdapter)
     private val enrollmentStore: EnrollmentStore = EnrollmentStoreImpl(databaseAdapter)
     private val noteStore: NoteStore = NoteStoreImpl(databaseAdapter)
+    private val eventStore: EventStore = EventStoreImpl(databaseAdapter)
+    private val trackedEntityDataValueStore: TrackedEntityDataValueStore =
+        TrackedEntityDataValueStoreImpl(databaseAdapter)
     private val d2CallExecutor = D2CallExecutor(databaseAdapter, D2ErrorStoreImpl(databaseAdapter))
 
     @Before
     fun setUp() {
         runBlocking {
             trackedEntityAttributeValueStore.delete()
+            trackedEntityDataValueStore.delete()
             noteStore.delete()
+            eventStore.delete()
             enrollmentStore.delete()
             trackedEntityInstanceStore.delete()
         }
@@ -51,7 +62,9 @@ class TrackedEntityRetentionPurgerIntegrationShould {
     fun tearDown() {
         runBlocking {
             trackedEntityAttributeValueStore.delete()
+            trackedEntityDataValueStore.delete()
             noteStore.delete()
+            eventStore.delete()
             enrollmentStore.delete()
             trackedEntityInstanceStore.delete()
         }
@@ -75,6 +88,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             trackedEntityAttributeValueStore,
             enrollmentStore,
             noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
             d2CallExecutor,
         ).purge(limit = 1)
 
@@ -100,6 +115,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             trackedEntityAttributeValueStore,
             enrollmentStore,
             noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
             d2CallExecutor,
         ).purge(limit = 0)
 
@@ -133,6 +150,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             trackedEntityAttributeValueStore,
             enrollmentStore,
             noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
             d2CallExecutor,
         ).purge(limit = 1)
 
@@ -159,6 +178,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             trackedEntityAttributeValueStore,
             enrollmentStore,
             noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
             d2CallExecutor,
         ).purge(limit = 0)
 
@@ -167,6 +188,95 @@ class TrackedEntityRetentionPurgerIntegrationShould {
 
         assertThat(remainingTeiUids).containsExactly("protectedTei")
         assertThat(remainingEnrollmentUids).containsExactly("enrollmentOfProtectedTei")
+    }
+
+    @Test
+    fun purge_the_events_their_data_values_and_their_notes_of_a_purged_tracked_entity_instance() = runTest {
+        val teiToPurge = givenATrackedEntityInstance("teiToPurge", State.SYNCED, "2026-01-01T00:00:00.000")
+        val teiToKeep = givenATrackedEntityInstance("teiToKeep", State.SYNCED, "2026-02-01T00:00:00.000")
+
+        trackedEntityInstanceStore.insert(teiToPurge)
+        trackedEntityInstanceStore.insert(teiToKeep)
+
+        val enrollmentToPurge = givenAnEnrollment("enrollmentToPurge", teiToPurge.uid())
+        val enrollmentToKeep = givenAnEnrollment("enrollmentToKeep", teiToKeep.uid())
+
+        enrollmentStore.insert(enrollmentToPurge)
+        enrollmentStore.insert(enrollmentToKeep)
+
+        val eventToPurge = givenAnEvent("eventToPurge", enrollmentToPurge.uid())
+        val eventToKeep = givenAnEvent("eventToKeep", enrollmentToKeep.uid())
+
+        eventStore.insert(eventToPurge)
+        eventStore.insert(eventToKeep)
+
+        val dataValueToPurge = givenATrackedEntityDataValue(eventToPurge.uid())
+        val dataValueToKeep = givenATrackedEntityDataValue(eventToKeep.uid())
+
+        trackedEntityDataValueStore.insert(listOf(dataValueToPurge, dataValueToKeep))
+
+        val eventNoteToPurge = givenAnEventNote("eventNoteToPurge", eventToPurge.uid())
+        val eventNoteToKeep = givenAnEventNote("eventNoteToKeep", eventToKeep.uid())
+
+        noteStore.insert(eventNoteToPurge)
+        noteStore.insert(eventNoteToKeep)
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            d2CallExecutor,
+        ).purge(limit = 1)
+
+        val remainingEventUids = eventStore.selectUids()
+        val remainingDataValueEventUids = trackedEntityDataValueStore.selectAll().map { it.event() }
+        val remainingNoteUids = noteStore.selectUids()
+
+        assertThat(remainingEventUids).containsExactly("eventToKeep")
+        assertThat(remainingDataValueEventUids).containsExactly("eventToKeep")
+        assertThat(remainingNoteUids).containsExactly("eventNoteToKeep")
+    }
+
+    private fun givenAnEvent(
+        uid: String,
+        enrollmentUid: String,
+        syncState: State = State.SYNCED,
+    ): Event {
+        return Event.builder()
+            .uid(uid)
+            .enrollment(enrollmentUid)
+            .program("program")
+            .programStage("programStage")
+            .organisationUnit("organisationUnit")
+            .attributeOptionCombo("attributeOptionCombo")
+            .syncState(syncState)
+            .aggregatedSyncState(syncState)
+            .build()
+    }
+
+    private fun givenATrackedEntityDataValue(
+        eventUid: String,
+    ): TrackedEntityDataValue {
+        return TrackedEntityDataValue.builder()
+            .event(eventUid)
+            .dataElement("dataElement")
+            .value("value")
+            .build()
+    }
+
+    private fun givenAnEventNote(
+        uid: String,
+        eventUid: String,
+    ): Note {
+        return Note.builder()
+            .uid(uid)
+            .noteType(Note.NoteType.EVENT_NOTE)
+            .event(eventUid)
+            .value("a note")
+            .build()
     }
 
     private fun givenAnEnrollment(

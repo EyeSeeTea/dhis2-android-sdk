@@ -111,6 +111,16 @@ This is safe specifically because eligibility was already established via
 every descendant is `SYNCED` (see `DataStatePropagatorImpl`), so re-checking
 would be redundant work, not an extra safety net.
 
+This purger's own tests intentionally do not re-verify that guarantee — doing
+so would mean fabricating a TEI/Event state combination
+(`aggregatedSyncState = SYNCED` on the TEI with a non-`SYNCED` Event beneath
+it) that the real system never produces, since `DataStatePropagatorImpl`
+always keeps them consistent. That guarantee is already covered by
+`core/src/androidTest/.../common/internal/DataStatePropagatorIntegrationShould.kt`
+(e.g. `set_parent_state_to_update_if_has_synced_state`,
+`do_not_set_parent_state_to_update_if_has_error_state`) — this purger's tests
+build on top of it rather than duplicating it.
+
 ### Leaf data (DataValue, TEI-less events): independent selection, no cascade
 `DataValue` has no children; TEI-less events are their own root. Both use the
 same "eligible, ordered by `lastUpdated`, over the limit" read, but with a

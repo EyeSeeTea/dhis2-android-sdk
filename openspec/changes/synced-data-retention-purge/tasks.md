@@ -86,10 +86,10 @@ green).
 
 ## 5. Tree-aware purge — Event module (tracker-rooted)
 
-- [ ] 5.1 Add a behavior test: a purged TEI's events, their
+- [x] 5.1 Add a behavior test: a purged TEI's events, their
       TrackedEntityDataValues, and their notes are all removed together with
       the TEI/Enrollment tree. Verify: test fails.
-- [ ] 5.2 Implement Event (+ TrackedEntityDataValue + Note) cascade delete
+- [x] 5.2 Implement Event (+ TrackedEntityDataValue + Note) cascade delete
       keyed off the same selected TEI id set. Verify: the 5.1 test passes.
 
 **Commit: 5.1 + 5.2 together.**
