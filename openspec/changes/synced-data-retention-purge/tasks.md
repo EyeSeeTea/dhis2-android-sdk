@@ -1,13 +1,13 @@
 ## 1. Purge candidate selection (leaf case, no cascade)
 
-- [ ] 1.1 Add a `core/src/androidTest` behavior test on `DataValue`: given rows
+- [x] 1.1 Add a `core/src/androidTest` behavior test on `DataValue`: given rows
       with a mix of `SYNCED` and non-`SYNCED` state and distinct `lastUpdated`
       values, and a retention limit smaller than the number of `SYNCED` rows,
       calling the new purge entry point leaves exactly the most-recently-updated
       `SYNCED` rows up to the limit, and every non-`SYNCED` row untouched, when
       the table is re-queried afterward. Verify: test fails (no implementation
       yet).
-- [ ] 1.2 Implement the minimal candidate-selection + delete logic for
+- [x] 1.2 Implement the minimal candidate-selection + delete logic for
       `DataValue` (new interface + module implementation, per design.md
       Decisions — do not touch `ModuleWiper`). Verify: the 1.1 test passes.
 
