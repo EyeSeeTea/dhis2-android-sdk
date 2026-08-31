@@ -78,7 +78,7 @@ green).
 
 **Commit: 4.1 + 4.2 together.**
 
-- [ ] 4.3 Add a behavior test: an Enrollment belonging to a TEI that is NOT
+- [x] 4.3 Add a behavior test: an Enrollment belonging to a TEI that is NOT
       eligible (non-synced descendant elsewhere in the tree) is never purged on
       its own, independent of the Enrollment's own state. Verify: test passes.
 

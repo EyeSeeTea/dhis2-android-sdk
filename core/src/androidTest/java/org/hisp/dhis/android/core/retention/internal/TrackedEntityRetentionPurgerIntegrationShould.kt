@@ -143,9 +143,36 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         assertThat(remainingNoteUids).containsExactly("noteToKeep")
     }
 
+    @Test
+    fun keep_an_enrollment_of_a_tei_that_is_not_eligible_even_if_the_enrollment_itself_is_synced() = runTest {
+        val protectedTei =
+            givenATrackedEntityInstance("protectedTei", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+
+        trackedEntityInstanceStore.insert(protectedTei)
+
+        val enrollmentOfProtectedTei = givenAnEnrollment("enrollmentOfProtectedTei", protectedTei.uid())
+
+        enrollmentStore.insert(enrollmentOfProtectedTei)
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            d2CallExecutor,
+        ).purge(limit = 0)
+
+        val remainingTeiUids = trackedEntityInstanceStore.selectUids()
+        val remainingEnrollmentUids = enrollmentStore.selectUids()
+
+        assertThat(remainingTeiUids).containsExactly("protectedTei")
+        assertThat(remainingEnrollmentUids).containsExactly("enrollmentOfProtectedTei")
+    }
+
     private fun givenAnEnrollment(
         uid: String,
         trackedEntityInstanceUid: String,
+        syncState: State = State.SYNCED,
     ): Enrollment {
         return Enrollment.builder()
             .uid(uid)
@@ -153,6 +180,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             .organisationUnit("organisationUnit")
             .program("program")
             .attributeOptionCombo("attributeOptionCombo")
+            .syncState(syncState)
+            .aggregatedSyncState(syncState)
             .build()
     }
 
