@@ -8,7 +8,7 @@ internal class SyncedDataRetentionPurger(
     private val dataValuePurger: RetentionPurger,
     private val trackedEntityPurger: RetentionPurger,
     private val eventPurger: RetentionPurger,
-    private val fileResourcePurger: RetentionPurger,
+    private val orphanFileResourcePurger: RetentionPurger,
     private val d2CallExecutor: D2CallExecutorInterface,
 ) {
     suspend fun purge(limits: RetentionLimits) {
@@ -16,7 +16,7 @@ internal class SyncedDataRetentionPurger(
             dataValuePurger.purge(limits.dataValue)
             trackedEntityPurger.purge(limits.trackedEntityInstance)
             eventPurger.purge(limits.event)
-            fileResourcePurger.purge(limits.fileResource)
+            orphanFileResourcePurger.purge(limits.fileResource)
         }
     }
 }

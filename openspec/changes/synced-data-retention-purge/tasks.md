@@ -346,7 +346,7 @@ should be shared instead of repeated per file (noted, not addressed now).
 Verified: full `retention` package suite (26 tests) green on `Pixel_9a` (real
 emulator).
 
-- [ ] 10.5 Rename `FileResourceRetentionPurger` to
+- [x] 10.5 Rename `FileResourceRetentionPurger` to
       `OrphanFileResourceRetentionPurger` and add a `NOT IN` filter (via each
       of `DataValue`/`TrackedEntityAttributeValue`/`TrackedEntityDataValue`'s
       `value` column, same resolution approach as
@@ -362,6 +362,16 @@ emulator).
       `OrphanFileResourceRetentionPurgerIntegrationShould`) still pass with
       only the rename applied, since the pre-existing tests never insert a
       live reference to the file resources they purge.
+
+      Implemented the `NOT IN` filter by unioning
+      `selectStringColumnsWhereClause(VALUE, "1")` across the 3 value stores
+      into one `Set<String>`, then a single `appendNotInKeyStringValues` on
+      `FileResource.uid` (same "1" always-true clause idiom already used
+      elsewhere in the SDK, e.g. `CustomIconModuleDownloader`).
+      `SyncedDataRetentionPurger`'s constructor parameter renamed
+      `fileResourcePurger` → `orphanFileResourcePurger` (same `RetentionPurger`
+      type, no structural change). Verified: full `retention` package suite
+      (27 tests) green on `Pixel_9a` (real emulator).
 
 **Commit: 10.5 alone.**
 

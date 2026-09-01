@@ -65,7 +65,12 @@ class SyncedDataRetentionPurgerIntegrationShould {
             NoteStoreImpl(databaseAdapter),
             valueFileResourcePurger,
         ),
-        fileResourcePurger = FileResourceRetentionPurger(FileResourceStoreImpl(databaseAdapter)),
+        orphanFileResourcePurger = OrphanFileResourceRetentionPurger(
+            FileResourceStoreImpl(databaseAdapter),
+            dataValueStore,
+            trackedEntityAttributeValueStore,
+            TrackedEntityDataValueStoreImpl(databaseAdapter),
+        ),
         d2CallExecutor = d2CallExecutor,
     )
 
@@ -173,7 +178,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
                 NoteStoreImpl(databaseAdapter),
                 valueFileResourcePurger,
             ),
-            fileResourcePurger = GivingAFailingFileResourceRetentionPurger(),
+            orphanFileResourcePurger = GivingAFailingFileResourceRetentionPurger(),
             d2CallExecutor = d2CallExecutor,
         )
 
@@ -187,7 +192,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
                 ),
             )
         } catch (expected: Exception) {
-            // Expected: the fileResourcePurger step fails after dataValue and
+            // Expected: the orphanFileResourcePurger step fails after dataValue and
             // trackedEntityInstance already ran, forcing the whole composed
             // transaction to roll back.
         }
@@ -201,12 +206,12 @@ class SyncedDataRetentionPurgerIntegrationShould {
 
     /**
      * A [RetentionPurger] that always throws, standing in for
-     * [FileResourceRetentionPurger] to simulate a failure in the last step of
-     * a multi-type purge. This proves the composed entry point's transaction
-     * covers every purger call, not just the failing one — the earlier
-     * dataValue/trackedEntityInstance purgers in the same test run against
-     * the real database, so their would-be-committed deletes are what this
-     * test verifies get rolled back too.
+     * [OrphanFileResourceRetentionPurger] to simulate a failure in the last
+     * step of a multi-type purge. This proves the composed entry point's
+     * transaction covers every purger call, not just the failing one — the
+     * earlier dataValue/trackedEntityInstance purgers in the same test run
+     * against the real database, so their would-be-committed deletes are what
+     * this test verifies get rolled back too.
      */
     private class GivingAFailingFileResourceRetentionPurger : RetentionPurger {
         override suspend fun purge(limit: Int) {
