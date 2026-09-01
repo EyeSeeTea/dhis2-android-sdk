@@ -173,3 +173,27 @@ callees.
   correct. This is an accepted dependency — re-deriving it manually was
   explicitly rejected in favor of the existing, tested primitive (see
   Context and `config.yaml` rules).
+- **[Risk]** `FileResourceRetentionPurger` purges `FileResource` rows purely
+  by their own `syncState`/`lastUpdated`/limit, with no awareness of the
+  `DataValue`/`TrackedEntityAttributeValue`/`TrackedEntityDataValue` rows that
+  reference a file resource's uid as their `value` (there is no FK — the link
+  only exists indirectly, via a `dataElement`/`trackedEntityAttribute` whose
+  `ValueType` is `FILE_RESOURCE`/`IMAGE`; see
+  `FileResourceDownloadCallHelper` for how the SDK resolves that link
+  elsewhere). This can leave broken links in both directions: a file resource
+  purged while the value still referencing it survives (broken attachment
+  visible in the app), or a value purged while its file resource survives
+  indefinitely (orphaned file, never cleaned up since nothing links it back).
+  → **Not mitigated in this change** — out of scope for the proposal as
+  written. See Open Questions.
+
+## Open Questions
+
+- Should `FileResourceRetentionPurger` be made aware of the
+  value↔file-resource link (either skip purging a file resource still
+  referenced by a non-purged value, or cascade-purge a file resource when the
+  value referencing it is purged)? This was not part of the original
+  proposal's scope and would need explicit confirmation from the
+  client/PM before committing to a design — the correct behavior may also
+  depend on whether the client considers a temporarily broken/orphaned
+  attachment acceptable given the purge's opt-out-by-default nature.

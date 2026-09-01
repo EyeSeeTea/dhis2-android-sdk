@@ -159,21 +159,30 @@ test just added, not new production code).
 
 ## 8. Public entry point and cross-module transactionality
 
-- [ ] 8.1 Add a behavior test: purging with limits set for multiple data types
+- [x] 8.1 Add a behavior test: purging with limits set for multiple data types
       in one call (e.g. TEI limit and DataValue limit together) purges each
       independently and correctly in a single invocation. Verify: test fails
       without a combined entry point.
-- [ ] 8.2 Implement the public purge entry point that accepts per-data-type
+- [x] 8.2 Implement the public purge entry point that accepts per-data-type
       limits and invokes each module's purge implementation inside a single
       `executeD2CallTransactionally` block. Verify: the 8.1 test passes.
+      Implemented as `SyncedDataRetentionPurger` (+ `RetentionLimits` data
+      class), constructor-typed against the `RetentionPurger` interface for
+      each of the 4 module purgers, so tests can substitute a failing fake
+      per module without needing a concrete subclass.
 
 **Commit: 8.1 + 8.2 together.**
 
-- [ ] 8.3 Add a behavior test: a failure during one data type's purge (e.g.
+- [x] 8.3 Add a behavior test: a failure during one data type's purge (e.g.
       FileResource) inside a multi-type call leaves ALL data types' tables
       unchanged, not just the failing one. Verify: test fails without proper
       transactional scope, passes once 8.2's wrapping covers every module in
       one transaction.
+      Passed on first run, confirming in practice that the single
+      transaction added in 8.2 (after the per-purger-transaction refactor
+      done earlier in this section) rolls back every module's writes, not
+      just the failing one — committed together with 8.1/8.2 rather than as
+      a separate commit.
 
 **Commit: 8.3 alone** if 8.2 already covers it (test-only); otherwise 8.3 plus
 the minimal fix to `8.2`'s transaction scope, as one red-green commit.
