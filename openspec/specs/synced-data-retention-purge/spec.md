@@ -13,6 +13,12 @@ eligible for purge only when its aggregated sync state is fully synced. A single
 non-synced record anywhere in the tree SHALL protect every record in that tree
 from purge, including the otherwise-eligible ancestors and descendants.
 
+A tracked entity instance, enrollment, or event that participates in a
+relationship SHALL additionally be eligible for purge only if the other side of
+that relationship — its own record tree — is also fully synced. A relationship
+with one side eligible and one side not SHALL protect both sides from purge,
+including the otherwise-eligible side's own tree.
+
 #### Scenario: Fully synced tree is eligible
 - **WHEN** a tracked entity instance and all of its enrollments, events, and
   values are fully synced
@@ -28,6 +34,17 @@ from purge, including the otherwise-eligible ancestors and descendants.
 - **WHEN** an aggregate data value has no child records
 - **THEN** its eligibility is determined directly by its own sync state, not an
   aggregated one
+
+#### Scenario: A relationship to a non-eligible counterpart protects the eligible side
+- **WHEN** a fully synced tracked entity instance has a relationship to another
+  tracked entity instance whose own record tree is not fully synced
+- **THEN** the fully synced tracked entity instance is not purged, even though
+  its own tree is otherwise eligible
+
+#### Scenario: A relationship between two fully synced trees does not block purge
+- **WHEN** a tracked entity instance, enrollment, or event has a relationship to
+  a counterpart whose own record tree is also fully synced
+- **THEN** the relationship does not prevent either side from being purged
 
 ### Requirement: Purge respects a caller-supplied retention count limit
 Given a retention count limit, the system SHALL purge only the excess: the
