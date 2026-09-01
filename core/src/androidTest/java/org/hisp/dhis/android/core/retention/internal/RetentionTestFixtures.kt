@@ -1,20 +1,20 @@
 package org.hisp.dhis.android.core.retention.internal
 
-import kotlinx.coroutines.runBlocking
 import org.hisp.dhis.android.core.category.CategoryCombo
 import org.hisp.dhis.android.core.category.internal.CategoryComboStore
 import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.common.ValueType
+import org.hisp.dhis.android.core.data.trackedentity.TrackedEntityDataValueSamples
 import org.hisp.dhis.android.core.dataelement.DataElement
 import org.hisp.dhis.android.core.fileresource.FileResource
 import org.hisp.dhis.android.core.note.Note
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue
 import java.text.SimpleDateFormat
 
-internal fun givenAFileDataElement(categoryComboStore: CategoryComboStore, uid: String): DataElement {
+internal suspend fun givenAFileDataElement(categoryComboStore: CategoryComboStore, uid: String): DataElement {
     val categoryCombo = CategoryCombo.builder().uid("$uid-categoryCombo").build()
-    runBlocking { categoryComboStore.insert(categoryCombo) }
+    categoryComboStore.insert(categoryCombo)
 
     return DataElement.builder()
         .uid(uid)
@@ -42,13 +42,7 @@ internal fun givenATrackedEntityDataValue(
     eventUid: String,
     dataElementUid: String = "dataElement",
     value: String = "value",
-): TrackedEntityDataValue {
-    return TrackedEntityDataValue.builder()
-        .event(eventUid)
-        .dataElement(dataElementUid)
-        .value(value)
-        .build()
-}
+): TrackedEntityDataValue = TrackedEntityDataValueSamples.get(dataElementUid, eventUid, value)
 
 internal fun givenAnEventNote(uid: String, eventUid: String): Note {
     return Note.builder()

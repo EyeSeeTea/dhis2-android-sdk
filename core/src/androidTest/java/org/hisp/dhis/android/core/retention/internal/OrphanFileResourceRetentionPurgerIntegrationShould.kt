@@ -62,8 +62,12 @@ class OrphanFileResourceRetentionPurgerIntegrationShould {
         val physicalFile = File.createTempFile("fileToPurge", ".txt", context.cacheDir)
         physicalFile.writeText("content")
 
-        val fileToPurge = givenAFileResource("fileToPurge", State.SYNCED, "2026-01-01T00:00:00.000", physicalFile.path)
-        val fileToKeep = givenAFileResource("fileToKeep", State.SYNCED, "2026-02-01T00:00:00.000", path = null)
+        val fileToPurge = givenAFileResource(
+            "fileToPurge",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            path = physicalFile.path,
+        )
+        val fileToKeep = givenAFileResource("fileToKeep", lastUpdated = "2026-02-01T00:00:00.000")
 
         fileResourceStore.insert(fileToPurge)
         fileResourceStore.insert(fileToKeep)
@@ -80,7 +84,11 @@ class OrphanFileResourceRetentionPurgerIntegrationShould {
     fun purge_an_eligible_file_resource_whose_physical_file_is_already_missing_without_raising_an_error() = runTest {
         val missingFilePath = context.cacheDir.path + "/does-not-exist.txt"
         val fileWithMissingPhysicalFile =
-            givenAFileResource("fileWithMissingPhysicalFile", State.SYNCED, "2026-01-01T00:00:00.000", missingFilePath)
+            givenAFileResource(
+                "fileWithMissingPhysicalFile",
+                lastUpdated = "2026-01-01T00:00:00.000",
+                path = missingFilePath,
+            )
 
         fileResourceStore.insert(fileWithMissingPhysicalFile)
 
@@ -93,7 +101,7 @@ class OrphanFileResourceRetentionPurgerIntegrationShould {
 
     @Test
     fun keep_a_file_resource_still_referenced_by_a_live_data_value_regardless_of_its_own_limit() = runTest {
-        val referencedFile = givenAFileResource("referencedFile", State.SYNCED, "2026-01-01T00:00:00.000", path = null)
+        val referencedFile = givenAFileResource("referencedFile", lastUpdated = "2026-01-01T00:00:00.000")
         fileResourceStore.insert(referencedFile)
 
         val referencingDataValue = givenADataValue("referencedFile")
