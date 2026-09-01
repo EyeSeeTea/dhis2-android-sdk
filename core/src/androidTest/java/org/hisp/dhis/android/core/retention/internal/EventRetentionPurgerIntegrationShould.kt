@@ -42,7 +42,8 @@ class EventRetentionPurgerIntegrationShould {
         TrackedEntityDataValueStoreImpl(databaseAdapter)
     private val noteStore: NoteStore = NoteStoreImpl(databaseAdapter)
     private val dataElementStore: DataElementStore = DataElementStoreImpl(databaseAdapter)
-    private val trackedEntityAttributeStore: TrackedEntityAttributeStore = TrackedEntityAttributeStoreImpl(databaseAdapter)
+    private val trackedEntityAttributeStore: TrackedEntityAttributeStore =
+        TrackedEntityAttributeStoreImpl(databaseAdapter)
     private val fileResourceStore: FileResourceStore = FileResourceStoreImpl(databaseAdapter)
     private val categoryComboStore = CategoryComboStoreImpl(databaseAdapter)
     private val valueFileResourcePurger =
@@ -91,7 +92,12 @@ class EventRetentionPurgerIntegrationShould {
         noteStore.insert(noteToPurge)
         noteStore.insert(noteToKeep)
 
-        EventRetentionPurger(eventStore, trackedEntityDataValueStore, noteStore, valueFileResourcePurger).purge(limit = 1)
+        EventRetentionPurger(
+            eventStore,
+            trackedEntityDataValueStore,
+            noteStore,
+            valueFileResourcePurger,
+        ).purge(limit = 1)
 
         val remainingEventUids = eventStore.selectUids()
         val remainingDataValueEventUids = trackedEntityDataValueStore.selectAll().map { it.event() }
@@ -110,7 +116,12 @@ class EventRetentionPurgerIntegrationShould {
         eventStore.insert(protectedEvent)
         eventStore.insert(syncedEvent)
 
-        EventRetentionPurger(eventStore, trackedEntityDataValueStore, noteStore, valueFileResourcePurger).purge(limit = 0)
+        EventRetentionPurger(
+            eventStore,
+            trackedEntityDataValueStore,
+            noteStore,
+            valueFileResourcePurger,
+        ).purge(limit = 0)
 
         val remainingEventUids = eventStore.selectUids()
 
@@ -131,7 +142,12 @@ class EventRetentionPurgerIntegrationShould {
         val dataValue = givenATrackedEntityDataValue(eventToPurge.uid(), "fileDataElement", "referencedFile")
         trackedEntityDataValueStore.insert(dataValue)
 
-        EventRetentionPurger(eventStore, trackedEntityDataValueStore, noteStore, valueFileResourcePurger).purge(limit = 0)
+        EventRetentionPurger(
+            eventStore,
+            trackedEntityDataValueStore,
+            noteStore,
+            valueFileResourcePurger,
+        ).purge(limit = 0)
 
         assertThat(fileResourceStore.selectUids()).isEmpty()
     }

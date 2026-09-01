@@ -43,7 +43,8 @@ class SyncedDataRetentionPurgerIntegrationShould {
         TrackedEntityAttributeValueStoreImpl(databaseAdapter)
     private val d2CallExecutor = D2CallExecutor(databaseAdapter, D2ErrorStoreImpl(databaseAdapter))
     private val dataElementStore: DataElementStore = DataElementStoreImpl(databaseAdapter)
-    private val trackedEntityAttributeStore: TrackedEntityAttributeStore = TrackedEntityAttributeStoreImpl(databaseAdapter)
+    private val trackedEntityAttributeStore: TrackedEntityAttributeStore =
+        TrackedEntityAttributeStoreImpl(databaseAdapter)
     private val fileResourceStore: FileResourceStore = FileResourceStoreImpl(databaseAdapter)
     private val valueFileResourcePurger =
         ValueFileResourcePurger(dataElementStore, trackedEntityAttributeStore, fileResourceStore)
@@ -65,12 +66,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
             NoteStoreImpl(databaseAdapter),
             valueFileResourcePurger,
         ),
-        orphanFileResourcePurger = OrphanFileResourceRetentionPurger(
-            FileResourceStoreImpl(databaseAdapter),
-            dataValueStore,
-            trackedEntityAttributeValueStore,
-            TrackedEntityDataValueStoreImpl(databaseAdapter),
-        ),
+        orphanFileResourcePurger = OrphanFileResourceRetentionPurger(FileResourceStoreImpl(databaseAdapter)),
         d2CallExecutor = d2CallExecutor,
     )
 

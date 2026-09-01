@@ -56,7 +56,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
     private val trackedEntityDataValueStore: TrackedEntityDataValueStore =
         TrackedEntityDataValueStoreImpl(databaseAdapter)
     private val dataElementStore: DataElementStore = DataElementStoreImpl(databaseAdapter)
-    private val trackedEntityAttributeStore: TrackedEntityAttributeStore = TrackedEntityAttributeStoreImpl(databaseAdapter)
+    private val trackedEntityAttributeStore: TrackedEntityAttributeStore =
+        TrackedEntityAttributeStoreImpl(databaseAdapter)
     private val fileResourceStore: FileResourceStore = FileResourceStoreImpl(databaseAdapter)
     private val categoryComboStore = CategoryComboStoreImpl(databaseAdapter)
     private val valueFileResourcePurger =

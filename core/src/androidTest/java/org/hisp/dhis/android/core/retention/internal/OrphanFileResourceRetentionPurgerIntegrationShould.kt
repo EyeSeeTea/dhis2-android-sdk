@@ -37,12 +37,7 @@ class OrphanFileResourceRetentionPurgerIntegrationShould {
         TrackedEntityDataValueStoreImpl(databaseAdapter)
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-    private val purger = OrphanFileResourceRetentionPurger(
-        fileResourceStore,
-        dataValueStore,
-        trackedEntityAttributeValueStore,
-        trackedEntityDataValueStore,
-    )
+    private val purger = OrphanFileResourceRetentionPurger(fileResourceStore)
 
     @Before
     fun setUp() {

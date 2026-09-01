@@ -19,14 +19,18 @@ internal class ValueFileResourcePurger(
     private var fileDataElementUids: Set<String>? = null
     private var fileAttributeUids: Set<String>? = null
 
-    suspend fun purgeIfDataElementReferencesFile(dataElementUid: String?, value: String?) {
-        if (dataElementUid != null && dataElementUid in fileDataElementUids()) {
-            purgeFileResource(value)
-        }
-    }
+    suspend fun purgeIfDataElementReferencesFile(dataElementUid: String?, value: String?) =
+        purgeIfFieldReferencesFile(dataElementUid, value, ::fileDataElementUids)
 
-    suspend fun purgeIfAttributeReferencesFile(attributeUid: String?, value: String?) {
-        if (attributeUid != null && attributeUid in fileAttributeUids()) {
+    suspend fun purgeIfAttributeReferencesFile(attributeUid: String?, value: String?) =
+        purgeIfFieldReferencesFile(attributeUid, value, ::fileAttributeUids)
+
+    private suspend fun purgeIfFieldReferencesFile(
+        fieldUid: String?,
+        value: String?,
+        fileFieldUids: suspend () -> Set<String>,
+    ) {
+        if (fieldUid != null && fieldUid in fileFieldUids()) {
             purgeFileResource(value)
         }
     }

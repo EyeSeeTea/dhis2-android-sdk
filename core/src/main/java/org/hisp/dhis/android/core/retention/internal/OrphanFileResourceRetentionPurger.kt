@@ -2,10 +2,7 @@ package org.hisp.dhis.android.core.retention.internal
 
 import org.hisp.dhis.android.core.common.DataColumns
 import org.hisp.dhis.android.core.common.State
-import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
-import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeValueStore
-import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityDataValueStore
 import org.hisp.dhis.android.persistence.common.querybuilders.WhereClauseBuilder
 import org.hisp.dhis.android.persistence.datavalue.DataValueTableInfo
 import org.hisp.dhis.android.persistence.fileresource.FileResourceTableInfo
@@ -17,26 +14,18 @@ import java.io.File
 @Singleton
 internal class OrphanFileResourceRetentionPurger(
     private val fileResourceStore: FileResourceStore,
-    private val dataValueStore: DataValueStore,
-    private val trackedEntityAttributeValueStore: TrackedEntityAttributeValueStore,
-    private val trackedEntityDataValueStore: TrackedEntityDataValueStore,
 ) : RetentionPurger {
     override suspend fun purge(limit: Int) {
-        val referencedFileResourceUids = (
-            dataValueStore.selectStringColumnsWhereClause(DataValueTableInfo.Columns.VALUE, "1") +
-                trackedEntityAttributeValueStore.selectStringColumnsWhereClause(
-                    TrackedEntityAttributeValueTableInfo.Columns.VALUE,
-                    "1",
-                ) +
-                trackedEntityDataValueStore.selectStringColumnsWhereClause(
-                    TrackedEntityDataValueTableInfo.Columns.VALUE,
-                    "1",
-                )
-            ).toSet()
+        val referencedFileResourcesSubQuery =
+            "SELECT ${DataValueTableInfo.Columns.VALUE} FROM ${DataValueTableInfo.TABLE_INFO.name()} " +
+                "UNION SELECT ${TrackedEntityAttributeValueTableInfo.Columns.VALUE} " +
+                "FROM ${TrackedEntityAttributeValueTableInfo.TABLE_INFO.name()} " +
+                "UNION SELECT ${TrackedEntityDataValueTableInfo.Columns.VALUE} " +
+                "FROM ${TrackedEntityDataValueTableInfo.TABLE_INFO.name()}"
 
         val orphanWhereClause = WhereClauseBuilder()
             .appendKeyStringValue(DataColumns.SYNC_STATE, State.SYNCED)
-            .appendNotInKeyStringValues(FileResourceTableInfo.Columns.UID, referencedFileResourceUids.toList())
+            .appendNotInSubQuery(FileResourceTableInfo.Columns.UID, referencedFileResourcesSubQuery)
             .build()
 
         val eligible = fileResourceStore.selectWhere(orphanWhereClause)

@@ -31,7 +31,8 @@ class ValueFileResourcePurgerIntegrationShould {
 
     private val databaseAdapter = TestDatabaseAdapterFactory.get()
     private val dataElementStore: DataElementStore = DataElementStoreImpl(databaseAdapter)
-    private val trackedEntityAttributeStore: TrackedEntityAttributeStore = TrackedEntityAttributeStoreImpl(databaseAdapter)
+    private val trackedEntityAttributeStore: TrackedEntityAttributeStore =
+        TrackedEntityAttributeStoreImpl(databaseAdapter)
     private val fileResourceStore: FileResourceStore = FileResourceStoreImpl(databaseAdapter)
     private val categoryComboStore = CategoryComboStoreImpl(databaseAdapter)
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
