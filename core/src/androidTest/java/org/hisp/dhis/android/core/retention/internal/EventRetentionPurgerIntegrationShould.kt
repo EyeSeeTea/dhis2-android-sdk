@@ -3,19 +3,12 @@ package org.hisp.dhis.android.core.retention.internal
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.hisp.dhis.android.core.category.CategoryCombo
-import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.common.State
-import org.hisp.dhis.android.core.common.ValueType
-import org.hisp.dhis.android.core.dataelement.DataElement
 import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
 import org.hisp.dhis.android.core.event.Event
 import org.hisp.dhis.android.core.event.internal.EventStore
-import org.hisp.dhis.android.core.fileresource.FileResource
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
-import org.hisp.dhis.android.core.note.Note
 import org.hisp.dhis.android.core.note.internal.NoteStore
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityDataValueStore
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
@@ -133,7 +126,7 @@ class EventRetentionPurgerIntegrationShould {
         val eventToPurge = givenATeiLessEvent("eventToPurge", State.SYNCED, "2026-01-01T00:00:00.000")
         eventStore.insert(eventToPurge)
 
-        val fileDataElement = givenAFileDataElement("fileDataElement")
+        val fileDataElement = givenAFileDataElement(categoryComboStore, "fileDataElement")
         dataElementStore.insert(fileDataElement)
 
         val referencedFileResource = givenAFileResource("referencedFile")
@@ -152,25 +145,6 @@ class EventRetentionPurgerIntegrationShould {
         assertThat(fileResourceStore.selectUids()).isEmpty()
     }
 
-    private fun givenAFileDataElement(uid: String): DataElement {
-        val categoryCombo = CategoryCombo.builder().uid("$uid-categoryCombo").build()
-        runBlocking { categoryComboStore.insert(categoryCombo) }
-
-        return DataElement.builder()
-            .uid(uid)
-            .valueType(ValueType.FILE_RESOURCE)
-            .categoryCombo(ObjectWithUid.fromIdentifiable(categoryCombo))
-            .domainType("AGGREGATE")
-            .build()
-    }
-
-    private fun givenAFileResource(uid: String): FileResource {
-        return FileResource.builder()
-            .uid(uid)
-            .syncState(State.SYNCED)
-            .build()
-    }
-
     private fun givenATeiLessEvent(
         uid: String,
         syncState: State,
@@ -186,30 +160,6 @@ class EventRetentionPurgerIntegrationShould {
             .syncState(syncState)
             .aggregatedSyncState(syncState)
             .lastUpdated(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))
-            .build()
-    }
-
-    private fun givenATrackedEntityDataValue(
-        eventUid: String,
-        dataElementUid: String = "dataElement",
-        value: String = "value",
-    ): TrackedEntityDataValue {
-        return TrackedEntityDataValue.builder()
-            .event(eventUid)
-            .dataElement(dataElementUid)
-            .value(value)
-            .build()
-    }
-
-    private fun givenAnEventNote(
-        uid: String,
-        eventUid: String,
-    ): Note {
-        return Note.builder()
-            .uid(uid)
-            .noteType(Note.NoteType.EVENT_NOTE)
-            .event(eventUid)
-            .value("a note")
             .build()
     }
 }

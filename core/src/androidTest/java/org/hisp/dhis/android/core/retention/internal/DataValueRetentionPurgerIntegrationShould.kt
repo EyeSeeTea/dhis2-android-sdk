@@ -3,16 +3,11 @@ package org.hisp.dhis.android.core.retention.internal
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.hisp.dhis.android.core.category.CategoryCombo
-import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.common.State
-import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
-import org.hisp.dhis.android.core.dataelement.DataElement
 import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
 import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
-import org.hisp.dhis.android.core.fileresource.FileResource
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeStore
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
@@ -111,7 +106,7 @@ class DataValueRetentionPurgerIntegrationShould {
 
     @Test
     fun purge_the_file_resource_referenced_by_a_purged_data_value() = runTest {
-        val fileDataElement = givenAFileDataElement("fileDataElement")
+        val fileDataElement = givenAFileDataElement(categoryComboStore, "fileDataElement")
         dataElementStore.insert(fileDataElement)
 
         val referencedFileResource = givenAFileResource("referencedFile")
@@ -125,25 +120,6 @@ class DataValueRetentionPurgerIntegrationShould {
         DataValueRetentionPurger(dataValueStore, valueFileResourcePurger).purge(limit = 0)
 
         assertThat(fileResourceStore.selectUids()).isEmpty()
-    }
-
-    private fun givenAFileDataElement(uid: String): DataElement {
-        val categoryCombo = CategoryCombo.builder().uid("$uid-categoryCombo").build()
-        runBlocking { categoryComboStore.insert(categoryCombo) }
-
-        return DataElement.builder()
-            .uid(uid)
-            .valueType(ValueType.FILE_RESOURCE)
-            .categoryCombo(ObjectWithUid.fromIdentifiable(categoryCombo))
-            .domainType("AGGREGATE")
-            .build()
-    }
-
-    private fun givenAFileResource(uid: String): FileResource {
-        return FileResource.builder()
-            .uid(uid)
-            .syncState(State.SYNCED)
-            .build()
     }
 
     private fun givenADataValue(

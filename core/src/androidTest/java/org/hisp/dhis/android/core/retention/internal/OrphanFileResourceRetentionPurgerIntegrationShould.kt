@@ -8,7 +8,6 @@ import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
 import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
-import org.hisp.dhis.android.core.fileresource.FileResource
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeValueStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityDataValueStore
@@ -23,7 +22,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
-import java.text.SimpleDateFormat
 
 @RunWith(D2JunitRunner::class)
 class OrphanFileResourceRetentionPurgerIntegrationShould {
@@ -104,20 +102,6 @@ class OrphanFileResourceRetentionPurgerIntegrationShould {
         purger.purge(limit = 0)
 
         assertThat(fileResourceStore.selectUids()).containsExactly("referencedFile")
-    }
-
-    private fun givenAFileResource(
-        uid: String,
-        syncState: State,
-        lastUpdated: String,
-        path: String?,
-    ): FileResource {
-        val builder = FileResource.builder()
-            .uid(uid)
-            .syncState(syncState)
-            .lastUpdated(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))
-        path?.let { builder.path(it) }
-        return builder.build()
     }
 
     private fun givenADataValue(value: String): DataValue {

@@ -6,7 +6,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.category.CategoryCombo
 import org.hisp.dhis.android.core.common.ObjectWithUid
-import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.dataelement.DataElement
 import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
@@ -147,16 +146,8 @@ class ValueFileResourcePurgerIntegrationShould {
             .build()
     }
 
-    private fun givenAFileResource(uid: String, path: String?): FileResource {
-        val builder = FileResource.builder()
-            .uid(uid)
-            .syncState(State.SYNCED)
-        path?.let { builder.path(it) }
-        return builder.build()
-    }
-
     private fun givenAFileResourceWithPhysicalFile(uid: String): Pair<FileResource, File> {
         val physicalFile = File.createTempFile(uid, ".txt", context.cacheDir).apply { writeText("content") }
-        return givenAFileResource(uid, physicalFile.path) to physicalFile
+        return givenAFileResource(uid, path = physicalFile.path) to physicalFile
     }
 }
