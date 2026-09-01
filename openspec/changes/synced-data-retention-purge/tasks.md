@@ -236,8 +236,13 @@ description instead of an empty commit.
 
 Adds a missing test (see mapping above) — committed alone.
 
-- [ ] 9.2 Run the full `core` test suite (unit + androidTest) and confirm
+- [x] 9.2 Run the full `core` test suite (unit + androidTest) and confirm
       green, with no pre-existing wiper/test behavior changed. Verify: CI or
       local run passes.
+
+      Verified locally: `:core:testDebugUnitTest` green;
+      `:core:connectedDebugAndroidTest` on `Pixel_9a` (real emulator, `android`
+      CLI) — 5524 tests run, 0 failed, 158 skipped (pre-existing skip set, not
+      new).
 
 **Commit: none** — verification only, no file changes expected.
