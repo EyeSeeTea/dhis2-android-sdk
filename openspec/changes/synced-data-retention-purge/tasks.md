@@ -189,16 +189,52 @@ the minimal fix to `8.2`'s transaction scope, as one red-green commit.
 
 ## 9. Full spec verification
 
-- [ ] 9.1 Walk every `#### Scenario:` in
+- [x] 9.1 Walk every `#### Scenario:` in
       `specs/synced-data-retention-purge/spec.md` and confirm each one maps to
       at least one test added in sections 1-8; add any scenario found without
       a corresponding test. Verify: one-to-one mapping documented (a checklist
       comment in this task or a follow-up commit), no scenario left
       unverified.
 
+      Mapping (scenario → test):
+      - Fully synced tree is eligible →
+        `TrackedEntityRetentionPurgerIntegrationShould.purge_a_fully_synced_tracked_entity_instance_together_with_its_attribute_values`
+      - One pending descendant protects the whole tree →
+        `TrackedEntityRetentionPurgerIntegrationShould.keep_the_whole_tree_of_a_tei_that_is_not_eligible_even_if_its_enrollment_and_event_are_synced`
+        (+ `keep_a_tracked_entity_instance_whose_aggregated_sync_state_is_not_synced`)
+      - Leaf data without children uses its own sync state →
+        `DataValueRetentionPurgerIntegrationShould` (all 3 tests filter by own
+        `syncState`, no aggregate) +
+        `EventRetentionPurgerIntegrationShould.keep_a_tei_less_event_whose_own_aggregated_sync_state_is_not_synced`
+      - Only the oldest excess records are purged →
+        `DataValueRetentionPurgerIntegrationShould.keep_only_the_most_recently_updated_synced_data_values_up_to_the_limit`
+        + `EventRetentionPurgerIntegrationShould.purge_the_oldest_synced_tei_less_events_beyond_the_limit_with_their_data_values_and_notes`
+        + `FileResourceRetentionPurgerIntegrationShould.purge_an_eligible_file_resource_beyond_the_limit_together_with_its_physical_file`
+      - Non-eligible records are never counted toward the limit →
+        `DataValueRetentionPurgerIntegrationShould.keep_only_the_most_recently_updated_synced_data_values_up_to_the_limit`
+        (the older `pending` row survives and is excluded from the count)
+      - A limit of zero purges everything eligible →
+        `DataValueRetentionPurgerIntegrationShould.purge_every_synced_data_value_when_limit_is_zero`
+      - Fewer eligible records than the limit purges nothing →
+        `DataValueRetentionPurgerIntegrationShould.keep_every_synced_data_value_when_eligible_rows_are_at_or_below_the_limit`
+      - Purging a tracked entity instance removes its full tree →
+        `TrackedEntityRetentionPurgerIntegrationShould.purge_the_enrollments_and_their_notes_of_a_purged_tracked_entity_instance`
+        + `purge_the_events_their_data_values_and_their_notes_of_a_purged_tracked_entity_instance`
+      - Trimming leaf data does not affect tracked entity data → **gap found,
+        no existing test isolated this.** Added
+        `SyncedDataRetentionPurgerIntegrationShould.trim_data_values_under_their_limit_without_affecting_an_eligible_tracked_entity_instance`.
+      - A failure partway through leaves data unchanged →
+        `SyncedDataRetentionPurgerIntegrationShould.leave_every_data_type_unchanged_when_one_type_fails_partway_through_a_multi_type_purge`
+      - Purging a file resource with an existing physical file →
+        `FileResourceRetentionPurgerIntegrationShould.purge_an_eligible_file_resource_beyond_the_limit_together_with_its_physical_file`
+      - Purging a file resource whose physical file is already missing →
+        `FileResourceRetentionPurgerIntegrationShould.purge_an_eligible_file_resource_whose_physical_file_is_already_missing_without_raising_an_error`
+
 **Commit: 9.1 alone**, only if it adds a missing test; if every scenario is
 already covered, no commit is needed — record the mapping in the PR
 description instead of an empty commit.
+
+Adds a missing test (see mapping above) — committed alone.
 
 - [ ] 9.2 Run the full `core` test suite (unit + androidTest) and confirm
       green, with no pre-existing wiper/test behavior changed. Verify: CI or

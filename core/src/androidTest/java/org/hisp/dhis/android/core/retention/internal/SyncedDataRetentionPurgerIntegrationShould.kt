@@ -105,6 +105,33 @@ class SyncedDataRetentionPurgerIntegrationShould {
     }
 
     @Test
+    fun trim_data_values_under_their_limit_without_affecting_an_eligible_tracked_entity_instance() = runTest {
+        val oldestDataValue = givenADataValue("oldestDataValue", "2026-01-01T00:00:00.000")
+        val newestDataValue = givenADataValue("newestDataValue", "2026-02-01T00:00:00.000")
+
+        dataValueStore.insert(listOf(oldestDataValue, newestDataValue))
+
+        val eligibleTei = givenATrackedEntityInstance("eligibleTei", "2026-01-01T00:00:00.000")
+
+        trackedEntityInstanceStore.insert(eligibleTei)
+
+        purger.purge(
+            RetentionLimits(
+                dataValue = 0,
+                trackedEntityInstance = 1,
+                event = 0,
+                fileResource = 0,
+            ),
+        )
+
+        val remainingDataElements = dataValueStore.selectAll().map { it.dataElement() }
+        val remainingTeiUids = trackedEntityInstanceStore.selectUids()
+
+        assertThat(remainingDataElements).isEmpty()
+        assertThat(remainingTeiUids).containsExactly("eligibleTei")
+    }
+
+    @Test
     fun leave_every_data_type_unchanged_when_one_type_fails_partway_through_a_multi_type_purge() = runTest {
         val oldestDataValue = givenADataValue("oldestDataValue", "2026-01-01T00:00:00.000")
         val newestDataValue = givenADataValue("newestDataValue", "2026-02-01T00:00:00.000")
