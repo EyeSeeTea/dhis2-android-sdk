@@ -99,3 +99,39 @@ NOT prevent the record from being purged or raise an error to the caller.
 - **WHEN** an eligible file resource is purged but its physical file no longer
   exists on the device
 - **THEN** the record is still purged and no error is raised to the caller
+
+### Requirement: A file resource's eligibility follows the value that references it
+A file resource referenced by a data value, tracked entity attribute value, or
+tracked entity data value SHALL NOT be evaluated by its own sync state for
+purge purposes. It SHALL be purged only when, and exactly when, the value
+referencing it is itself purged as part of its own module's retention purge.
+
+#### Scenario: A referenced file resource is purged together with its value
+- **WHEN** a data value, tracked entity attribute value, or tracked entity data
+  value referencing a file resource is purged
+- **THEN** the file resource it references is also purged, together with its
+  physical file
+
+#### Scenario: A referenced file resource survives while its value is not eligible
+- **WHEN** a file resource is referenced by a value whose own record tree is
+  not eligible for purge (for example, a tracked entity attribute value whose
+  tracked entity instance has a pending descendant), even though the file
+  resource's own sync state is fully synced
+- **THEN** the file resource is not purged
+
+### Requirement: Orphaned file resources are purged independently
+A file resource with no live data value, tracked entity attribute value, or
+tracked entity data value referencing it SHALL be treated as its own
+independent retention unit, purged under its own retention count limit and
+sync state, the same way leaf data without a tree is purged.
+
+#### Scenario: An orphaned file resource beyond the limit is purged
+- **WHEN** a fully synced file resource has no data value, tracked entity
+  attribute value, or tracked entity data value referencing it, and it is
+  beyond the configured retention count limit
+- **THEN** the file resource is purged
+
+#### Scenario: A referenced file resource is not purged as an orphan
+- **WHEN** a file resource is still referenced by a live value
+- **THEN** it is never purged by the orphan file resource purge, regardless of
+  its own sync state or retention count limit

@@ -246,3 +246,106 @@ Adds a missing test (see mapping above) — committed alone.
       new).
 
 **Commit: none** — verification only, no file changes expected.
+
+## 10. FileResource cascade eligibility (fixes the risk found in 9.1's coverage pass)
+
+See design.md "FileResource cascade" for the full rationale: a `FileResource`
+referenced by a value must inherit that value's tree eligibility instead of
+being evaluated by its own `syncState`, and orphaned `FileResource`s (no live
+reference at all) are purged independently. This changes `RetentionPurger`'s
+return type and repurposes `FileResourceRetentionPurger` — both already-merged
+capabilities (sections 1-9), so treat every sub-task here as a refactor of
+tested code, re-running the full existing `retention` package test suite after
+each step, not just the new test.
+
+- [ ] 10.1 Change `RetentionPurger.purge(limit: Int)` to return
+      `List<PurgedValueRef>` (a `(fieldUid: String, value: String?)` pair — see
+      design.md) instead of `Unit`. Update `DataValueRetentionPurger`,
+      `TrackedEntityRetentionPurger`, `EventRetentionPurger` to return the refs
+      of the rows they delete: for `DataValueRetentionPurger`, one ref per
+      purged `DataValue` (`dataElement()`, `value()`); for
+      `TrackedEntityRetentionPurger`, one ref per purged
+      `TrackedEntityAttributeValue` (`trackedEntityAttribute()`, `value()`) and
+      one per purged `TrackedEntityDataValue` (`dataElement()`, `value()`); for
+      `EventRetentionPurger`, one ref per purged `TrackedEntityDataValue`.
+      Verify: existing tests in `DataValueRetentionPurgerIntegrationShould`,
+      `TrackedEntityRetentionPurgerIntegrationShould`,
+      `EventRetentionPurgerIntegrationShould` still pass unchanged in
+      behavior — this step only changes what `purge()` returns, not what it
+      deletes.
+- [ ] 10.2 Switch `TrackedEntityDataValue` deletion in both
+      `TrackedEntityRetentionPurger` (event cascade) and `EventRetentionPurger`
+      (TEI-less path) from `TrackedEntityDataValueStore.deleteByEvent(uid)` (a
+      batch delete that never reads what it removes) to read-then-delete
+      (`getForEvent`/`queryTrackedEntityDataValuesByEventUid` followed by
+      row-level deletes), so both call sites can build the
+      `TrackedEntityDataValue` refs required by 10.1. Verify: existing
+      cascade tests in both files still pass; no behavior change other than
+      the refs now being returned.
+
+**Commit: 10.1 + 10.2 together** (interface + call-site change, no new test
+behavior yet — existing tests are the safety net).
+
+- [ ] 10.3 Add a behavior test: a `TrackedEntityAttributeValue` of a file type
+      references a `FileResource` that is itself `SYNCED`, but the owning
+      TEI's `aggregatedSyncState` is not `SYNCED` (e.g. one of its events is
+      pending) — the file resource is NOT purged when purging with a
+      `fileResource` limit of 0. Verify: test fails against the current
+      `FileResourceRetentionPurger` (it purges by the file resource's own
+      `syncState`, ignoring the owning tree).
+- [ ] 10.4 Repurpose `FileResourceRetentionPurger`: remove its `RetentionPurger`
+      implementation and its own `syncState`/`lastUpdated`/limit selection;
+      replace with `purgeAssociatedTo(purgedValues: List<PurgedValueRef>)`,
+      which resolves which `fieldUid`s are `DataElement`/`TrackedEntityAttribute`
+      of `ValueType` `FILE_RESOURCE`/`IMAGE` (same resolution
+      `FileResourceDownloadCallHelper` uses) and purges (row + physical file,
+      reusing the existing `runCatching` file-deletion) the `FileResource`
+      named by each matching `value`. Wire `SyncedDataRetentionPurger` to call
+      it with the union of what `dataValuePurger`/`trackedEntityPurger`/
+      `eventPurger` returned, after they run. Verify: the 10.3 test passes,
+      and (per Group 10 preamble) the full `retention` package suite is
+      re-run green — this step deletes the file-eligibility behavior the
+      original `FileResourceRetentionPurgerIntegrationShould` tests (7.1/7.2/
+      7.3, 9.1's scenario coverage) asserted, so those tests must be moved or
+      rewritten against the new trigger (a purged value, not a limit) rather
+      than silently left red or deleted.
+
+**Commit: 10.3 + 10.4 together** (red test, then the repurposing that turns it
+green; includes updating/moving the pre-existing `FileResourceRetentionPurger`
+tests that this step's behavior change invalidates).
+
+- [ ] 10.5 Add a behavior test: purging a `DataValue`/
+      `TrackedEntityAttributeValue`/`TrackedEntityDataValue` that references a
+      `FileResource` purges that file resource (row + physical file)
+      together with it, in the same call. Verify: test passes against 10.4's
+      implementation (should already be green — this asserts the positive
+      case symmetric to 10.3's negative one).
+
+**Commit: 10.5 alone** (test-only, against the 10.4 implementation).
+
+- [ ] 10.6 Add a new class `OrphanFileResourceRetentionPurger` implementing
+      `RetentionPurger`, carrying the by-limit/`lastUpdated`/`syncState`
+      selection logic the original `FileResourceRetentionPurger` had, plus a
+      `NOT IN` filter (via each table's `value` column, same approach as
+      `FileResourceDownloadCallHelper`) excluding any `FileResource` uid
+      referenced by a live `DataValue`/`TrackedEntityAttributeValue`/
+      `TrackedEntityDataValue` row. Add a behavior test: a `FileResource` with
+      no live reference at all, beyond the limit and `SYNCED`, is purged; a
+      `FileResource` still referenced by a live value is never purged by this
+      class regardless of its own state/limit. Wire `SyncedDataRetentionPurger`
+      to call it with `limits.fileResource` (replacing the old, now-removed
+      `FileResourceRetentionPurger` wiring for that limit). Verify: new tests
+      pass; `SyncedDataRetentionPurgerIntegrationShould`'s existing multi-type
+      tests still pass with the constructor updated to the new purger.
+
+**Commit: 10.6 alone.**
+
+- [ ] 10.7 Full spec re-verification (same method as 9.1): walk every
+      `#### Scenario:` added to `spec.md` by this group (FileResource cascade
+      eligibility + orphan purge requirements) and confirm each maps to a test
+      added in 10.3-10.6; then re-run the full `core` test suite (unit +
+      androidTest), same as 9.2, to confirm no regression outside this
+      change. Verify: mapping documented here, full suite green.
+
+**Commit: 10.7 alone**, only if it adds a missing test; otherwise document the
+mapping here with no commit, same rule as 9.1.

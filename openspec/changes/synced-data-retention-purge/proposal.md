@@ -26,6 +26,11 @@ fork can build a retention policy on top of.
   unchanged from before the attempt.
 - `FileResource` purge additionally deletes the row's physical file; a missing
   physical file does not abort the row deletion or raise an error to the caller.
+- A `FileResource` referenced by a `DataValue`/`TrackedEntityAttributeValue`/
+  `TrackedEntityDataValue` is purged exactly when that value is purged by its
+  own module's purger (inheriting the value's tree eligibility, not the file
+  resource's own sync state); a `FileResource` with no live reference at all is
+  purged independently, under its own retention count limit.
 
 ## Capabilities
 

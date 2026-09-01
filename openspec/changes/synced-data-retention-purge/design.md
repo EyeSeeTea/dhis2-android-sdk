@@ -136,6 +136,69 @@ missing file (`runCatching` or equivalent) without aborting the row's DB
 deletion — a missing physical file is a legitimate "already gone" state, not a
 purge failure.
 
+### FileResource cascade: purge the ones a purged value referenced, purge orphans separately
+Resolved after client/PM input (see former Open Question below): a `FileResource`
+must never be evaluated by its own `syncState`/`lastUpdated`/limit alone, because
+it can be indirectly attached to a tracker tree that is not eligible (e.g. a
+`TrackedEntityAttributeValue` of type `IMAGE` pointing at a `SYNCED` `FileResource`
+while the owning TEI's `aggregatedSyncState` is `TO_UPDATE` because one of its
+events is pending) — purging it there would delete a file a still-pending record
+depends on, before that record ever reaches the server. Eligibility for a
+referenced `FileResource` must instead be inherited from the value that
+references it, which already went through the correct tree-eligibility check in
+its own module's purger.
+
+This splits FileResource purge into two distinct, separately-triggered
+mechanisms instead of one:
+
+- **`FileResourceRetentionPurger`** (repurposed, no longer a `RetentionPurger`,
+  no limit of its own): purges the `FileResource` a value's row referenced, at
+  the exact moment that value's own purger (`DataValueRetentionPurger`,
+  `TrackedEntityRetentionPurger`, `EventRetentionPurger`) deletes that row. It
+  never runs on a schedule/limit of its own — it only reacts to what those three
+  purgers already decided was eligible, so it inherits their tree-eligibility
+  check for free instead of re-implementing it.
+- **`OrphanFileResourceRetentionPurger`** (new, implements `RetentionPurger`,
+  keeps the limit/`lastUpdated`/`syncState` selection logic the original
+  `FileResourceRetentionPurger` had): purges `FileResource` rows that no live
+  `DataValue`/`TrackedEntityAttributeValue`/`TrackedEntityDataValue` row
+  references at all (checked via a `NOT IN` against each table's `value`
+  column, the same resolution approach `FileResourceDownloadCallHelper` already
+  uses elsewhere in the SDK) — these have no tree to inherit eligibility from,
+  so they keep the original by-limit selection.
+
+Homogeneous alternative considered (each value purger resolves and deletes its
+own associated `FileResource` inline, duplicating the file-type resolution and
+physical-file deletion three times) was rejected: it would require injecting
+`FileResourceStore` into three unrelated modules and triplicate the "is this
+`dataElement`/`trackedEntityAttribute` a file type, and does its `value` name a
+real `FileResource`" resolution, breaking the one-module-per-data-type shape the
+other 8 sections deliberately kept — see the "new, narrow interface" decision
+above, same reasoning applied to this cascade.
+
+To let the three value purgers report what they deleted without leaking
+`FileResource` knowledge into them, `RetentionPurger.purge(limit: Int)` changes
+its return type from `Unit` to `List<PurgedValueRef>` — a plain
+`(fieldUid: String, value: String?)` pair identifying, per deleted row, the
+`dataElement`/`trackedEntityAttribute` uid and the raw stored value, with no
+opinion on whether it names a file. `SyncedDataRetentionPurger` (the composed
+entry point) collects the three value purgers' returned refs and passes their
+union to `FileResourceRetentionPurger.purgeAssociatedTo(...)` after they run,
+still inside the same single transaction — `OrphanFileResourceRetentionPurger`
+runs independently, keyed off `RetentionLimits.fileResource` like the other
+by-limit purgers.
+
+One mechanical consequence: `TrackedEntityDataValue` deletion (used both from
+`TrackedEntityRetentionPurger`'s event cascade and from `EventRetentionPurger`'s
+TEI-less path) currently goes through `TrackedEntityDataValueStore.deleteByEvent`,
+a single batch delete that never reads the rows it removes. Both call sites
+must switch to read-then-delete (`getForEvent`/
+`queryTrackedEntityDataValuesByEventUid` followed by row-level deletes) to be
+able to return `PurgedValueRef`s for what they deleted — the same shape
+`TrackedEntityRetentionPurger` already uses for
+`TrackedEntityAttributeValueStore` (`queryByTrackedEntityInstance` then
+`deleteWhere`).
+
 ### Transactionality: reuse `d2CallExecutor.executeD2CallTransactionally`, same as `WipeModuleImpl` — at the composed entry point only
 No new transaction mechanism. But — revised after building the first 4
 per-module purgers — the transaction wrapping belongs **only on the composed
@@ -173,27 +236,29 @@ callees.
   correct. This is an accepted dependency — re-deriving it manually was
   explicitly rejected in favor of the existing, tested primitive (see
   Context and `config.yaml` rules).
-- **[Risk]** `FileResourceRetentionPurger` purges `FileResource` rows purely
-  by their own `syncState`/`lastUpdated`/limit, with no awareness of the
-  `DataValue`/`TrackedEntityAttributeValue`/`TrackedEntityDataValue` rows that
-  reference a file resource's uid as their `value` (there is no FK — the link
-  only exists indirectly, via a `dataElement`/`trackedEntityAttribute` whose
-  `ValueType` is `FILE_RESOURCE`/`IMAGE`; see
-  `FileResourceDownloadCallHelper` for how the SDK resolves that link
-  elsewhere). This can leave broken links in both directions: a file resource
-  purged while the value still referencing it survives (broken attachment
-  visible in the app), or a value purged while its file resource survives
-  indefinitely (orphaned file, never cleaned up since nothing links it back).
-  → **Not mitigated in this change** — out of scope for the proposal as
-  written. See Open Questions.
-
-## Open Questions
-
-- Should `FileResourceRetentionPurger` be made aware of the
-  value↔file-resource link (either skip purging a file resource still
-  referenced by a non-purged value, or cascade-purge a file resource when the
-  value referencing it is purged)? This was not part of the original
-  proposal's scope and would need explicit confirmation from the
-  client/PM before committing to a design — the correct behavior may also
-  depend on whether the client considers a temporarily broken/orphaned
-  attachment acceptable given the purge's opt-out-by-default nature.
+- **[Risk, resolved]** `FileResourceRetentionPurger` originally purged
+  `FileResource` rows purely by their own `syncState`/`lastUpdated`/limit, with
+  no awareness of the `DataValue`/`TrackedEntityAttributeValue`/
+  `TrackedEntityDataValue` rows that reference a file resource's uid as their
+  `value` (there is no FK — the link only exists indirectly, via a
+  `dataElement`/`trackedEntityAttribute` whose `ValueType` is
+  `FILE_RESOURCE`/`IMAGE`; see `FileResourceDownloadCallHelper` for how the SDK
+  resolves that link elsewhere). Confirmed with the client/PM that this is a
+  real correctness bug, not just a cosmetic orphan risk — a file still backing
+  a not-yet-synced record could be deleted purely because the file row itself
+  happened to be `SYNCED`, ahead of its own tree's eligibility.
+  → **Mitigation**: see "FileResource cascade" above — associated
+  `FileResource`s now inherit eligibility from the value referencing them;
+  orphaned ones (no live reference at all) are purged separately by
+  `OrphanFileResourceRetentionPurger`.
+- **[Risk]** A `FileResource` referenced by more than one live value row (the
+  same uploaded file reused across two attributes/data elements) would, under
+  "purge in cascade whenever a referencing value is purged," be deleted by the
+  first purger that reaches it even if a second live reference survives.
+  → **Not mitigated in this change**: DHIS2 file resources are 1:1 with the
+  value that uploaded them in every real flow this SDK supports (each upload
+  creates its own `FileResource`); cross-referencing the same uid from two rows
+  is not a case the app or server produces today. Flagged here rather than
+  guarded in code, consistent with this design's general stance of trusting an
+  existing invariant instead of re-deriving it defensively (see
+  `aggregatedSyncState` in Context).
