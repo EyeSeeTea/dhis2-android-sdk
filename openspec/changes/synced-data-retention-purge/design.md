@@ -151,13 +151,14 @@ its own module's purger.
 This splits FileResource purge into two distinct, separately-triggered
 mechanisms instead of one:
 
-- **`FileResourceRetentionPurger`** (repurposed, no longer a `RetentionPurger`,
-  no limit of its own): purges the `FileResource` a value's row referenced, at
-  the exact moment that value's own purger (`DataValueRetentionPurger`,
-  `TrackedEntityRetentionPurger`, `EventRetentionPurger`) deletes that row. It
-  never runs on a schedule/limit of its own — it only reacts to what those three
-  purgers already decided was eligible, so it inherits their tree-eligibility
-  check for free instead of re-implementing it.
+- **`ValueFileResourcePurger`** (new, plain injected collaborator — not a
+  `RetentionPurger`, no limit of its own, no scheduled invocation): purges the
+  `FileResource` a value's row referenced, called inline, in the same loop
+  iteration, at the exact moment that value's own purger
+  (`DataValueRetentionPurger`, `TrackedEntityRetentionPurger`,
+  `EventRetentionPurger`) deletes that row. It never runs on its own — it only
+  reacts to what those three purgers already decided was eligible, so it
+  inherits their tree-eligibility check for free instead of re-implementing it.
 - **`OrphanFileResourceRetentionPurger`** (new, implements `RetentionPurger`,
   keeps the limit/`lastUpdated`/`syncState` selection logic the original
   `FileResourceRetentionPurger` had): purges `FileResource` rows that no live
@@ -165,36 +166,86 @@ mechanisms instead of one:
   references at all (checked via a `NOT IN` against each table's `value`
   column, the same resolution approach `FileResourceDownloadCallHelper` already
   uses elsewhere in the SDK) — these have no tree to inherit eligibility from,
-  so they keep the original by-limit selection.
+  so they keep the original by-limit selection. `FileResourceRetentionPurger`
+  is renamed to `OrphanFileResourceRetentionPurger` rather than kept alongside
+  it, since after this change the original class's only remaining
+  responsibility is the orphan case.
 
-Homogeneous alternative considered (each value purger resolves and deletes its
-own associated `FileResource` inline, duplicating the file-type resolution and
-physical-file deletion three times) was rejected: it would require injecting
-`FileResourceStore` into three unrelated modules and triplicate the "is this
-`dataElement`/`trackedEntityAttribute` a file type, and does its `value` name a
-real `FileResource`" resolution, breaking the one-module-per-data-type shape the
-other 8 sections deliberately kept — see the "new, narrow interface" decision
-above, same reasoning applied to this cascade.
+Two designs were considered and rejected before this one:
 
-To let the three value purgers report what they deleted without leaking
-`FileResource` knowledge into them, `RetentionPurger.purge(limit: Int)` changes
-its return type from `Unit` to `List<PurgedValueRef>` — a plain
-`(fieldUid: String, value: String?)` pair identifying, per deleted row, the
-`dataElement`/`trackedEntityAttribute` uid and the raw stored value, with no
-opinion on whether it names a file. `SyncedDataRetentionPurger` (the composed
-entry point) collects the three value purgers' returned refs and passes their
-union to `FileResourceRetentionPurger.purgeAssociatedTo(...)` after they run,
-still inside the same single transaction — `OrphanFileResourceRetentionPurger`
-runs independently, keyed off `RetentionLimits.fileResource` like the other
-by-limit purgers.
+1. **A dedicated `FileResourceRetentionPurger.purgeAssociatedTo(purgedValues)`
+   called once, after the fact, from the composed entry point.** This needed
+   the three value purgers to report what they deleted, which meant changing
+   `RetentionPurger.purge(limit: Int)`'s return type from `Unit` to
+   `List<PurgedValueRef>`. Rejected: it broke command-query separation (a
+   `purge()` command started returning data purely so a caller three layers up
+   could act on it) and forced `OrphanFileResourceRetentionPurger` — which has
+   nothing to report — to return `emptyList()` just to satisfy a contract it
+   doesn't need. Splitting the reporting into a second interface
+   (`ValuePurgeReporter`) avoided the `Unit`-vs-`List` clash but still required
+   every value purger to carry mutable last-purged state, and forced
+   `SyncedDataRetentionPurger`'s constructor to take a `RetentionPurger` and
+   the corresponding reporter for each of the three value purgers side by side
+   — more moving parts than the problem needs, for a distinction
+   (associated vs. orphan FileResource purge) that already has a natural home
+   at the point of deletion.
+2. **Each value purger resolving and deleting its own associated
+   `FileResource` inline, independently** (no shared collaborator — the
+   file-type resolution and physical-file deletion code duplicated three
+   times). Rejected for the duplication, not for the "inline, in the deleting
+   purger's own loop" shape — which this design keeps. The fix for the
+   duplication is a shared, injected collaborator (`ValueFileResourcePurger`),
+   not moving the call out of the loop.
 
-One mechanical consequence: `TrackedEntityDataValue` deletion (used both from
+`ValueFileResourcePurger` resolves, for a given `dataElement`/
+`trackedEntityAttribute` uid, whether its `ValueType` is `FILE_RESOURCE`/
+`IMAGE` — the same resolution `FileResourceDownloadCallHelper` already uses
+elsewhere in the SDK — and if so, deletes the `FileResource` (row + physical
+file, `runCatching` around the file delete, same tolerance as the existing
+row-by-row purge) named by the value's raw string. It exposes two entry
+points, one per caller shape (a `dataElement` uid for `DataValue`/
+`TrackedEntityDataValue` callers, a `trackedEntityAttribute` uid for
+`TrackedEntityAttributeValue` callers) so no caller needs to pass a
+column-name discriminator:
+
+```kotlin
+internal class ValueFileResourcePurger(
+    private val dataElementStore: DataElementStore,
+    private val trackedEntityAttributeStore: TrackedEntityAttributeStore,
+    private val fileResourceStore: FileResourceStore,
+) {
+    suspend fun purgeIfDataElementReferencesFile(dataElementUid: String?, value: String?)
+    suspend fun purgeIfAttributeReferencesFile(attributeUid: String?, value: String?)
+}
+```
+
+To avoid resolving `DataElement`/`TrackedEntityAttribute` file-typedness on
+every single purged row, both entry points check against a per-instance,
+lazily-populated `Set<String>` of file-typed uids — one `SELECT ... WHERE
+valueType IN (FILE_RESOURCE, IMAGE)` per table (`DataElement`,
+`TrackedEntityAttribute`), fetched once on first use and cached for the rest
+of that `ValueFileResourcePurger` instance's lifetime. This is deliberately
+not a `prepare()`/init-style lifecycle method: an explicit "call this before
+using the class" step is a caller contract nothing enforces — a missed call
+degrades to silently skipping every FileResource cascade, not an error.
+Populating the cache lazily inside the query methods themselves means the
+class is correct and cheap (two queries total, not one per row) regardless of
+which value purger happens to call it first, with no setup step to forget.
+
+`DataValueRetentionPurger`, `TrackedEntityRetentionPurger`, and
+`EventRetentionPurger` each take `ValueFileResourcePurger` as a constructor
+dependency and call the matching method right after deleting each row they
+purge, inside their existing loop — no new loop, no batching, no change to
+`RetentionPurger`'s signature.
+
+One mechanical consequence, needed regardless of which design purges the
+associated FileResource: `TrackedEntityDataValue` deletion (used both from
 `TrackedEntityRetentionPurger`'s event cascade and from `EventRetentionPurger`'s
 TEI-less path) currently goes through `TrackedEntityDataValueStore.deleteByEvent`,
-a single batch delete that never reads the rows it removes. Both call sites
-must switch to read-then-delete (`getForEvent`/
-`queryTrackedEntityDataValuesByEventUid` followed by row-level deletes) to be
-able to return `PurgedValueRef`s for what they deleted — the same shape
+a single batch delete that never reads the rows it removes — there is nothing
+to hand to `ValueFileResourcePurger` without first knowing each row's
+`dataElement`/`value`. Both call sites must switch to read-then-delete
+(`getForEvent` followed by row-level `deleteWhere`) — the same shape
 `TrackedEntityRetentionPurger` already uses for
 `TrackedEntityAttributeValueStore` (`queryByTrackedEntityInstance` then
 `deleteWhere`).
