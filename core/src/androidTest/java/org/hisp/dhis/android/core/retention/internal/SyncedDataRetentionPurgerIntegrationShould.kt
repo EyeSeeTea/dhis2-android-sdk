@@ -10,6 +10,8 @@ import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
 import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
+import org.hisp.dhis.android.core.relationship.internal.RelationshipItemStore
+import org.hisp.dhis.android.core.relationship.internal.RelationshipStore
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeValueStore
@@ -23,6 +25,8 @@ import org.hisp.dhis.android.persistence.event.EventStoreImpl
 import org.hisp.dhis.android.persistence.fileresource.FileResourceStoreImpl
 import org.hisp.dhis.android.persistence.maintenance.D2ErrorStoreImpl
 import org.hisp.dhis.android.persistence.note.NoteStoreImpl
+import org.hisp.dhis.android.persistence.relationship.RelationshipItemStoreImpl
+import org.hisp.dhis.android.persistence.relationship.RelationshipStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeValueStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityDataValueStoreImpl
@@ -46,8 +50,17 @@ class SyncedDataRetentionPurgerIntegrationShould {
     private val trackedEntityAttributeStore: TrackedEntityAttributeStore =
         TrackedEntityAttributeStoreImpl(databaseAdapter)
     private val fileResourceStore: FileResourceStore = FileResourceStoreImpl(databaseAdapter)
+    private val relationshipStore: RelationshipStore = RelationshipStoreImpl(databaseAdapter)
+    private val relationshipItemStore: RelationshipItemStore = RelationshipItemStoreImpl(databaseAdapter)
     private val valueFileResourcePurger =
         ValueFileResourcePurger(dataElementStore, trackedEntityAttributeStore, fileResourceStore)
+    private val relationshipEligibilityChecker = RelationshipEligibilityChecker(
+        relationshipItemStore,
+        trackedEntityInstanceStore,
+        EnrollmentStoreImpl(databaseAdapter),
+        EventStoreImpl(databaseAdapter),
+    )
+    private val relationshipRetentionPurger = RelationshipRetentionPurger(relationshipStore, relationshipItemStore)
 
     private val purger = SyncedDataRetentionPurger(
         dataValuePurger = DataValueRetentionPurger(dataValueStore, valueFileResourcePurger),
@@ -59,6 +72,8 @@ class SyncedDataRetentionPurgerIntegrationShould {
             EventStoreImpl(databaseAdapter),
             TrackedEntityDataValueStoreImpl(databaseAdapter),
             valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
         ),
         eventPurger = EventRetentionPurger(
             EventStoreImpl(databaseAdapter),
@@ -76,6 +91,8 @@ class SyncedDataRetentionPurgerIntegrationShould {
             dataValueStore.delete()
             trackedEntityAttributeValueStore.delete()
             trackedEntityInstanceStore.delete()
+            relationshipItemStore.delete()
+            relationshipStore.delete()
         }
     }
 
@@ -85,6 +102,8 @@ class SyncedDataRetentionPurgerIntegrationShould {
             dataValueStore.delete()
             trackedEntityAttributeValueStore.delete()
             trackedEntityInstanceStore.delete()
+            relationshipItemStore.delete()
+            relationshipStore.delete()
         }
     }
 
@@ -167,6 +186,8 @@ class SyncedDataRetentionPurgerIntegrationShould {
                 EventStoreImpl(databaseAdapter),
                 TrackedEntityDataValueStoreImpl(databaseAdapter),
                 valueFileResourcePurger,
+                relationshipEligibilityChecker,
+                relationshipRetentionPurger,
             ),
             eventPurger = EventRetentionPurger(
                 EventStoreImpl(databaseAdapter),

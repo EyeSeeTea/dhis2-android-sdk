@@ -88,25 +88,36 @@ Verified: 2 tests green on `Pixel_9a`.
 
 ## 3. Wire eligibility check + cascade into `TrackedEntityRetentionPurger`
 
-- [ ] 3.1 Add a behavior test: a fully synced tracked entity instance with a
+- [x] 3.1 Add a behavior test: a fully synced tracked entity instance with a
       relationship to another fully synced tracked entity instance — both are
       purged, and the relationship linking them is purged too, in the same
       call. Verify: test fails (current purger has no relationship awareness).
-- [ ] 3.2 Wire the eligibility check from Group 2 into
+- [x] 3.2 Wire the eligibility check from Group 2 into
       `TrackedEntityRetentionPurger`'s selection query (excluding a
       candidate whose relationship counterpart is not eligible, on top of the
       existing `aggregatedSyncState = SYNCED` filter), and call
       `RelationshipRetentionPurger.purgeForEntity(tei.uid())` inline when a TEI
       is purged. Verify: the 3.1 test passes.
 
+      The eligibility filter was added to the `eligible` pipeline
+      (`.filter { relationshipEligibilityChecker.isEligible(it.uid()) }`
+      before `.sortedByDescending`), not inside the `toPurge.forEach` body —
+      keeps `detekt`'s `NestedBlockDepth` (already at its 4/4 limit after the
+      prior change's fix) from being exceeded again.
+
 **Commit: 3.1 + 3.2 together.**
 
-- [ ] 3.3 Add a behavior test: a fully synced tracked entity instance that has a
+- [x] 3.3 Add a behavior test: a fully synced tracked entity instance that has a
       relationship to another tracked entity instance whose own tree is NOT
       fully synced is NOT purged, even though its own tree is otherwise
       eligible — the cross-tree protection scenario from spec.md. Verify: test
       passes against the 3.2 implementation (should already be green — this
       asserts the negative case symmetric to 3.1's positive one).
+
+      Passed on first run. Committed together with 3.1/3.2 rather than
+      separately, since both tests were added to the same file in the same
+      pass. Verified: full `retention` package suite (33 tests) green on
+      `Pixel_9a`; `:core:detekt` green (no `NestedBlockDepth` regression).
 
 **Commit: 3.3 alone** (test-only, against the 3.2 implementation).
 

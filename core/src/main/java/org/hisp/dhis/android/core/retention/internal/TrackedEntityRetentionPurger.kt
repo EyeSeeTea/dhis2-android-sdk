@@ -22,6 +22,8 @@ internal class TrackedEntityRetentionPurger(
     private val eventStore: EventStore,
     private val trackedEntityDataValueStore: TrackedEntityDataValueStore,
     private val valueFileResourcePurger: ValueFileResourcePurger,
+    private val relationshipEligibilityChecker: RelationshipEligibilityChecker,
+    private val relationshipRetentionPurger: RelationshipRetentionPurger,
 ) : RetentionPurger {
     override suspend fun purge(limit: Int) {
         val syncedWhereClause = WhereClauseBuilder()
@@ -29,6 +31,7 @@ internal class TrackedEntityRetentionPurger(
             .build()
 
         val eligible = trackedEntityInstanceStore.selectWhere(syncedWhereClause)
+            .filter { relationshipEligibilityChecker.isEligible(it.uid()) }
             .sortedByDescending { it.lastUpdated() }
 
         val toPurge = eligible.drop(limit)
@@ -57,6 +60,7 @@ internal class TrackedEntityRetentionPurger(
             }
 
             trackedEntityInstanceStore.delete(tei.uid())
+            relationshipRetentionPurger.purgeForEntity(tei.uid())
         }
     }
 

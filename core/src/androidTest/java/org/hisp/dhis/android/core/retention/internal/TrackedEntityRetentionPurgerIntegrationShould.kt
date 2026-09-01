@@ -3,6 +3,7 @@ package org.hisp.dhis.android.core.retention.internal
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.common.ValueType
 import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
@@ -13,6 +14,11 @@ import org.hisp.dhis.android.core.event.internal.EventStore
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
 import org.hisp.dhis.android.core.note.Note
 import org.hisp.dhis.android.core.note.internal.NoteStore
+import org.hisp.dhis.android.core.relationship.Relationship
+import org.hisp.dhis.android.core.relationship.RelationshipConstraintType
+import org.hisp.dhis.android.core.relationship.RelationshipHelper
+import org.hisp.dhis.android.core.relationship.internal.RelationshipItemStore
+import org.hisp.dhis.android.core.relationship.internal.RelationshipStore
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance
@@ -28,6 +34,8 @@ import org.hisp.dhis.android.persistence.enrollment.EnrollmentStoreImpl
 import org.hisp.dhis.android.persistence.event.EventStoreImpl
 import org.hisp.dhis.android.persistence.fileresource.FileResourceStoreImpl
 import org.hisp.dhis.android.persistence.note.NoteStoreImpl
+import org.hisp.dhis.android.persistence.relationship.RelationshipItemStoreImpl
+import org.hisp.dhis.android.persistence.relationship.RelationshipStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeValueStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityDataValueStoreImpl
@@ -55,8 +63,17 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         TrackedEntityAttributeStoreImpl(databaseAdapter)
     private val fileResourceStore: FileResourceStore = FileResourceStoreImpl(databaseAdapter)
     private val categoryComboStore = CategoryComboStoreImpl(databaseAdapter)
+    private val relationshipStore: RelationshipStore = RelationshipStoreImpl(databaseAdapter)
+    private val relationshipItemStore: RelationshipItemStore = RelationshipItemStoreImpl(databaseAdapter)
     private val valueFileResourcePurger =
         ValueFileResourcePurger(dataElementStore, trackedEntityAttributeStore, fileResourceStore)
+    private val relationshipEligibilityChecker = RelationshipEligibilityChecker(
+        relationshipItemStore,
+        trackedEntityInstanceStore,
+        enrollmentStore,
+        eventStore,
+    )
+    private val relationshipRetentionPurger = RelationshipRetentionPurger(relationshipStore, relationshipItemStore)
 
     @Before
     fun setUp() {
@@ -70,6 +87,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             trackedEntityAttributeStore.delete()
             fileResourceStore.delete()
             categoryComboStore.delete()
+            relationshipItemStore.delete()
+            relationshipStore.delete()
         }
     }
 
@@ -85,6 +104,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             trackedEntityAttributeStore.delete()
             fileResourceStore.delete()
             categoryComboStore.delete()
+            relationshipItemStore.delete()
+            relationshipStore.delete()
         }
     }
 
@@ -109,6 +130,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore,
             trackedEntityDataValueStore,
             valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
         ).purge(limit = 1)
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
@@ -136,6 +159,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore,
             trackedEntityDataValueStore,
             valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
         ).purge(limit = 0)
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
@@ -171,6 +196,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore,
             trackedEntityDataValueStore,
             valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
         ).purge(limit = 1)
 
         val remainingEnrollmentUids = enrollmentStore.selectUids()
@@ -203,6 +230,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore,
             trackedEntityDataValueStore,
             valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
         ).purge(limit = 0)
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
@@ -253,6 +282,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore,
             trackedEntityDataValueStore,
             valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
         ).purge(limit = 1)
 
         val remainingEventUids = eventStore.selectUids()
@@ -287,6 +318,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore,
             trackedEntityDataValueStore,
             valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
         ).purge(limit = 0)
 
         assertThat(fileResourceStore.selectUids()).containsExactly("referencedFile")
@@ -314,6 +347,8 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore,
             trackedEntityDataValueStore,
             valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
         ).purge(limit = 0)
 
         assertThat(fileResourceStore.selectUids()).isEmpty()
@@ -347,9 +382,80 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore,
             trackedEntityDataValueStore,
             valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
         ).purge(limit = 0)
 
         assertThat(fileResourceStore.selectUids()).isEmpty()
+    }
+
+    @Test
+    fun purge_a_relationship_when_purging_both_of_its_fully_synced_teis() = runTest {
+        val teiA = givenATrackedEntityInstance("teiA", State.SYNCED, "2026-01-01T00:00:00.000")
+        val teiB = givenATrackedEntityInstance("teiB", State.SYNCED, "2025-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(teiA)
+        trackedEntityInstanceStore.insert(teiB)
+        givenARelationshipBetweenTeis("relationship", "teiA", "teiB")
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
+        ).purge(limit = 0)
+
+        assertThat(trackedEntityInstanceStore.selectUids()).isEmpty()
+        assertThat(relationshipStore.selectUids()).isEmpty()
+    }
+
+    @Test
+    fun keep_a_tei_that_has_a_relationship_to_a_non_eligible_counterpart() = runTest {
+        val eligibleTei = givenATrackedEntityInstance("eligibleTei", State.SYNCED, "2026-01-01T00:00:00.000")
+        val nonEligibleTei = givenATrackedEntityInstance("nonEligibleTei", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(eligibleTei)
+        trackedEntityInstanceStore.insert(nonEligibleTei)
+        givenARelationshipBetweenTeis("relationship", "eligibleTei", "nonEligibleTei")
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
+        ).purge(limit = 0)
+
+        assertThat(trackedEntityInstanceStore.selectUids()).containsExactly("eligibleTei", "nonEligibleTei")
+        assertThat(relationshipStore.selectUids()).containsExactly("relationship")
+    }
+
+    private suspend fun givenARelationshipBetweenTeis(relationshipUid: String, fromUid: String, toUid: String) {
+        relationshipStore.insert(
+            Relationship.builder()
+                .uid(relationshipUid)
+                .relationshipType("relationshipType")
+                .build(),
+        )
+        relationshipItemStore.insert(
+            RelationshipHelper.teiItem(fromUid).toBuilder()
+                .relationship(ObjectWithUid.create(relationshipUid))
+                .relationshipItemType(RelationshipConstraintType.FROM)
+                .build(),
+        )
+        relationshipItemStore.insert(
+            RelationshipHelper.teiItem(toUid).toBuilder()
+                .relationship(ObjectWithUid.create(relationshipUid))
+                .relationshipItemType(RelationshipConstraintType.TO)
+                .build(),
+        )
     }
 
     private fun givenAnEvent(
