@@ -271,8 +271,13 @@ instead of an empty commit.
 
 Adds a missing test (see mapping above) — committed alone.
 
-- [ ] 7.2 Run the full `core` test suite (unit + androidTest) and confirm green,
+- [x] 7.2 Run the full `core` test suite (unit + androidTest) and confirm green,
       with no pre-existing purger/wiper/test behavior changed. Verify: CI or
       local run passes.
+
+      Verified locally: `:core:testDebugUnitTest` green;
+      `:core:connectedDebugAndroidTest` on `Pixel_9a` (real emulator) — 5549
+      tests run, 0 failed, 158 skipped (same pre-existing skip set as the
+      prior change's 9.2/10.6 checkpoints).
 
 **Commit: none** — verification only, no file changes expected.
