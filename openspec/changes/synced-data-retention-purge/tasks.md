@@ -305,7 +305,7 @@ existing purger).
 **Commit: 10.2 alone** (mechanical refactor, existing tests are the safety
 net — no new test expected).
 
-- [ ] 10.3 Add a behavior test: a `TrackedEntityAttributeValue` of a file type
+- [x] 10.3 Add a behavior test: a `TrackedEntityAttributeValue` of a file type
       references a `FileResource` that is itself `SYNCED`, but the owning
       TEI's `aggregatedSyncState` is not `SYNCED` (e.g. one of its events is
       pending) — the file resource is NOT purged when
@@ -315,7 +315,7 @@ net — no new test expected).
       also passes vacuously without one — assert it actually exercises the
       cascade path by first proving the positive case, see 10.4, or write both
       together).
-- [ ] 10.4 Wire `ValueFileResourcePurger` into `DataValueRetentionPurger`,
+- [x] 10.4 Wire `ValueFileResourcePurger` into `DataValueRetentionPurger`,
       `TrackedEntityRetentionPurger` (both the attribute-value loop, via
       `purgeIfAttributeReferencesFile`, and the event data-value loop, via
       `purgeIfDataElementReferencesFile`), and `EventRetentionPurger` (its
@@ -332,6 +332,19 @@ net — no new test expected).
 
 **Commit: 10.3 + 10.4 together** (red test, then the wiring that turns it
 green, plus the three symmetric positive-case tests).
+
+Implemented as 5 tests total (not exactly the "three" sketched above): the
+10.3 protection test, plus one positive case each for `DataValueRetentionPurger`,
+`EventRetentionPurger`, and two for `TrackedEntityRetentionPurger` (one for its
+`TrackedEntityAttributeValue` loop, one for its event `TrackedEntityDataValue`
+loop, since that purger wires `ValueFileResourcePurger` at two separate call
+sites). Needed a `CategoryCombo` fixture in the 3 files that build a file-typed
+`DataElement` for these tests — `DataElement.categoryCombo()` is `@NonNull` in
+its builder (confirmed against `FileResourceRoutineSamples.kt`, an existing
+test fixture using the same pattern). Revisit later whether this fixture setup
+should be shared instead of repeated per file (noted, not addressed now).
+Verified: full `retention` package suite (26 tests) green on `Pixel_9a` (real
+emulator).
 
 - [ ] 10.5 Rename `FileResourceRetentionPurger` to
       `OrphanFileResourceRetentionPurger` and add a `NOT IN` filter (via each

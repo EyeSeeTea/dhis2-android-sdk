@@ -3,24 +3,37 @@ package org.hisp.dhis.android.core.retention.internal
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.hisp.dhis.android.core.category.CategoryCombo
+import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.common.State
+import org.hisp.dhis.android.core.common.ValueType
+import org.hisp.dhis.android.core.dataelement.DataElement
+import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
 import org.hisp.dhis.android.core.enrollment.Enrollment
 import org.hisp.dhis.android.core.enrollment.internal.EnrollmentStore
 import org.hisp.dhis.android.core.event.Event
 import org.hisp.dhis.android.core.event.internal.EventStore
+import org.hisp.dhis.android.core.fileresource.FileResource
+import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
 import org.hisp.dhis.android.core.note.Note
 import org.hisp.dhis.android.core.note.internal.NoteStore
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance
+import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeValueStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityDataValueStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityInstanceStore
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
+import org.hisp.dhis.android.persistence.category.CategoryComboStoreImpl
+import org.hisp.dhis.android.persistence.dataelement.DataElementStoreImpl
 import org.hisp.dhis.android.persistence.enrollment.EnrollmentStoreImpl
 import org.hisp.dhis.android.persistence.event.EventStoreImpl
+import org.hisp.dhis.android.persistence.fileresource.FileResourceStoreImpl
 import org.hisp.dhis.android.persistence.note.NoteStoreImpl
+import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeValueStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityDataValueStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityInstanceStoreImpl
@@ -42,6 +55,12 @@ class TrackedEntityRetentionPurgerIntegrationShould {
     private val eventStore: EventStore = EventStoreImpl(databaseAdapter)
     private val trackedEntityDataValueStore: TrackedEntityDataValueStore =
         TrackedEntityDataValueStoreImpl(databaseAdapter)
+    private val dataElementStore: DataElementStore = DataElementStoreImpl(databaseAdapter)
+    private val trackedEntityAttributeStore: TrackedEntityAttributeStore = TrackedEntityAttributeStoreImpl(databaseAdapter)
+    private val fileResourceStore: FileResourceStore = FileResourceStoreImpl(databaseAdapter)
+    private val categoryComboStore = CategoryComboStoreImpl(databaseAdapter)
+    private val valueFileResourcePurger =
+        ValueFileResourcePurger(dataElementStore, trackedEntityAttributeStore, fileResourceStore)
 
     @Before
     fun setUp() {
@@ -52,6 +71,9 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore.delete()
             enrollmentStore.delete()
             trackedEntityInstanceStore.delete()
+            trackedEntityAttributeStore.delete()
+            fileResourceStore.delete()
+            categoryComboStore.delete()
         }
     }
 
@@ -64,6 +86,9 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             eventStore.delete()
             enrollmentStore.delete()
             trackedEntityInstanceStore.delete()
+            trackedEntityAttributeStore.delete()
+            fileResourceStore.delete()
+            categoryComboStore.delete()
         }
     }
 
@@ -87,6 +112,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             noteStore,
             eventStore,
             trackedEntityDataValueStore,
+            valueFileResourcePurger,
         ).purge(limit = 1)
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
@@ -113,6 +139,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             noteStore,
             eventStore,
             trackedEntityDataValueStore,
+            valueFileResourcePurger,
         ).purge(limit = 0)
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
@@ -147,6 +174,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             noteStore,
             eventStore,
             trackedEntityDataValueStore,
+            valueFileResourcePurger,
         ).purge(limit = 1)
 
         val remainingEnrollmentUids = enrollmentStore.selectUids()
@@ -178,6 +206,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             noteStore,
             eventStore,
             trackedEntityDataValueStore,
+            valueFileResourcePurger,
         ).purge(limit = 0)
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
@@ -227,6 +256,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             noteStore,
             eventStore,
             trackedEntityDataValueStore,
+            valueFileResourcePurger,
         ).purge(limit = 1)
 
         val remainingEventUids = eventStore.selectUids()
@@ -236,6 +266,94 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         assertThat(remainingEventUids).containsExactly("eventToKeep")
         assertThat(remainingDataValueEventUids).containsExactly("eventToKeep")
         assertThat(remainingNoteUids).containsExactly("eventNoteToKeep")
+    }
+
+    @Test
+    fun keep_the_file_resource_of_a_protected_tei_even_if_its_own_sync_state_is_synced() = runTest {
+        val protectedTei =
+            givenATrackedEntityInstance("protectedTei", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(protectedTei)
+
+        val fileAttribute = givenAFileTrackedEntityAttribute("fileAttribute")
+        trackedEntityAttributeStore.insert(fileAttribute)
+
+        val referencedFileResource = givenAFileResource("referencedFile")
+        fileResourceStore.insert(referencedFileResource)
+
+        val attributeValue = givenATrackedEntityAttributeValue(protectedTei.uid(), "fileAttribute", "referencedFile")
+        trackedEntityAttributeValueStore.insert(attributeValue)
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+        ).purge(limit = 0)
+
+        assertThat(fileResourceStore.selectUids()).containsExactly("referencedFile")
+    }
+
+    @Test
+    fun purge_the_file_resource_referenced_by_an_attribute_value_of_a_purged_tei() = runTest {
+        val teiToPurge = givenATrackedEntityInstance("teiToPurge", State.SYNCED, "2026-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(teiToPurge)
+
+        val fileAttribute = givenAFileTrackedEntityAttribute("fileAttribute")
+        trackedEntityAttributeStore.insert(fileAttribute)
+
+        val referencedFileResource = givenAFileResource("referencedFile")
+        fileResourceStore.insert(referencedFileResource)
+
+        val attributeValue = givenATrackedEntityAttributeValue(teiToPurge.uid(), "fileAttribute", "referencedFile")
+        trackedEntityAttributeValueStore.insert(attributeValue)
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+        ).purge(limit = 0)
+
+        assertThat(fileResourceStore.selectUids()).isEmpty()
+    }
+
+    @Test
+    fun purge_the_file_resource_referenced_by_an_events_data_value_of_a_purged_tei() = runTest {
+        val teiToPurge = givenATrackedEntityInstance("teiToPurge", State.SYNCED, "2026-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(teiToPurge)
+
+        val enrollment = givenAnEnrollment("enrollment", teiToPurge.uid())
+        enrollmentStore.insert(enrollment)
+
+        val event = givenAnEvent("event", enrollment.uid())
+        eventStore.insert(event)
+
+        val fileDataElement = givenAFileDataElement("fileDataElement")
+        dataElementStore.insert(fileDataElement)
+
+        val referencedFileResource = givenAFileResource("referencedFile")
+        fileResourceStore.insert(referencedFileResource)
+
+        val dataValue = givenATrackedEntityDataValue(event.uid(), "fileDataElement", "referencedFile")
+        trackedEntityDataValueStore.insert(dataValue)
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+        ).purge(limit = 0)
+
+        assertThat(fileResourceStore.selectUids()).isEmpty()
     }
 
     private fun givenAnEvent(
@@ -257,11 +375,25 @@ class TrackedEntityRetentionPurgerIntegrationShould {
 
     private fun givenATrackedEntityDataValue(
         eventUid: String,
+        dataElementUid: String = "dataElement",
+        value: String = "value",
     ): TrackedEntityDataValue {
         return TrackedEntityDataValue.builder()
             .event(eventUid)
-            .dataElement("dataElement")
-            .value("value")
+            .dataElement(dataElementUid)
+            .value(value)
+            .build()
+    }
+
+    private fun givenAFileDataElement(uid: String): DataElement {
+        val categoryCombo = CategoryCombo.builder().uid("$uid-categoryCombo").build()
+        runBlocking { categoryComboStore.insert(categoryCombo) }
+
+        return DataElement.builder()
+            .uid(uid)
+            .valueType(ValueType.FILE_RESOURCE)
+            .categoryCombo(ObjectWithUid.fromIdentifiable(categoryCombo))
+            .domainType("AGGREGATE")
             .build()
     }
 
@@ -321,11 +453,27 @@ class TrackedEntityRetentionPurgerIntegrationShould {
 
     private fun givenATrackedEntityAttributeValue(
         trackedEntityInstanceUid: String,
+        trackedEntityAttributeUid: String = "attribute",
+        value: String = "value",
     ): TrackedEntityAttributeValue {
         return TrackedEntityAttributeValue.builder()
-            .trackedEntityAttribute("attribute")
+            .trackedEntityAttribute(trackedEntityAttributeUid)
             .trackedEntityInstance(trackedEntityInstanceUid)
-            .value("value")
+            .value(value)
+            .build()
+    }
+
+    private fun givenAFileTrackedEntityAttribute(uid: String): TrackedEntityAttribute {
+        return TrackedEntityAttribute.builder()
+            .uid(uid)
+            .valueType(ValueType.FILE_RESOURCE)
+            .build()
+    }
+
+    private fun givenAFileResource(uid: String): FileResource {
+        return FileResource.builder()
+            .uid(uid)
+            .syncState(State.SYNCED)
             .build()
     }
 }

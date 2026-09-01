@@ -21,6 +21,7 @@ internal class TrackedEntityRetentionPurger(
     private val noteStore: NoteStore,
     private val eventStore: EventStore,
     private val trackedEntityDataValueStore: TrackedEntityDataValueStore,
+    private val valueFileResourcePurger: ValueFileResourcePurger,
 ) : RetentionPurger {
     override suspend fun purge(limit: Int) {
         val syncedWhereClause = WhereClauseBuilder()
@@ -33,8 +34,10 @@ internal class TrackedEntityRetentionPurger(
         val toPurge = eligible.drop(limit)
 
         toPurge.forEach { tei ->
-            trackedEntityAttributeValueStore.queryByTrackedEntityInstance(tei.uid())
-                .forEach { trackedEntityAttributeValueStore.deleteWhere(it) }
+            trackedEntityAttributeValueStore.queryByTrackedEntityInstance(tei.uid()).forEach {
+                trackedEntityAttributeValueStore.deleteWhere(it)
+                valueFileResourcePurger.purgeIfAttributeReferencesFile(it.trackedEntityAttribute(), it.value())
+            }
 
             val enrollmentsWhereClause = WhereClauseBuilder()
                 .appendKeyStringValue(EnrollmentTableInfo.Columns.TRACKED_ENTITY_INSTANCE, tei.uid())
@@ -50,6 +53,7 @@ internal class TrackedEntityRetentionPurger(
                 events.forEach { event ->
                     trackedEntityDataValueStore.getForEvent(event.uid()).forEach {
                         trackedEntityDataValueStore.deleteWhere(it)
+                        valueFileResourcePurger.purgeIfDataElementReferencesFile(it.dataElement(), it.value())
                     }
                     noteStore.getForEvent(event.uid()).forEach { noteStore.delete(it.uid()) }
                     eventStore.delete(event.uid())

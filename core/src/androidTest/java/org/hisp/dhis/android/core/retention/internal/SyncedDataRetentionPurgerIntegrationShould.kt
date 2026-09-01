@@ -6,19 +6,24 @@ import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutor
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
+import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
 import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
+import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance
+import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeValueStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityInstanceStore
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
+import org.hisp.dhis.android.persistence.dataelement.DataElementStoreImpl
 import org.hisp.dhis.android.persistence.datavalue.DataValueStoreImpl
 import org.hisp.dhis.android.persistence.enrollment.EnrollmentStoreImpl
 import org.hisp.dhis.android.persistence.event.EventStoreImpl
 import org.hisp.dhis.android.persistence.fileresource.FileResourceStoreImpl
 import org.hisp.dhis.android.persistence.maintenance.D2ErrorStoreImpl
 import org.hisp.dhis.android.persistence.note.NoteStoreImpl
+import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeValueStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityDataValueStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityInstanceStoreImpl
@@ -37,9 +42,14 @@ class SyncedDataRetentionPurgerIntegrationShould {
     private val trackedEntityAttributeValueStore: TrackedEntityAttributeValueStore =
         TrackedEntityAttributeValueStoreImpl(databaseAdapter)
     private val d2CallExecutor = D2CallExecutor(databaseAdapter, D2ErrorStoreImpl(databaseAdapter))
+    private val dataElementStore: DataElementStore = DataElementStoreImpl(databaseAdapter)
+    private val trackedEntityAttributeStore: TrackedEntityAttributeStore = TrackedEntityAttributeStoreImpl(databaseAdapter)
+    private val fileResourceStore: FileResourceStore = FileResourceStoreImpl(databaseAdapter)
+    private val valueFileResourcePurger =
+        ValueFileResourcePurger(dataElementStore, trackedEntityAttributeStore, fileResourceStore)
 
     private val purger = SyncedDataRetentionPurger(
-        dataValuePurger = DataValueRetentionPurger(dataValueStore),
+        dataValuePurger = DataValueRetentionPurger(dataValueStore, valueFileResourcePurger),
         trackedEntityPurger = TrackedEntityRetentionPurger(
             trackedEntityInstanceStore,
             trackedEntityAttributeValueStore,
@@ -47,11 +57,13 @@ class SyncedDataRetentionPurgerIntegrationShould {
             NoteStoreImpl(databaseAdapter),
             EventStoreImpl(databaseAdapter),
             TrackedEntityDataValueStoreImpl(databaseAdapter),
+            valueFileResourcePurger,
         ),
         eventPurger = EventRetentionPurger(
             EventStoreImpl(databaseAdapter),
             TrackedEntityDataValueStoreImpl(databaseAdapter),
             NoteStoreImpl(databaseAdapter),
+            valueFileResourcePurger,
         ),
         fileResourcePurger = FileResourceRetentionPurger(FileResourceStoreImpl(databaseAdapter)),
         d2CallExecutor = d2CallExecutor,
@@ -145,7 +157,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
         trackedEntityInstanceStore.insert(newestTei)
 
         val purgerWithFailingFileResourceStep = SyncedDataRetentionPurger(
-            dataValuePurger = DataValueRetentionPurger(dataValueStore),
+            dataValuePurger = DataValueRetentionPurger(dataValueStore, valueFileResourcePurger),
             trackedEntityPurger = TrackedEntityRetentionPurger(
                 trackedEntityInstanceStore,
                 trackedEntityAttributeValueStore,
@@ -153,11 +165,13 @@ class SyncedDataRetentionPurgerIntegrationShould {
                 NoteStoreImpl(databaseAdapter),
                 EventStoreImpl(databaseAdapter),
                 TrackedEntityDataValueStoreImpl(databaseAdapter),
+                valueFileResourcePurger,
             ),
             eventPurger = EventRetentionPurger(
                 EventStoreImpl(databaseAdapter),
                 TrackedEntityDataValueStoreImpl(databaseAdapter),
                 NoteStoreImpl(databaseAdapter),
+                valueFileResourcePurger,
             ),
             fileResourcePurger = GivingAFailingFileResourceRetentionPurger(),
             d2CallExecutor = d2CallExecutor,

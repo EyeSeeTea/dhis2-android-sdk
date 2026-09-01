@@ -14,6 +14,7 @@ internal class EventRetentionPurger(
     private val eventStore: EventStore,
     private val trackedEntityDataValueStore: TrackedEntityDataValueStore,
     private val noteStore: NoteStore,
+    private val valueFileResourcePurger: ValueFileResourcePurger,
 ) : RetentionPurger {
     override suspend fun purge(limit: Int) {
         val teiLessSyncedWhereClause = WhereClauseBuilder()
@@ -29,6 +30,7 @@ internal class EventRetentionPurger(
         toPurge.forEach { event ->
             trackedEntityDataValueStore.getForEvent(event.uid()).forEach {
                 trackedEntityDataValueStore.deleteWhere(it)
+                valueFileResourcePurger.purgeIfDataElementReferencesFile(it.dataElement(), it.value())
             }
             noteStore.getForEvent(event.uid()).forEach { noteStore.delete(it.uid()) }
             eventStore.delete(event.uid())

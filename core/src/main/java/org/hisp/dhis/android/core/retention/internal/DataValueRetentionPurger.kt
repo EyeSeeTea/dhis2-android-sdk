@@ -7,6 +7,7 @@ import org.koin.core.annotation.Singleton
 @Singleton
 internal class DataValueRetentionPurger(
     private val dataValueStore: DataValueStore,
+    private val valueFileResourcePurger: ValueFileResourcePurger,
 ) : RetentionPurger {
     override suspend fun purge(limit: Int) {
         val eligible = dataValueStore.getDataValuesWithState(State.SYNCED)
@@ -14,6 +15,9 @@ internal class DataValueRetentionPurger(
 
         val toPurge = eligible.drop(limit)
 
-        toPurge.forEach { dataValueStore.deleteWhere(it) }
+        toPurge.forEach {
+            dataValueStore.deleteWhere(it)
+            valueFileResourcePurger.purgeIfDataElementReferencesFile(it.dataElement(), it.value())
+        }
     }
 }
