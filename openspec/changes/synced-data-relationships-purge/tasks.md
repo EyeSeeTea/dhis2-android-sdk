@@ -128,18 +128,25 @@ purging a TEI (no standalone `EnrollmentRetentionPurger` exists — see the prio
 change's design.md, Enrollment is purged only as part of its TEI's cascade, never
 independently). This group extends that same cascade step.
 
-- [ ] 4.1 Add a behavior test: an eligible tracked entity instance's enrollment
+- [x] 4.1 Add a behavior test: an eligible tracked entity instance's enrollment
       has a relationship to an eligible event (belonging to a different,
       unrelated tracked entity instance) — purging the first TEI purges its
       enrollment, and the relationship linking the enrollment to that event is
       purged too. Verify: test fails.
-- [ ] 4.2 Wire `RelationshipRetentionPurger.purgeForEntity(enrollment.uid())`
+- [x] 4.2 Wire `RelationshipRetentionPurger.purgeForEntity(enrollment.uid())`
       inline into the enrollment-cascade step of `TrackedEntityRetentionPurger`.
       Verify: the 4.1 test passes.
 
+      Also introduced `isTreeRelationshipEligible(teiUid)`, replacing the plain
+      `relationshipEligibilityChecker.isEligible(it.uid())` filter from Group 3 —
+      it now checks the TEI's own relationships AND every one of its
+      enrollments' relationships before the TEI counts as eligible, since a
+      protected relationship can attach at any tree level (this is also what
+      makes 4.3 pass without further changes).
+
 **Commit: 4.1 + 4.2 together.**
 
-- [ ] 4.3 Add a behavior test: an otherwise-eligible tracked entity instance is
+- [x] 4.3 Add a behavior test: an otherwise-eligible tracked entity instance is
       NOT purged because one of its enrollments has a relationship to a
       non-eligible counterpart — confirms the eligibility check from Group 2 is
       also applied at the enrollment level, not just the root TEI level, since a
@@ -148,6 +155,15 @@ independently). This group extends that same cascade step.
       relationships and ignored its enrollments'; passes once the enrollment
       check is added to the same selection query (extending 3.2, not a second
       independent check).
+
+      Committed together with 4.1/4.2 (both were needed at once —
+      `isTreeRelationshipEligible` already covers the enrollment level from the
+      first implementation, so there was no separate red step for 4.3 alone).
+      One test fixture bug found and fixed while writing 4.1: two TEIs shared
+      the same `lastUpdated`, making which one `limit = 1` kept
+      non-deterministic — gave them distinct timestamps. Verified: full
+      `retention` package suite (35 tests) green on `Pixel_9a`; `ktlintCheck`
+      and `:core:detekt` green.
 
 **Commit: 4.3 alone** if 3.2/4.2 already cover it structurally (test-only);
 otherwise 4.3 plus the minimal fix to extend the eligibility check to

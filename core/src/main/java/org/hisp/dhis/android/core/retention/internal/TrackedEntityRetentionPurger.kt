@@ -31,7 +31,7 @@ internal class TrackedEntityRetentionPurger(
             .build()
 
         val eligible = trackedEntityInstanceStore.selectWhere(syncedWhereClause)
-            .filter { relationshipEligibilityChecker.isEligible(it.uid()) }
+            .filter { isTreeRelationshipEligible(it.uid()) }
             .sortedByDescending { it.lastUpdated() }
 
         val toPurge = eligible.drop(limit)
@@ -57,11 +57,23 @@ internal class TrackedEntityRetentionPurger(
 
                 noteStore.getForEnrollment(enrollment.uid()).forEach { noteStore.delete(it.uid()) }
                 enrollmentStore.delete(enrollment.uid())
+                relationshipRetentionPurger.purgeForEntity(enrollment.uid())
             }
 
             trackedEntityInstanceStore.delete(tei.uid())
             relationshipRetentionPurger.purgeForEntity(tei.uid())
         }
+    }
+
+    private suspend fun isTreeRelationshipEligible(teiUid: String): Boolean {
+        if (!relationshipEligibilityChecker.isEligible(teiUid)) return false
+
+        val enrollmentsWhereClause = WhereClauseBuilder()
+            .appendKeyStringValue(EnrollmentTableInfo.Columns.TRACKED_ENTITY_INSTANCE, teiUid)
+            .build()
+
+        return enrollmentStore.selectWhere(enrollmentsWhereClause)
+            .all { relationshipEligibilityChecker.isEligible(it.uid()) }
     }
 
     private suspend fun purgeEvent(eventUid: String) {

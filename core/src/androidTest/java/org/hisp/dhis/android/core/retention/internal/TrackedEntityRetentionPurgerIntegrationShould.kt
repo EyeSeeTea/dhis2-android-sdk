@@ -17,6 +17,7 @@ import org.hisp.dhis.android.core.note.internal.NoteStore
 import org.hisp.dhis.android.core.relationship.Relationship
 import org.hisp.dhis.android.core.relationship.RelationshipConstraintType
 import org.hisp.dhis.android.core.relationship.RelationshipHelper
+import org.hisp.dhis.android.core.relationship.RelationshipItem
 import org.hisp.dhis.android.core.relationship.internal.RelationshipItemStore
 import org.hisp.dhis.android.core.relationship.internal.RelationshipStore
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute
@@ -437,7 +438,79 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         assertThat(relationshipStore.selectUids()).containsExactly("relationship")
     }
 
+    @Test
+    fun purge_a_relationship_when_purging_an_enrollment_related_to_an_eligible_event() = runTest {
+        val teiToPurge = givenATrackedEntityInstance("teiToPurge", State.SYNCED, "2026-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(teiToPurge)
+        val enrollment = givenAnEnrollment("enrollment", teiToPurge.uid())
+        enrollmentStore.insert(enrollment)
+
+        val unrelatedTei = givenATrackedEntityInstance("unrelatedTei", State.SYNCED, "2026-02-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(unrelatedTei)
+        val unrelatedEnrollment = givenAnEnrollment("unrelatedEnrollment", unrelatedTei.uid())
+        enrollmentStore.insert(unrelatedEnrollment)
+        val unrelatedEvent = givenAnEvent("unrelatedEvent", unrelatedEnrollment.uid())
+        eventStore.insert(unrelatedEvent)
+
+        givenARelationship(
+            "relationship",
+            RelationshipHelper.enrollmentItem(enrollment.uid()),
+            RelationshipHelper.eventItem(unrelatedEvent.uid()),
+        )
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
+        ).purge(limit = 1)
+
+        assertThat(enrollmentStore.selectUids()).containsExactly("unrelatedEnrollment")
+        assertThat(relationshipStore.selectUids()).isEmpty()
+    }
+
+    @Test
+    fun keep_a_tei_whose_enrollment_has_a_relationship_to_a_non_eligible_counterpart() = runTest {
+        val protectedTei = givenATrackedEntityInstance("protectedTei", State.SYNCED, "2026-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(protectedTei)
+        val enrollment = givenAnEnrollment("enrollment", protectedTei.uid())
+        enrollmentStore.insert(enrollment)
+
+        val nonEligibleTei = givenATrackedEntityInstance("nonEligibleTei", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(nonEligibleTei)
+
+        givenARelationship(
+            "relationship",
+            RelationshipHelper.enrollmentItem(enrollment.uid()),
+            RelationshipHelper.teiItem(nonEligibleTei.uid()),
+        )
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
+        ).purge(limit = 0)
+
+        assertThat(trackedEntityInstanceStore.selectUids()).contains("protectedTei")
+        assertThat(enrollmentStore.selectUids()).containsExactly("enrollment")
+    }
+
     private suspend fun givenARelationshipBetweenTeis(relationshipUid: String, fromUid: String, toUid: String) {
+        givenARelationship(relationshipUid, RelationshipHelper.teiItem(fromUid), RelationshipHelper.teiItem(toUid))
+    }
+
+    private suspend fun givenARelationship(relationshipUid: String, from: RelationshipItem, to: RelationshipItem) {
         relationshipStore.insert(
             Relationship.builder()
                 .uid(relationshipUid)
@@ -445,13 +518,13 @@ class TrackedEntityRetentionPurgerIntegrationShould {
                 .build(),
         )
         relationshipItemStore.insert(
-            RelationshipHelper.teiItem(fromUid).toBuilder()
+            from.toBuilder()
                 .relationship(ObjectWithUid.create(relationshipUid))
                 .relationshipItemType(RelationshipConstraintType.FROM)
                 .build(),
         )
         relationshipItemStore.insert(
-            RelationshipHelper.teiItem(toUid).toBuilder()
+            to.toBuilder()
                 .relationship(ObjectWithUid.create(relationshipUid))
                 .relationshipItemType(RelationshipConstraintType.TO)
                 .build(),
