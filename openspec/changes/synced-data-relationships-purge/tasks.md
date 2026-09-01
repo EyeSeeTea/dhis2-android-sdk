@@ -171,20 +171,25 @@ enrollment-level relationships, as one red-green commit.
 
 ## 5. Wire eligibility check + cascade into `EventRetentionPurger` (TEI-less events)
 
-- [ ] 5.1 Add a behavior test: an eligible TEI-less event with a relationship to
+- [x] 5.1 Add a behavior test: an eligible TEI-less event with a relationship to
       an eligible tracked entity instance — purging the event purges the
       relationship linking it too. Verify: test fails.
-- [ ] 5.2 Wire the eligibility check from Group 2 into `EventRetentionPurger`'s
+- [x] 5.2 Wire the eligibility check from Group 2 into `EventRetentionPurger`'s
       selection query, and call
       `RelationshipRetentionPurger.purgeForEntity(event.uid())` inline when a
       TEI-less event is purged. Verify: the 5.1 test passes.
 
 **Commit: 5.1 + 5.2 together.**
 
-- [ ] 5.3 Add a behavior test: an otherwise-eligible TEI-less event is NOT
+- [x] 5.3 Add a behavior test: an otherwise-eligible TEI-less event is NOT
       purged because it has a relationship to a non-eligible counterpart.
       Verify: test passes against the 5.2 implementation (should already be
       green — negative case symmetric to 5.1's positive one).
+
+      Committed together with 5.1/5.2 (both tests added to the same file in
+      the same pass, both green on first run). Verified: full `retention`
+      package suite (37 tests) green on `Pixel_9a`; `ktlintCheck` and
+      `:core:detekt` green.
 
 **Commit: 5.3 alone** (test-only).
 
