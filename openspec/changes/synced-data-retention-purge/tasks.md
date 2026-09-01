@@ -375,12 +375,32 @@ emulator).
 
 **Commit: 10.5 alone.**
 
-- [ ] 10.6 Full spec re-verification (same method as 9.1): walk every
+- [x] 10.6 Full spec re-verification (same method as 9.1): walk every
       `#### Scenario:` added to `spec.md` by this group (FileResource cascade
       eligibility + orphan purge requirements) and confirm each maps to a test
       added in 10.1-10.5; then re-run the full `core` test suite (unit +
       androidTest), same as 9.2, to confirm no regression outside this
       change. Verify: mapping documented here, full suite green.
+
+      Mapping (scenario → test):
+      - A referenced file resource is purged together with its value →
+        `DataValueRetentionPurgerIntegrationShould.purge_the_file_resource_referenced_by_a_purged_data_value`
+        + `EventRetentionPurgerIntegrationShould.purge_the_file_resource_referenced_by_a_purged_tei_less_events_data_value`
+        + `TrackedEntityRetentionPurgerIntegrationShould.purge_the_file_resource_referenced_by_an_attribute_value_of_a_purged_tei`
+        + `TrackedEntityRetentionPurgerIntegrationShould.purge_the_file_resource_referenced_by_an_events_data_value_of_a_purged_tei`
+      - A referenced file resource survives while its value is not eligible →
+        `TrackedEntityRetentionPurgerIntegrationShould.keep_the_file_resource_of_a_protected_tei_even_if_its_own_sync_state_is_synced`
+      - An orphaned file resource beyond the limit is purged →
+        `OrphanFileResourceRetentionPurgerIntegrationShould.purge_an_eligible_file_resource_beyond_the_limit_together_with_its_physical_file`
+      - A referenced file resource is not purged as an orphan →
+        `OrphanFileResourceRetentionPurgerIntegrationShould.keep_a_file_resource_still_referenced_by_a_live_data_value_regardless_of_its_own_limit`
+
+      Every scenario already covered — no missing test found, no commit
+      needed for the mapping itself.
+
+      Verified locally: `:core:testDebugUnitTest` green;
+      `:core:connectedDebugAndroidTest` on `Pixel_9a` (real emulator) — 5536
+      tests run, 0 failed, 158 skipped (same pre-existing skip set as 9.2).
 
 **Commit: 10.6 alone**, only if it adds a missing test; otherwise document the
 mapping here with no commit, same rule as 9.1.
