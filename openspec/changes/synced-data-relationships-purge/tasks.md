@@ -1,0 +1,184 @@
+## 1. `RelationshipRetentionPurger` — purge relationships of an entity being purged
+
+Building block used by every purger below (mirrors `ValueFileResourcePurger`'s
+role for the FileResource cascade — a plain injected collaborator, not a
+`RetentionPurger`, no limit of its own, called inline).
+
+- [ ] 1.1 Add a behavior test: given a `Relationship` linking two tracked entity
+      instances, both fully synced (`aggregatedSyncState = SYNCED`), calling
+      `purgeForEntity(uid)` for one of them (with the other row already deleted
+      by the caller, matching how it will actually be invoked — see task 2)
+      purges the `Relationship` and its two `RelationshipItem` rows. Verify:
+      test fails (no implementation yet).
+- [ ] 1.2 Implement `RelationshipRetentionPurger.purgeForEntity(entityUid:
+      String)`: find every `RelationshipItem` referencing `entityUid`
+      (`RelationshipItemStore.getByEntityUid`), and for each, delete the
+      `Relationship` row and both its `RelationshipItem` rows. Verify: the 1.1
+      test passes.
+
+**Commit: 1.1 + 1.2 together** (red test, then the implementation that turns it
+green).
+
+- [ ] 1.3 Add a behavior test: `purgeForEntity(uid)` for an entity whose
+      relationship counterpart no longer exists in any store at all (already
+      orphaned) still purges the `Relationship`/`RelationshipItem` rows without
+      raising an error. Verify: test fails without explicit handling, passes
+      once added — this is the self-healing case from design.md's Risks
+      section, not a hypothetical.
+
+**Commit: 1.3 alone** if 1.2's delete-by-relationship-uid approach already
+tolerates a missing counterpart row (test-only); otherwise 1.3 plus the minimal
+fix, as one red-green commit.
+
+## 2. Cross-tree eligibility check — read side
+
+Building block used by every purger's selection query below: given a candidate
+entity uid, determine whether every relationship it participates in has a fully
+synced counterpart.
+
+- [ ] 2.1 Add a behavior test: given a tracked entity instance with a
+      relationship to another tracked entity instance whose own
+      `aggregatedSyncState` is not `SYNCED`, an eligibility check for the first
+      TEI's uid returns "not eligible". Verify: test fails (no implementation
+      yet).
+- [ ] 2.2 Implement the eligibility check: given an entity uid, resolve every
+      `RelationshipItem` referencing it, resolve the other item of the same
+      `Relationship` via `RelationshipItemStore.getForRelationshipUid`, resolve
+      that other item's own `elementType()`/`elementUid()` to a
+      TrackedEntityInstance/Enrollment/Event and read its `aggregatedSyncState`.
+      Returns eligible only if every counterpart found is `SYNCED`; a
+      counterpart uid that resolves to no row at all counts as eligible (see
+      design.md Risks — self-healing for pre-existing orphans). Verify: the 2.1
+      test passes.
+
+**Commit: 2.1 + 2.2 together.**
+
+- [ ] 2.3 Add a behavior test: the same check, but the relationship's
+      counterpart is an Enrollment (not a TrackedEntityInstance) whose own
+      `aggregatedSyncState` is not `SYNCED` — confirms the check resolves
+      `elementType()` correctly across all three possible counterpart kinds, not
+      just TrackedEntityInstance. Verify: test passes against the 2.2
+      implementation with no changes needed (or the minimal fix, as one
+      red-green commit, if a gap is found).
+
+**Commit: 2.3 alone** (test-only), unless it finds a real gap in 2.2's handling
+of non-TEI counterparts — then bundle the fix with it as one commit.
+
+## 3. Wire eligibility check + cascade into `TrackedEntityRetentionPurger`
+
+- [ ] 3.1 Add a behavior test: a fully synced tracked entity instance with a
+      relationship to another fully synced tracked entity instance — both are
+      purged, and the relationship linking them is purged too, in the same
+      call. Verify: test fails (current purger has no relationship awareness).
+- [ ] 3.2 Wire the eligibility check from Group 2 into
+      `TrackedEntityRetentionPurger`'s selection query (excluding a
+      candidate whose relationship counterpart is not eligible, on top of the
+      existing `aggregatedSyncState = SYNCED` filter), and call
+      `RelationshipRetentionPurger.purgeForEntity(tei.uid())` inline when a TEI
+      is purged. Verify: the 3.1 test passes.
+
+**Commit: 3.1 + 3.2 together.**
+
+- [ ] 3.3 Add a behavior test: a fully synced tracked entity instance that has a
+      relationship to another tracked entity instance whose own tree is NOT
+      fully synced is NOT purged, even though its own tree is otherwise
+      eligible — the cross-tree protection scenario from spec.md. Verify: test
+      passes against the 3.2 implementation (should already be green — this
+      asserts the negative case symmetric to 3.1's positive one).
+
+**Commit: 3.3 alone** (test-only, against the 3.2 implementation).
+
+## 4. Wire eligibility check + cascade into the Enrollment cascade step
+
+`TrackedEntityRetentionPurger` already cascades into Enrollment as part of
+purging a TEI (no standalone `EnrollmentRetentionPurger` exists — see the prior
+change's design.md, Enrollment is purged only as part of its TEI's cascade, never
+independently). This group extends that same cascade step.
+
+- [ ] 4.1 Add a behavior test: an eligible tracked entity instance's enrollment
+      has a relationship to an eligible event (belonging to a different,
+      unrelated tracked entity instance) — purging the first TEI purges its
+      enrollment, and the relationship linking the enrollment to that event is
+      purged too. Verify: test fails.
+- [ ] 4.2 Wire `RelationshipRetentionPurger.purgeForEntity(enrollment.uid())`
+      inline into the enrollment-cascade step of `TrackedEntityRetentionPurger`.
+      Verify: the 4.1 test passes.
+
+**Commit: 4.1 + 4.2 together.**
+
+- [ ] 4.3 Add a behavior test: an otherwise-eligible tracked entity instance is
+      NOT purged because one of its enrollments has a relationship to a
+      non-eligible counterpart — confirms the eligibility check from Group 2 is
+      also applied at the enrollment level, not just the root TEI level, since a
+      protected relationship can attach to any node in the tree being purged.
+      Verify: test fails if the 3.2 selection query only checked the TEI's own
+      relationships and ignored its enrollments'; passes once the enrollment
+      check is added to the same selection query (extending 3.2, not a second
+      independent check).
+
+**Commit: 4.3 alone** if 3.2/4.2 already cover it structurally (test-only);
+otherwise 4.3 plus the minimal fix to extend the eligibility check to
+enrollment-level relationships, as one red-green commit.
+
+## 5. Wire eligibility check + cascade into `EventRetentionPurger` (TEI-less events)
+
+- [ ] 5.1 Add a behavior test: an eligible TEI-less event with a relationship to
+      an eligible tracked entity instance — purging the event purges the
+      relationship linking it too. Verify: test fails.
+- [ ] 5.2 Wire the eligibility check from Group 2 into `EventRetentionPurger`'s
+      selection query, and call
+      `RelationshipRetentionPurger.purgeForEntity(event.uid())` inline when a
+      TEI-less event is purged. Verify: the 5.1 test passes.
+
+**Commit: 5.1 + 5.2 together.**
+
+- [ ] 5.3 Add a behavior test: an otherwise-eligible TEI-less event is NOT
+      purged because it has a relationship to a non-eligible counterpart.
+      Verify: test passes against the 5.2 implementation (should already be
+      green — negative case symmetric to 5.1's positive one).
+
+**Commit: 5.3 alone** (test-only).
+
+## 6. Wire eligibility check + cascade into the tracker-rooted Event cascade step
+
+Same reasoning as Group 4: events cascaded from an eligible TEI (via its
+enrollments) also need both the eligibility check and the relationship cascade,
+independently of the TEI-less path in Group 5.
+
+- [ ] 6.1 Add a behavior test: an eligible tracked entity instance's event (via
+      an eligible enrollment) has a relationship to an eligible counterpart —
+      purging the TEI cascades to purge the event, and the relationship linking
+      it is purged too. Verify: test fails.
+- [ ] 6.2 Wire `RelationshipRetentionPurger.purgeForEntity(event.uid())` inline
+      into the event-cascade step of `TrackedEntityRetentionPurger`. Verify: the
+      6.1 test passes.
+
+**Commit: 6.1 + 6.2 together.**
+
+- [ ] 6.3 Add a behavior test: an otherwise-eligible tracked entity instance is
+      NOT purged because one of its cascaded events has a relationship to a
+      non-eligible counterpart — same reasoning as 4.3, one level deeper in the
+      tree. Verify: test fails if the eligibility check only covers TEI +
+      enrollment level and misses event level; passes once extended.
+
+**Commit: 6.3 alone** if already covered structurally (test-only); otherwise 6.3
+plus the minimal fix, as one red-green commit.
+
+## 7. Full spec verification
+
+- [ ] 7.1 Walk every `#### Scenario:` added or modified by this change (both
+      `specs/synced-data-retention-purge/spec.md`'s delta and
+      `specs/synced-data-relationships-purge/spec.md`) and confirm each maps to
+      at least one test added in Groups 1-6; add any scenario found without a
+      corresponding test. Verify: one-to-one mapping documented in this task,
+      no scenario left unverified.
+
+**Commit: 7.1 alone**, only if it adds a missing test; if every scenario is
+already covered, no commit is needed — record the mapping in the PR description
+instead of an empty commit.
+
+- [ ] 7.2 Run the full `core` test suite (unit + androidTest) and confirm green,
+      with no pre-existing purger/wiper/test behavior changed. Verify: CI or
+      local run passes.
+
+**Commit: none** — verification only, no file changes expected.
