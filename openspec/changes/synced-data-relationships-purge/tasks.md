@@ -45,12 +45,12 @@ Building block used by every purger's selection query below: given a candidate
 entity uid, determine whether every relationship it participates in has a fully
 synced counterpart.
 
-- [ ] 2.1 Add a behavior test: given a tracked entity instance with a
+- [x] 2.1 Add a behavior test: given a tracked entity instance with a
       relationship to another tracked entity instance whose own
       `aggregatedSyncState` is not `SYNCED`, an eligibility check for the first
       TEI's uid returns "not eligible". Verify: test fails (no implementation
       yet).
-- [ ] 2.2 Implement the eligibility check: given an entity uid, resolve every
+- [x] 2.2 Implement the eligibility check: given an entity uid, resolve every
       `RelationshipItem` referencing it, resolve the other item of the same
       `Relationship` via `RelationshipItemStore.getForRelationshipUid`, resolve
       that other item's own `elementType()`/`elementUid()` to a
@@ -62,7 +62,12 @@ synced counterpart.
 
 **Commit: 2.1 + 2.2 together.**
 
-- [ ] 2.3 Add a behavior test: the same check, but the relationship's
+Implemented as `RelationshipEligibilityChecker`, a separate class from
+`RelationshipRetentionPurger` (read-only check vs. delete side-effect — kept as
+two collaborators sharing the same `RelationshipItemStore` dependency, not
+merged into one class). Verified: green on `Pixel_9a` (real emulator).
+
+- [x] 2.3 Add a behavior test: the same check, but the relationship's
       counterpart is an Enrollment (not a TrackedEntityInstance) whose own
       `aggregatedSyncState` is not `SYNCED` — confirms the check resolves
       `elementType()` correctly across all three possible counterpart kinds, not
@@ -72,6 +77,14 @@ synced counterpart.
 
 **Commit: 2.3 alone** (test-only), unless it finds a real gap in 2.2's handling
 of non-TEI counterparts — then bundle the fix with it as one commit.
+
+Passed on first run against 2.2's implementation (already resolves
+`elementType()` uniformly via `selectByUid` on all three root stores) — one
+unrelated fixture bug found and fixed while writing it (a test `Enrollment`
+missing the required `trackedEntityInstance` field, unrelated to the
+eligibility logic itself). Committed together with 2.1/2.2 rather than
+separately, since both tests live in the same file added in this group.
+Verified: 2 tests green on `Pixel_9a`.
 
 ## 3. Wire eligibility check + cascade into `TrackedEntityRetentionPurger`
 
