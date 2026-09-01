@@ -50,14 +50,7 @@ internal class TrackedEntityRetentionPurger(
                     .build()
                 val events = eventStore.selectWhere(eventsWhereClause)
 
-                events.forEach { event ->
-                    trackedEntityDataValueStore.getForEvent(event.uid()).forEach {
-                        trackedEntityDataValueStore.deleteWhere(it)
-                        valueFileResourcePurger.purgeIfDataElementReferencesFile(it.dataElement(), it.value())
-                    }
-                    noteStore.getForEvent(event.uid()).forEach { noteStore.delete(it.uid()) }
-                    eventStore.delete(event.uid())
-                }
+                events.forEach { event -> purgeEvent(event.uid()) }
 
                 noteStore.getForEnrollment(enrollment.uid()).forEach { noteStore.delete(it.uid()) }
                 enrollmentStore.delete(enrollment.uid())
@@ -65,5 +58,14 @@ internal class TrackedEntityRetentionPurger(
 
             trackedEntityInstanceStore.delete(tei.uid())
         }
+    }
+
+    private suspend fun purgeEvent(eventUid: String) {
+        trackedEntityDataValueStore.getForEvent(eventUid).forEach {
+            trackedEntityDataValueStore.deleteWhere(it)
+            valueFileResourcePurger.purgeIfDataElementReferencesFile(it.dataElement(), it.value())
+        }
+        noteStore.getForEvent(eventUid).forEach { noteStore.delete(it.uid()) }
+        eventStore.delete(eventUid)
     }
 }
