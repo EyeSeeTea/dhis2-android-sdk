@@ -48,7 +48,9 @@ internal class TrackedEntityRetentionPurger(
                 val events = eventStore.selectWhere(eventsWhereClause)
 
                 events.forEach { event ->
-                    trackedEntityDataValueStore.deleteByEvent(event.uid())
+                    trackedEntityDataValueStore.getForEvent(event.uid()).forEach {
+                        trackedEntityDataValueStore.deleteWhere(it)
+                    }
                     noteStore.getForEvent(event.uid()).forEach { noteStore.delete(it.uid()) }
                     eventStore.delete(event.uid())
                 }

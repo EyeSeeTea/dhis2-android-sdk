@@ -288,7 +288,7 @@ test.
 **Commit: 10.1 alone** (new, self-contained class — not yet wired into any
 existing purger).
 
-- [ ] 10.2 Switch `TrackedEntityDataValue` deletion in both
+- [x] 10.2 Switch `TrackedEntityDataValue` deletion in both
       `TrackedEntityRetentionPurger` (event cascade) and `EventRetentionPurger`
       (TEI-less path) from `TrackedEntityDataValueStore.deleteByEvent(uid)` (a
       batch delete that never reads what it removes) to read-then-delete
@@ -297,6 +297,10 @@ existing purger).
       `TrackedEntityAttributeValueStore`. This is a pure refactor with no new
       behavior yet (no `ValueFileResourcePurger` call added in this step).
       Verify: existing cascade tests in both files still pass unchanged.
+
+      Verified: full `retention` package suite (21 tests, including the 6 new
+      `ValueFileResourcePurger` tests from 10.1) passes unchanged on
+      `Pixel_9a` (real emulator).
 
 **Commit: 10.2 alone** (mechanical refactor, existing tests are the safety
 net — no new test expected).
