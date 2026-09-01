@@ -261,7 +261,7 @@ treat every sub-task here as a refactor of tested code, re-running the full
 existing `retention` package test suite after each step, not just the new
 test.
 
-- [ ] 10.1 Add a new class `ValueFileResourcePurger` (constructor:
+- [x] 10.1 Add a new class `ValueFileResourcePurger` (constructor:
       `DataElementStore`, `TrackedEntityAttributeStore`, `FileResourceStore`)
       with two methods, `purgeIfDataElementReferencesFile(dataElementUid:
       String?, value: String?)` and `purgeIfAttributeReferencesFile
@@ -278,6 +278,12 @@ test.
       even if `value` happens to name an existing `FileResource`; `value =
       null` or naming no existing `FileResource` is a no-op, not an error.
       Verify: tests fail (no implementation yet), then pass.
+
+      Implemented with a per-instance lazy cache (`Set<String>?` populated on
+      first use, no `prepare()`). Reused `ValueType.isFile` (already public)
+      instead of duplicating the `FILE_RESOURCE`/`IMAGE` set. 6 tests added in
+      `ValueFileResourcePurgerIntegrationShould`, all passing on `Pixel_9a`
+      (real emulator) on first run.
 
 **Commit: 10.1 alone** (new, self-contained class — not yet wired into any
 existing purger).
