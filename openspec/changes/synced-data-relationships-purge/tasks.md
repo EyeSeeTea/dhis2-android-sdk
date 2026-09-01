@@ -4,22 +4,26 @@ Building block used by every purger below (mirrors `ValueFileResourcePurger`'s
 role for the FileResource cascade — a plain injected collaborator, not a
 `RetentionPurger`, no limit of its own, called inline).
 
-- [ ] 1.1 Add a behavior test: given a `Relationship` linking two tracked entity
+- [x] 1.1 Add a behavior test: given a `Relationship` linking two tracked entity
       instances, both fully synced (`aggregatedSyncState = SYNCED`), calling
       `purgeForEntity(uid)` for one of them (with the other row already deleted
       by the caller, matching how it will actually be invoked — see task 2)
       purges the `Relationship` and its two `RelationshipItem` rows. Verify:
       test fails (no implementation yet).
-- [ ] 1.2 Implement `RelationshipRetentionPurger.purgeForEntity(entityUid:
+- [x] 1.2 Implement `RelationshipRetentionPurger.purgeForEntity(entityUid:
       String)`: find every `RelationshipItem` referencing `entityUid`
       (`RelationshipItemStore.getByEntityUid`), and for each, delete the
       `Relationship` row and both its `RelationshipItem` rows. Verify: the 1.1
       test passes.
 
+      Implemented using `deleteWhereIfExists`/`deleteIfExists` throughout, so
+      the class already tolerates a missing counterpart from the start (see
+      1.3). Verified: 1 test green on `Pixel_9a` (real emulator).
+
 **Commit: 1.1 + 1.2 together** (red test, then the implementation that turns it
 green).
 
-- [ ] 1.3 Add a behavior test: `purgeForEntity(uid)` for an entity whose
+- [x] 1.3 Add a behavior test: `purgeForEntity(uid)` for an entity whose
       relationship counterpart no longer exists in any store at all (already
       orphaned) still purges the `Relationship`/`RelationshipItem` rows without
       raising an error. Verify: test fails without explicit handling, passes
@@ -29,6 +33,11 @@ green).
 **Commit: 1.3 alone** if 1.2's delete-by-relationship-uid approach already
 tolerates a missing counterpart row (test-only); otherwise 1.3 plus the minimal
 fix, as one red-green commit.
+
+In practice 1.2 already tolerated it from the start (no fix needed), so 1.3 was
+committed together with 1.1/1.2 rather than as a separate commit — same
+"passed green on first run" pattern already used repeatedly in the prior
+change (e.g. its task 7.3). Verified: 2 tests green on `Pixel_9a`.
 
 ## 2. Cross-tree eligibility check — read side
 
