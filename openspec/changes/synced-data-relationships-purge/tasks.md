@@ -199,21 +199,34 @@ Same reasoning as Group 4: events cascaded from an eligible TEI (via its
 enrollments) also need both the eligibility check and the relationship cascade,
 independently of the TEI-less path in Group 5.
 
-- [ ] 6.1 Add a behavior test: an eligible tracked entity instance's event (via
+- [x] 6.1 Add a behavior test: an eligible tracked entity instance's event (via
       an eligible enrollment) has a relationship to an eligible counterpart —
       purging the TEI cascades to purge the event, and the relationship linking
       it is purged too. Verify: test fails.
-- [ ] 6.2 Wire `RelationshipRetentionPurger.purgeForEntity(event.uid())` inline
+- [x] 6.2 Wire `RelationshipRetentionPurger.purgeForEntity(event.uid())` inline
       into the event-cascade step of `TrackedEntityRetentionPurger`. Verify: the
       6.1 test passes.
 
+      Also extended `isTreeRelationshipEligible` with a new
+      `isEnrollmentsEventsRelationshipEligible(enrollmentUid)` step, checking
+      every event of every enrollment before the TEI counts as eligible — same
+      reasoning as the Group 4 enrollment-level extension, one tree level
+      deeper. One test fixture bug found while writing 6.1: two TEIs shared the
+      same `lastUpdated`, making `limit = 1`'s outcome non-deterministic — same
+      class of bug as Group 4's, fixed the same way (distinct timestamps).
+
 **Commit: 6.1 + 6.2 together.**
 
-- [ ] 6.3 Add a behavior test: an otherwise-eligible tracked entity instance is
+- [x] 6.3 Add a behavior test: an otherwise-eligible tracked entity instance is
       NOT purged because one of its cascaded events has a relationship to a
       non-eligible counterpart — same reasoning as 4.3, one level deeper in the
       tree. Verify: test fails if the eligibility check only covers TEI +
       enrollment level and misses event level; passes once extended.
+
+      Committed together with 6.1/6.2 (both tests added to the same file in
+      the same pass; both green after the `isTreeRelationshipEligible`
+      extension). Verified: full `retention` package suite (39 tests) green on
+      `Pixel_9a`; `ktlintCheck` and `:core:detekt` green.
 
 **Commit: 6.3 alone** if already covered structurally (test-only); otherwise 6.3
 plus the minimal fix, as one red-green commit.

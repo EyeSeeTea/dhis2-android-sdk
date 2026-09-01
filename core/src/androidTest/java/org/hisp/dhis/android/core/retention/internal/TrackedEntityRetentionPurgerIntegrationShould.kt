@@ -506,6 +506,74 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         assertThat(enrollmentStore.selectUids()).containsExactly("enrollment")
     }
 
+    @Test
+    fun purge_a_relationship_when_purging_a_cascaded_event_related_to_an_eligible_counterpart() = runTest {
+        val teiToPurge = givenATrackedEntityInstance("teiToPurge", State.SYNCED, "2026-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(teiToPurge)
+        val enrollment = givenAnEnrollment("enrollment", teiToPurge.uid())
+        enrollmentStore.insert(enrollment)
+        val event = givenAnEvent("event", enrollment.uid())
+        eventStore.insert(event)
+
+        val eligibleTei = givenATrackedEntityInstance("eligibleTei", State.SYNCED, "2026-02-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(eligibleTei)
+
+        givenARelationship(
+            "relationship",
+            RelationshipHelper.eventItem(event.uid()),
+            RelationshipHelper.teiItem(eligibleTei.uid()),
+        )
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
+        ).purge(limit = 1)
+
+        assertThat(eventStore.selectUids()).isEmpty()
+        assertThat(relationshipStore.selectUids()).isEmpty()
+    }
+
+    @Test
+    fun keep_a_tei_whose_cascaded_event_has_a_relationship_to_a_non_eligible_counterpart() = runTest {
+        val protectedTei = givenATrackedEntityInstance("protectedTei", State.SYNCED, "2026-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(protectedTei)
+        val enrollment = givenAnEnrollment("enrollment", protectedTei.uid())
+        enrollmentStore.insert(enrollment)
+        val event = givenAnEvent("event", enrollment.uid())
+        eventStore.insert(event)
+
+        val nonEligibleTei = givenATrackedEntityInstance("nonEligibleTei", State.TO_UPDATE, "2025-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(nonEligibleTei)
+
+        givenARelationship(
+            "relationship",
+            RelationshipHelper.eventItem(event.uid()),
+            RelationshipHelper.teiItem(nonEligibleTei.uid()),
+        )
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
+        ).purge(limit = 0)
+
+        assertThat(trackedEntityInstanceStore.selectUids()).contains("protectedTei")
+        assertThat(eventStore.selectUids()).containsExactly("event")
+    }
+
     private suspend fun givenARelationshipBetweenTeis(relationshipUid: String, fromUid: String, toUid: String) {
         givenARelationship(relationshipUid, RelationshipHelper.teiItem(fromUid), RelationshipHelper.teiItem(toUid))
     }

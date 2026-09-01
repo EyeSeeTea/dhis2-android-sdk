@@ -53,7 +53,10 @@ internal class TrackedEntityRetentionPurger(
                     .build()
                 val events = eventStore.selectWhere(eventsWhereClause)
 
-                events.forEach { event -> purgeEvent(event.uid()) }
+                events.forEach { event ->
+                    purgeEvent(event.uid())
+                    relationshipRetentionPurger.purgeForEntity(event.uid())
+                }
 
                 noteStore.getForEnrollment(enrollment.uid()).forEach { noteStore.delete(it.uid()) }
                 enrollmentStore.delete(enrollment.uid())
@@ -72,7 +75,18 @@ internal class TrackedEntityRetentionPurger(
             .appendKeyStringValue(EnrollmentTableInfo.Columns.TRACKED_ENTITY_INSTANCE, teiUid)
             .build()
 
-        return enrollmentStore.selectWhere(enrollmentsWhereClause)
+        return enrollmentStore.selectWhere(enrollmentsWhereClause).all { enrollment ->
+            relationshipEligibilityChecker.isEligible(enrollment.uid()) &&
+                isEnrollmentsEventsRelationshipEligible(enrollment.uid())
+        }
+    }
+
+    private suspend fun isEnrollmentsEventsRelationshipEligible(enrollmentUid: String): Boolean {
+        val eventsWhereClause = WhereClauseBuilder()
+            .appendKeyStringValue(EventTableInfo.Columns.ENROLLMENT, enrollmentUid)
+            .build()
+
+        return eventStore.selectWhere(eventsWhereClause)
             .all { relationshipEligibilityChecker.isEligible(it.uid()) }
     }
 
