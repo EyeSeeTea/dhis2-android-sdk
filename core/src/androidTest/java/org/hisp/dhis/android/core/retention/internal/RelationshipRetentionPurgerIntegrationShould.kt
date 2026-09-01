@@ -54,6 +54,18 @@ class RelationshipRetentionPurgerIntegrationShould {
     }
 
     @Test
+    fun purge_a_relationship_the_same_way_regardless_of_which_side_triggers_the_purge() = runTest {
+        givenARelationshipBetweenTwoTeis("relationship", "teiA", "teiB")
+
+        // teiB is the TO side of the relationship, not the FROM side used in
+        // the other tests — purging from either side must behave identically.
+        purger.purgeForEntity("teiB")
+
+        assertThat(relationshipStore.selectUids()).isEmpty()
+        assertThat(relationshipItemStore.getForRelationshipUid("relationship")).isEmpty()
+    }
+
+    @Test
     fun purge_a_relationship_without_error_when_its_relationship_row_is_already_missing() = runTest {
         // Only the RelationshipItem for teiA exists; the Relationship row itself
         // (and teiB's item) is already gone, simulating a pre-existing orphan.

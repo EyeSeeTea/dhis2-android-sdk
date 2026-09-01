@@ -233,16 +233,43 @@ plus the minimal fix, as one red-green commit.
 
 ## 7. Full spec verification
 
-- [ ] 7.1 Walk every `#### Scenario:` added or modified by this change (both
+- [x] 7.1 Walk every `#### Scenario:` added or modified by this change (both
       `specs/synced-data-retention-purge/spec.md`'s delta and
       `specs/synced-data-relationships-purge/spec.md`) and confirm each maps to
       at least one test added in Groups 1-6; add any scenario found without a
       corresponding test. Verify: one-to-one mapping documented in this task,
       no scenario left unverified.
 
+      Mapping (scenario → test):
+      - A relationship to a non-eligible counterpart protects the eligible
+        side →
+        `TrackedEntityRetentionPurgerIntegrationShould.keep_a_tei_that_has_a_relationship_to_a_non_eligible_counterpart`
+      - A relationship between two fully synced trees does not block purge →
+        `TrackedEntityRetentionPurgerIntegrationShould.purge_a_relationship_when_purging_both_of_its_fully_synced_teis`
+      - Purging a tracked entity instance purges its relationships →
+        `RelationshipRetentionPurgerIntegrationShould.purge_a_relationship_and_its_items_when_purging_one_of_its_two_teis`
+        + `TrackedEntityRetentionPurgerIntegrationShould.purge_a_relationship_when_purging_both_of_its_fully_synced_teis`
+      - A relationship between different record types is purged the same way →
+        `TrackedEntityRetentionPurgerIntegrationShould.purge_a_relationship_when_purging_an_enrollment_related_to_an_eligible_event`
+        + `TrackedEntityRetentionPurgerIntegrationShould.purge_a_relationship_when_purging_a_cascaded_event_related_to_an_eligible_counterpart`
+        + `EventRetentionPurgerIntegrationShould.purge_a_relationship_when_purging_a_tei_less_event_related_to_an_eligible_tei`
+      - Relationship purge does not depend on relationship directionality →
+        **gap found, no existing test isolated this.** Added
+        `RelationshipRetentionPurgerIntegrationShould.purge_a_relationship_the_same_way_regardless_of_which_side_triggers_the_purge`
+        (verified `purgeForEntity` produces the identical result whether
+        triggered from the `FROM` or the `TO` side — confirmed no
+        `retention/internal` code reads `RelationshipType.bidirectional()` at
+        all, unlike `DataStatePropagatorImpl`, so the behavior was already
+        directionality-independent by construction; this closes the coverage
+        gap).
+      - A relationship whose counterpart record is already missing is purged →
+        `RelationshipRetentionPurgerIntegrationShould.purge_a_relationship_without_error_when_its_relationship_row_is_already_missing`
+
 **Commit: 7.1 alone**, only if it adds a missing test; if every scenario is
 already covered, no commit is needed — record the mapping in the PR description
 instead of an empty commit.
+
+Adds a missing test (see mapping above) — committed alone.
 
 - [ ] 7.2 Run the full `core` test suite (unit + androidTest) and confirm green,
       with no pre-existing purger/wiper/test behavior changed. Verify: CI or
