@@ -2,7 +2,7 @@
 
 **Commit: 1.1 + 1.2 together** (red -> green).
 
-- [ ] 1.1 Add a failing test for a new `ProgramRetentionLimitResolver`
+- [x] 1.1 Add a failing test for a new `ProgramRetentionLimitResolver`
   collaborator (`core/src/test/java/org/hisp/dhis/android/core/retention/internal/ProgramRetentionLimitResolverShould.kt`,
   mockito-kotlin + `runTest`, mocking `ProgramSettingsObjectRepository`)
   covering: (a) a program with its own `teiDBTrimming`/`eventsDBTrimming`
@@ -10,7 +10,7 @@
   program with no specific setting falls back to `globalSettings()`, (c) no
   global or specific setting at all falls back to the existing hardcoded
   default, (d) no `settingDBTrimming` scope set falls back to `GLOBAL`.
-- [ ] 1.2 Implement `ProgramRetentionLimitResolver` (wraps
+- [x] 1.2 Implement `ProgramRetentionLimitResolver` (wraps
   `ProgramSettingsObjectRepository.blockingGet()` via
   `withContext(Dispatchers.IO)`, per design.md) exposing, for a given
   programUid and a field selector (`teiDBTrimming` vs `eventsDBTrimming`),
