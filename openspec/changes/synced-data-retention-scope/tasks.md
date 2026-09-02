@@ -20,13 +20,13 @@
 
 **Commit: 2.1 + 2.2 together** (red -> green).
 
-- [ ] 2.1 Add a failing test asserting that, given a TEI's set of enrolled
+- [x] 2.1 Add a failing test asserting that, given a TEI's set of enrolled
   program uids, the effective limit used for grouping is the minimum of
   each program's resolved limit (design.md decision: most-restrictive-wins).
   Include the edge case of a TEI enrolled in only one program (limit equals
   that program's own resolved limit, unchanged from single-program
   behavior).
-- [ ] 2.2 Implement the resolution as a small function/extension taking a
+- [x] 2.2 Implement the resolution as a small function/extension taking a
   list of programUids and returning the effective `(limit, scope)` pair,
   reusing `ProgramRetentionLimitResolver` from Group 1. Verify: 2.1 passes.
 
