@@ -80,11 +80,6 @@ internal class TrackedEntityInstanceQueryDataFetcher(
                 isExhaustedOffline = instances.size < requestedLoadSize
             }
             if (result.size < requestedLoadSize && scope.mode() == RepositoryMode.OFFLINE_FIRST) {
-                // EyeSeeTea fix - if the online call fails in OFFLINE_FIRST mode, discard the
-                // online failures and show only the local results. Prevents the UI from freezing
-                // on the previous result set when the server returns an error (e.g. HTTP 400).
-                // Local Result.Failure items (e.g. missing TE type) are NOT affected — those
-                // come from transform() after this point and still propagate normally.
                 val onlineInstances = queryOnline(requestedLoadSize)
                 result.addAll(onlineInstances.filter { it.succeeded })
             }

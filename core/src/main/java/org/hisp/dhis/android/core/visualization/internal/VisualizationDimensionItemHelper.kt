@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2004-2023, University of Oslo
+ *  Copyright (c) 2004-2024, University of Oslo
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -25,17 +25,26 @@
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.android.core.user.internal
+package org.hisp.dhis.android.core.visualization.internal
 
-import org.hisp.dhis.android.core.arch.db.stores.internal.LinkStore
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnit
-import org.hisp.dhis.android.core.user.UserOrganisationUnitLink
+/**
+ * Helper to build and recognize the placeholder
+ * [org.hisp.dhis.android.core.visualization.VisualizationDimensionItem] that represents an automatic
+ * ("all options") selection for a dimension.
+ *
+ * The primary key of the persisted item is (visualization, dimensionItem) and does not accept null values, so a null
+ * dimensionItem (which previously expressed "all options") cannot be stored. Instead, a synthetic placeholder of the
+ * form `<dimensionId>.allItems` is persisted. Prefixing it with the dimension id keeps it unique per dimension, so two
+ * dimensions with automatic selection in the same visualization do not collide on the primary key.
+ */
+internal object VisualizationDimensionItemHelper {
 
-internal interface UserOrganisationUnitLinkStore : LinkStore<UserOrganisationUnitLink> {
-    @Throws(RuntimeException::class)
-    suspend fun queryRootCaptureOrganisationUnitUids(): List<String>
-    suspend fun queryOrganisationUnitUidsByScope(scope: OrganisationUnit.Scope): List<String>
-    suspend fun queryAssignedOrganisationUnitUidsByScope(scope: OrganisationUnit.Scope): List<String>
-    suspend fun isCaptureScope(organisationUnit: String): Boolean
-    suspend fun isSearchScope(organisationUnit: String): Boolean
+    private const val ALL_ITEMS_SUFFIX = "allItems"
+
+    private val allItemsRegex = "^\\w{11}\\.$ALL_ITEMS_SUFFIX$".toRegex()
+
+    fun allItemsPlaceholder(dimensionId: String): String = "$dimensionId.$ALL_ITEMS_SUFFIX"
+
+    fun isAllItemsPlaceholder(dimensionItem: String?): Boolean =
+        dimensionItem != null && allItemsRegex.matches(dimensionItem)
 }
