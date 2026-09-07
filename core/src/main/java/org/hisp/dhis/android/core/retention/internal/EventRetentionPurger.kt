@@ -18,26 +18,26 @@ internal class EventRetentionPurger(
     private val relationshipEligibilityChecker: RelationshipEligibilityChecker,
     private val relationshipRetentionPurger: RelationshipRetentionPurger,
 ) : RetentionPurger {
-    override suspend fun purge(limit: Int) {
+    override suspend fun eligibleCandidates(): List<RetentionCandidate> {
         val teiLessSyncedWhereClause = WhereClauseBuilder()
             .appendIsNullValue(EventTableInfo.Columns.ENROLLMENT)
             .appendKeyStringValue(DataColumns.AGGREGATED_SYNC_STATE, State.SYNCED)
             .build()
 
-        val eligible = eventStore.selectWhere(teiLessSyncedWhereClause)
+        return eventStore.selectWhere(teiLessSyncedWhereClause)
             .filter { relationshipEligibilityChecker.isEligible(it.uid()) }
-            .sortedByDescending { it.lastUpdated() }
+            .map { RetentionCandidate(uid = it.uid(), lastUpdated = it.lastUpdated()) }
+    }
 
-        val toPurge = eligible.drop(limit)
-
-        toPurge.forEach { event ->
-            trackedEntityDataValueStore.getForEvent(event.uid()).forEach {
+    override suspend fun purge(uids: List<String>) {
+        uids.forEach { eventUid ->
+            trackedEntityDataValueStore.getForEvent(eventUid).forEach {
                 trackedEntityDataValueStore.deleteWhere(it)
                 valueFileResourcePurger.purgeIfDataElementReferencesFile(it.dataElement(), it.value())
             }
-            noteStore.getForEvent(event.uid()).forEach { noteStore.delete(it.uid()) }
-            eventStore.delete(event.uid())
-            relationshipRetentionPurger.purgeForEntity(event.uid())
+            noteStore.getForEvent(eventUid).forEach { noteStore.delete(it.uid()) }
+            eventStore.delete(eventUid)
+            relationshipRetentionPurger.purgeForEntity(eventUid)
         }
     }
 }

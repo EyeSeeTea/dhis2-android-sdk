@@ -42,7 +42,7 @@
 > read/write split — see design.md "`RetentionPurger` splits into a read
 > port and a write port" for the full rationale.
 
-- [ ] 3.1 Add a failing unit test for a new `RetentionSelector` domain
+- [x] 3.1 Add a failing unit test for a new `RetentionSelector` domain
   service (`core/src/test/.../RetentionSelectorShould.kt`, plain
   `RetentionCandidate` fixtures, no Room/androidTest needed) covering: (a)
   `GLOBAL` scope selects from one combined pool, dropping the resolved
@@ -56,7 +56,7 @@
   (representing a TEI enrolled in more than one program) resolves to the
   most-restrictive of its programs' limits (reusing
   `TrackedEntityInstanceRetentionLimitResolver` from Group 2).
-- [ ] 3.2 Implement `RetentionCandidate` (uid, lastUpdated, programUids,
+- [x] 3.2 Implement `RetentionCandidate` (uid, lastUpdated, programUids,
   organisationUnitUid — per design.md), `RetentionSelector` (the pure
   grouping/sorting/trimming service), and split `RetentionPurger` into
   `eligibleCandidates(): List<RetentionCandidate>` +

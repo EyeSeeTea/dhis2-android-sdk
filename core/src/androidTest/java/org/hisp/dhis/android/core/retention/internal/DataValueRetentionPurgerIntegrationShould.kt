@@ -64,7 +64,7 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(oldestSynced, middleSynced, newestSynced, pending))
 
-        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger).purge(limit = 2)
+        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger).purge(listOf(dataValueUid("oldestSynced")))
 
         val remaining = dataValueStore.selectAll()
         val remainingDataElements = remaining.map { it.dataElement() }
@@ -80,7 +80,8 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
 
-        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger).purge(limit = 0)
+        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger)
+            .purge(listOf(dataValueUid("oldestSynced"), dataValueUid("newestSynced")))
 
         val remaining = dataValueStore.selectAll()
         val remainingDataElements = remaining.map { it.dataElement() }
@@ -96,7 +97,7 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
 
-        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger).purge(limit = 2)
+        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger).purge(emptyList())
 
         val remaining = dataValueStore.selectAll()
         val remainingDataElements = remaining.map { it.dataElement() }
@@ -117,7 +118,8 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(dataValueToPurge))
 
-        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger).purge(limit = 0)
+        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger)
+            .purge(listOf(dataValueUid("fileDataElement")))
 
         assertThat(fileResourceStore.selectUids()).isEmpty()
     }
@@ -134,4 +136,8 @@ class DataValueRetentionPurgerIntegrationShould {
             .lastUpdated(java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))
             .build()
     }
+
+    private fun dataValueUid(dataElement: String): String =
+        listOf(dataElement, "period", "organisationUnit", "categoryOptionCombo", "attributeOptionCombo")
+            .joinToString("_")
 }

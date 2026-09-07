@@ -9,6 +9,7 @@ import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
 import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
 import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
+import org.hisp.dhis.android.core.fileresource.FileResource
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
 import org.hisp.dhis.android.core.relationship.internal.RelationshipItemStore
 import org.hisp.dhis.android.core.relationship.internal.RelationshipStore
@@ -61,6 +62,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
         EventStoreImpl(databaseAdapter),
     )
     private val relationshipRetentionPurger = RelationshipRetentionPurger(relationshipStore, relationshipItemStore)
+    private val retentionSelector = RetentionSelector()
 
     private val purger = SyncedDataRetentionPurger(
         dataValuePurger = DataValueRetentionPurger(dataValueStore, valueFileResourcePurger),
@@ -84,6 +86,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
             relationshipRetentionPurger,
         ),
         orphanFileResourcePurger = OrphanFileResourceRetentionPurger(FileResourceStoreImpl(databaseAdapter)),
+        retentionSelector = retentionSelector,
         d2CallExecutor = d2CallExecutor,
     )
 
@@ -199,7 +202,10 @@ class SyncedDataRetentionPurgerIntegrationShould {
                 relationshipEligibilityChecker,
                 relationshipRetentionPurger,
             ),
-            orphanFileResourcePurger = GivingAFailingFileResourceRetentionPurger(),
+            orphanFileResourcePurger = OrphanFileResourceRetentionPurger(
+                GivingAFailingFileResourceStore(fileResourceStore),
+            ),
+            retentionSelector = retentionSelector,
             d2CallExecutor = d2CallExecutor,
         )
 
@@ -226,16 +232,18 @@ class SyncedDataRetentionPurgerIntegrationShould {
     }
 
     /**
-     * A [RetentionPurger] that always throws, standing in for
-     * [OrphanFileResourceRetentionPurger] to simulate a failure in the last
-     * step of a multi-type purge. This proves the composed entry point's
-     * transaction covers every purger call, not just the failing one — the
-     * earlier dataValue/trackedEntityInstance purgers in the same test run
-     * against the real database, so their would-be-committed deletes are what
-     * this test verifies get rolled back too.
+     * A [FileResourceStore] whose `selectWhere` always throws, standing in
+     * for a real store to simulate a failure in the last step of a
+     * multi-type purge. This proves the composed entry point's transaction
+     * covers every purger call, not just the failing one — the earlier
+     * dataValue/trackedEntityInstance purgers in the same test run against
+     * the real database, so their would-be-committed deletes are what this
+     * test verifies get rolled back too.
      */
-    private class GivingAFailingFileResourceRetentionPurger : RetentionPurger {
-        override suspend fun purge(limit: Int) {
+    private class GivingAFailingFileResourceStore(
+        delegate: FileResourceStore,
+    ) : FileResourceStore by delegate {
+        override suspend fun selectWhere(whereClause: String): List<FileResource> {
             throw RuntimeException("Simulated failure while purging file resources")
         }
     }

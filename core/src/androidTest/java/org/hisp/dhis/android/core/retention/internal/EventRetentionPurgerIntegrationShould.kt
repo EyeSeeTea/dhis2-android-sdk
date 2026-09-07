@@ -121,7 +121,7 @@ class EventRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 1)
+        ).purge(listOf("eventToPurge"))
 
         val remainingEventUids = eventStore.selectUids()
         val remainingDataValueEventUids = trackedEntityDataValueStore.selectAll().map { it.event() }
@@ -147,7 +147,7 @@ class EventRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(listOf("syncedEvent"))
 
         val remainingEventUids = eventStore.selectUids()
 
@@ -175,7 +175,7 @@ class EventRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(listOf("eventToPurge"))
 
         assertThat(fileResourceStore.selectUids()).isEmpty()
     }
@@ -201,7 +201,7 @@ class EventRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(listOf("eventToPurge"))
 
         assertThat(eventStore.selectUids()).isEmpty()
         assertThat(relationshipStore.selectUids()).isEmpty()
@@ -228,7 +228,7 @@ class EventRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(emptyList())
 
         assertThat(eventStore.selectUids()).containsExactly("protectedEvent")
     }

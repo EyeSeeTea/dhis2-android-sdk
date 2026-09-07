@@ -25,29 +25,24 @@ internal class TrackedEntityRetentionPurger(
     private val relationshipEligibilityChecker: RelationshipEligibilityChecker,
     private val relationshipRetentionPurger: RelationshipRetentionPurger,
 ) : RetentionPurger {
-    override suspend fun purge(limit: Int) {
+    override suspend fun eligibleCandidates(): List<RetentionCandidate> {
         val syncedWhereClause = WhereClauseBuilder()
             .appendKeyStringValue(DataColumns.AGGREGATED_SYNC_STATE, State.SYNCED)
             .build()
 
-        val eligible = trackedEntityInstanceStore.selectWhere(syncedWhereClause)
+        return trackedEntityInstanceStore.selectWhere(syncedWhereClause)
             .filter { isTreeRelationshipEligible(it.uid()) }
-            .sortedByDescending { it.lastUpdated() }
+            .map { RetentionCandidate(uid = it.uid(), lastUpdated = it.lastUpdated()) }
+    }
 
-        val toPurge = eligible.drop(limit)
-
-        toPurge.forEach { tei ->
-            trackedEntityAttributeValueStore.queryByTrackedEntityInstance(tei.uid()).forEach {
+    override suspend fun purge(uids: List<String>) {
+        uids.forEach { teiUid ->
+            trackedEntityAttributeValueStore.queryByTrackedEntityInstance(teiUid).forEach {
                 trackedEntityAttributeValueStore.deleteWhere(it)
                 valueFileResourcePurger.purgeIfAttributeReferencesFile(it.trackedEntityAttribute(), it.value())
             }
 
-            val enrollmentsWhereClause = WhereClauseBuilder()
-                .appendKeyStringValue(EnrollmentTableInfo.Columns.TRACKED_ENTITY_INSTANCE, tei.uid())
-                .build()
-            val enrollments = enrollmentStore.selectWhere(enrollmentsWhereClause)
-
-            enrollments.forEach { enrollment ->
+            enrollmentsOf(teiUid).forEach { enrollment ->
                 val eventsWhereClause = WhereClauseBuilder()
                     .appendKeyStringValue(EventTableInfo.Columns.ENROLLMENT, enrollment.uid())
                     .build()
@@ -63,23 +58,25 @@ internal class TrackedEntityRetentionPurger(
                 relationshipRetentionPurger.purgeForEntity(enrollment.uid())
             }
 
-            trackedEntityInstanceStore.delete(tei.uid())
-            relationshipRetentionPurger.purgeForEntity(tei.uid())
+            trackedEntityInstanceStore.delete(teiUid)
+            relationshipRetentionPurger.purgeForEntity(teiUid)
         }
     }
 
     private suspend fun isTreeRelationshipEligible(teiUid: String): Boolean {
         if (!relationshipEligibilityChecker.isEligible(teiUid)) return false
 
-        val enrollmentsWhereClause = WhereClauseBuilder()
-            .appendKeyStringValue(EnrollmentTableInfo.Columns.TRACKED_ENTITY_INSTANCE, teiUid)
-            .build()
-
-        return enrollmentStore.selectWhere(enrollmentsWhereClause).all { enrollment ->
+        return enrollmentsOf(teiUid).all { enrollment ->
             relationshipEligibilityChecker.isEligible(enrollment.uid()) &&
                 isEnrollmentsEventsRelationshipEligible(enrollment.uid())
         }
     }
+
+    private suspend fun enrollmentsOf(teiUid: String) = enrollmentStore.selectWhere(
+        WhereClauseBuilder()
+            .appendKeyStringValue(EnrollmentTableInfo.Columns.TRACKED_ENTITY_INSTANCE, teiUid)
+            .build(),
+    )
 
     private suspend fun isEnrollmentsEventsRelationshipEligible(enrollmentUid: String): Boolean {
         val eventsWhereClause = WhereClauseBuilder()

@@ -133,7 +133,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 1)
+        ).purge(listOf("teiToPurge"))
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
         val remainingAttributeValueTeiUids = trackedEntityAttributeValueStore.selectAll()
@@ -162,7 +162,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(listOf("syncedTei"))
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
 
@@ -199,7 +199,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 1)
+        ).purge(listOf("teiToPurge"))
 
         val remainingEnrollmentUids = enrollmentStore.selectUids()
         val remainingNoteUids = noteStore.selectUids()
@@ -233,7 +233,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(emptyList())
 
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
         val remainingEnrollmentUids = enrollmentStore.selectUids()
@@ -285,7 +285,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 1)
+        ).purge(listOf("teiToPurge"))
 
         val remainingEventUids = eventStore.selectUids()
         val remainingDataValueEventUids = trackedEntityDataValueStore.selectAll().map { it.event() }
@@ -321,7 +321,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(emptyList())
 
         assertThat(fileResourceStore.selectUids()).containsExactly("referencedFile")
     }
@@ -350,7 +350,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(listOf("teiToPurge"))
 
         assertThat(fileResourceStore.selectUids()).isEmpty()
     }
@@ -385,7 +385,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(listOf("teiToPurge"))
 
         assertThat(fileResourceStore.selectUids()).isEmpty()
     }
@@ -408,7 +408,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(listOf("teiA", "teiB"))
 
         assertThat(trackedEntityInstanceStore.selectUids()).isEmpty()
         assertThat(relationshipStore.selectUids()).isEmpty()
@@ -432,7 +432,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(emptyList())
 
         assertThat(trackedEntityInstanceStore.selectUids()).containsExactly("eligibleTei", "nonEligibleTei")
         assertThat(relationshipStore.selectUids()).containsExactly("relationship")
@@ -468,7 +468,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 1)
+        ).purge(listOf("teiToPurge"))
 
         assertThat(enrollmentStore.selectUids()).containsExactly("unrelatedEnrollment")
         assertThat(relationshipStore.selectUids()).isEmpty()
@@ -500,7 +500,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(emptyList())
 
         assertThat(trackedEntityInstanceStore.selectUids()).contains("protectedTei")
         assertThat(enrollmentStore.selectUids()).containsExactly("enrollment")
@@ -534,7 +534,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 1)
+        ).purge(listOf("teiToPurge"))
 
         assertThat(eventStore.selectUids()).isEmpty()
         assertThat(relationshipStore.selectUids()).isEmpty()
@@ -568,7 +568,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             valueFileResourcePurger,
             relationshipEligibilityChecker,
             relationshipRetentionPurger,
-        ).purge(limit = 0)
+        ).purge(emptyList())
 
         assertThat(trackedEntityInstanceStore.selectUids()).contains("protectedTei")
         assertThat(eventStore.selectUids()).containsExactly("event")

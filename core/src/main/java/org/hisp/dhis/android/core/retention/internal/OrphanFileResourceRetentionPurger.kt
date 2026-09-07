@@ -14,8 +14,8 @@ import java.io.File
 @Singleton
 internal class OrphanFileResourceRetentionPurger(
     private val fileResourceStore: FileResourceStore,
-) : RetentionPurger {
-    override suspend fun purge(limit: Int) {
+) {
+    suspend fun purge(limit: Int) {
         val referencedFileResourcesSubQuery =
             "SELECT ${DataValueTableInfo.Columns.VALUE} FROM ${DataValueTableInfo.TABLE_INFO.name()} " +
                 "UNION SELECT ${TrackedEntityAttributeValueTableInfo.Columns.VALUE} " +
