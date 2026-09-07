@@ -32,12 +32,15 @@ resolve its limits from these existing settings instead of a fixed value.
   not globally across all programs — a TEI/Event purger candidate set that
   today is selected and trimmed as one pool becomes multiple pools, one per
   programUid, each trimmed to its own resolved limit. This changes the
-  `RetentionPurger` contract (today `purge(limit: Int)` assumes one pool)
-  for the trackedentity and event purgers; the data value purger gets the
-  equivalent per-dataset grouping. `ALL_ORG_UNITS`/`PER_ORG_UNIT`/
-  `PER_OU_AND_PROGRAM` splitting by org unit is addressed the same way
-  (grouping key extended with org unit) — see design.md for the exact
-  grouping key per scope value.
+  `RetentionPurger` contract: instead of a single `purge(limit: Int)`
+  method, it splits into a read (`eligibleCandidates()`) and a write
+  (`purge(uids: List<String>)`), with grouping/sorting/trimming moved to a
+  new `RetentionSelector` domain service — for the trackedentity and event
+  purgers; the data value purger gets the equivalent per-dataset grouping.
+  `ALL_ORG_UNITS`/`PER_ORG_UNIT`/`PER_OU_AND_PROGRAM` splitting by org unit
+  is addressed the same way (grouping key extended with org unit) — see
+  design.md for the exact grouping key per scope value and the rationale
+  for the two-port split.
 - `RetentionLimits` changes from a single flat value set into a value
   resolved per program/dataset/org-unit group before each purger runs —
   **BREAKING** for any caller currently constructing `RetentionLimits`
@@ -70,17 +73,25 @@ resolve its limits from these existing settings instead of a fixed value.
   decided in design.md).
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/RetentionPurger.kt`
   — the shared interface every value purger implements changes from
-  `purge(limit: Int)` (one pool) to a form that can enforce a limit per
-  resolved group (program/dataset/org-unit) — the highest-conflict-surface
-  option available here, but required to honor `LimitScope` correctly;
+  `purge(limit: Int)` (one pool) to two methods, `eligibleCandidates():
+  List<RetentionCandidate>` and `purge(uids: List<String>)` — the
+  highest-conflict-surface option available here, but required to keep
+  grouping/limit policy out of the persistence adapter (see design.md);
   touches `TrackedEntityRetentionPurger`, `EventRetentionPurger`,
   `DataValueRetentionPurger` (3 implementations, not ~30+ like
   `ModuleWiper`). `OrphanFileResourceRetentionPurger` keeps today's
-  single-pool `purge(limit: Int)` behavior (no corresponding setting to
-  group by — see design.md).
+  single-pool `purge(limit: Int)` behavior and does not implement
+  `RetentionPurger` (no corresponding setting to group by — see design.md).
+- New `RetentionSelector` domain service in `retention/internal` — pure
+  grouping/sorting/trimming logic (`RetentionCandidate` list + resolved
+  `LimitScope` + a per-group limit lookup -> uids to purge), with no
+  dependency on Room or any store; used by `SyncedDataRetentionPurger`
+  between each purger's `eligibleCandidates()` and `purge(uids)` calls.
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/SyncedDataRetentionPurger.kt`
-  — gains a dependency on the new scope resolver instead of accepting
-  `RetentionLimits` as an opaque caller-supplied parameter.
+  — gains a dependency on the new scope resolvers and `RetentionSelector`
+  instead of accepting `RetentionLimits` as an opaque caller-supplied
+  parameter; becomes the sole orchestrator that reads candidates, resolves
+  scope, selects uids, and purges them per entity type.
 - New collaborator(s) in `retention/internal` for resolving limits and
   grouping keys from `ProgramSettingsObjectRepository` /
   `DataSetSettingsObjectRepository` (existing repositories, not modified).

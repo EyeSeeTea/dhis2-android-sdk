@@ -108,16 +108,78 @@ a more generous program's larger allowance.
   limit unstable and harder to reason about than the always-deterministic
   minimum.
 
-### `RetentionPurger` becomes group-aware
+### `RetentionPurger` splits into a read port and a write port — selection moves to a domain service
 
-**Decision**: change `RetentionPurger.purge(limit: Int)` to
+**Problem with the first version of this decision**: an earlier draft had
 `RetentionPurger.purge(resolveLimit: (groupKey: RetentionGroupKey) -> Int)`
-(exact key/type naming left to implementation) rather than adding a second,
-parallel "grouped" method. The purger already builds the full candidate
-list and knows each candidate's program/org-unit/dataset; grouping is a
-`groupBy { ... }` on that same list before the existing
-`sortedByDescending { lastUpdated() }.drop(limit)` step, with the resolved
-limit looked up per group instead of once.
+— a callback the purger invokes per group it decides to build. This was
+rejected during implementation of Group 3: it makes the purger (a
+persistence adapter) responsible for deciding *whether* and *how* to group
+candidates, which is a business rule, not a persistence concern. Concretely,
+it broke the `GLOBAL` case — an adapter that always groups by program, even
+when handed a callback that returns the same flat number for every group,
+does not reduce to single-pool behavior (dropping N from *each* per-program
+group is not equivalent to dropping N from the combined pool). The adapter
+had no way to know, from an `Int`-returning callback alone, whether the
+caller intended one pool or several.
+
+**Decision**: `RetentionPurger` splits into two operations — a read (list
+eligible candidates with their grouping attributes) and a write (delete a
+given set of uids). Selection — grouping, sorting, and trimming to the
+resolved limit — moves out of the purger entirely and into a new domain
+service, `RetentionSelector`, that operates on plain data and knows nothing
+about Room or any store:
+
+```kotlin
+internal interface RetentionPurger {
+    suspend fun eligibleCandidates(): List<RetentionCandidate>
+    suspend fun purge(uids: List<String>)
+}
+
+internal data class RetentionCandidate(
+    val uid: String,
+    val lastUpdated: Date,
+    val programUids: List<String> = emptyList(),   // TEI: 0..n via enrollments; Event: exactly 1
+    val organisationUnitUid: String? = null,
+)
+
+internal class RetentionSelector(
+    private val programRetentionLimitResolver: ProgramRetentionLimitResolver,
+    private val trackedEntityInstanceRetentionLimitResolver: TrackedEntityInstanceRetentionLimitResolver,
+) {
+    // Pure function of (candidates, resolved scope, limit lookup) -> uids to purge.
+    // GLOBAL -> one group (RetentionGroupKey.Global), no splitting: exactly today's
+    // single-pool behavior. PER_PROGRAM/PER_ORG_UNIT/etc. -> groupBy the matching
+    // RetentionGroupKey per the table above, each group independently
+    // sortedByDescending { lastUpdated }.drop(resolvedLimitForThatGroup).
+    suspend fun select(
+        candidates: List<RetentionCandidate>,
+        scope: LimitScope,
+        limitFor: suspend (RetentionGroupKey) -> Int,
+    ): List<String>
+}
+```
+
+The use case (`SyncedDataRetentionPurger`) is the only caller of both the
+purger and the selector: for each entity type it calls
+`purger.eligibleCandidates()`, resolves the run's `LimitScope` via the
+Group 1-2 domain services, calls `retentionSelector.select(candidates,
+scope, limitFor)` to get the uids to remove, then calls `purger.purge(uids)`.
+This keeps the purger a pure adapter (query + cascade delete, both
+genuinely Room-specific) and keeps all business logic (grouping policy,
+most-restrictive-wins, sort-and-trim) in one reusable, non-Room-dependent
+service — substitutable to any other persistence technology without
+duplicating the selection logic.
+
+**Alternative considered and rejected — a precomputed
+`Map<RetentionGroupKey, Int>` passed as a plain data structure**: avoids a
+callback, but the caller (use case) cannot know which programUids exist
+among the candidates without first querying them — which is exactly the
+`eligibleCandidates()` read the purger already needs to do. Building the
+map would require either a redundant preliminary query from the use case
+(duplicating store access outside the adapter) or exposing the store to the
+domain layer. The two-port split (read candidates, then write uids) gives
+the use case the grouping-relevant data it needs without either.
 
 **Alternative considered and rejected**: keep `purge(limit: Int)` unchanged
 and resolve one effective global number by summing/flattening group limits
@@ -127,13 +189,13 @@ consumed by another's excess (e.g. program A's 200 synced TEIs would count
 against program B's separate limit of 50), which defeats the purpose of
 `PER_PROGRAM` scope entirely.
 
-**`OrphanFileResourceRetentionPurger` keeps `purge(limit: Int)` unchanged** —
-no setting exists to group file resources by, so it is not migrated to the
-group-aware form; `RetentionPurger` becomes a shared interface with two
-purge signatures split by capability, or `OrphanFileResourceRetentionPurger`
-stops implementing `RetentionPurger` and calls a single-group resolver
-directly (implementation detail for tasks.md to settle without spec impact
-either way).
+**`OrphanFileResourceRetentionPurger` keeps `purge(limit: Int)` unchanged
+and does not implement `RetentionPurger`** — no setting exists to group
+file resources by, so there is no candidate/selector split needed for it;
+it stays a single concrete method called directly by
+`SyncedDataRetentionPurger`, same as the current implementation (see Group
+3 commit `ec11f4a351`, which already made this change ahead of this
+design revision).
 
 ### DataValue (dataset) limit — no org-unit split
 
@@ -164,12 +226,18 @@ exactly as today, upstream of the new grouping/limit-resolution step.
 ## Risks / Trade-offs
 
 - [Changing a shared interface (`RetentionPurger`) touches 3 implementations
-  instead of being purely additive] → Scoped and justified explicitly per
-  proposal.md - Impact; contained to the `retention/internal` package (not
-  the ~30+ `ModuleWiper` blast radius the project's design rules warn
-  about). No production caller exists yet for `SyncedDataRetentionPurger`
-  (per the retention-purge spec), so there is no external behavior to
-  break by changing the interface now versus later.
+  instead of being purely additive, and splitting it into two ports (read +
+  write) plus a new `RetentionSelector` service adds a class not in the
+  original proposal] → Scoped and justified explicitly per proposal.md -
+  Impact; contained to the `retention/internal` package (not the ~30+
+  `ModuleWiper` blast radius the project's design rules warn about). No
+  production caller exists yet for `SyncedDataRetentionPurger` (per the
+  retention-purge spec), so there is no external behavior to break by
+  changing the interface now versus later. The split was adopted after the
+  single-callback form (`purge(resolveLimit: (key) -> Int)`) was found
+  during Group 3 implementation to push a business decision (grouping
+  policy) into the persistence adapter — see the "splits into a read port
+  and a write port" decision above.
 - [Groups with very few candidates could rebuild the same
   `ProgramSettings`/`DataSetSettings` lookup repeatedly per group] →
   Mitigation: resolve `ProgramSettings`/`DataSetSettings` once per purge run
