@@ -70,6 +70,30 @@ class RetentionSelectorShould {
         assertEquals(listOf("singleProgramCandidate"), toPurge)
     }
 
+    @Test
+    fun trim_each_org_units_excess_candidates_independently_of_the_other_org_units_eligible_count() {
+        val overLimitCandidate = givenACandidateForOrgUnit(
+            uid = "overLimitCandidate",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            organisationUnitUid = "orgUnitOverLimit",
+        )
+        val withinLimitCandidate = givenACandidateForOrgUnit(
+            uid = "withinLimitCandidate",
+            lastUpdated = "2026-02-01T00:00:00.000",
+            organisationUnitUid = "orgUnitWithinLimit",
+        )
+
+        val toPurge = selector.selectByOrgUnit(
+            candidates = listOf(overLimitCandidate, withinLimitCandidate),
+            limitByOrgUnit = mapOf(
+                "orgUnitOverLimit" to 0,
+                "orgUnitWithinLimit" to 1,
+            ),
+        )
+
+        assertEquals(listOf("overLimitCandidate"), toPurge)
+    }
+
     private fun givenACandidate(uid: String, lastUpdated: String): RetentionCandidate {
         return RetentionCandidate(
             uid = uid,
@@ -86,6 +110,18 @@ class RetentionSelectorShould {
             uid = uid,
             lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
             programUids = programUids,
+        )
+    }
+
+    private fun givenACandidateForOrgUnit(
+        uid: String,
+        lastUpdated: String,
+        organisationUnitUid: String,
+    ): RetentionCandidate {
+        return RetentionCandidate(
+            uid = uid,
+            lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
+            organisationUnitUid = organisationUnitUid,
         )
     }
 }

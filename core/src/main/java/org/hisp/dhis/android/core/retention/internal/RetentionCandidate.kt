@@ -6,4 +6,5 @@ internal data class RetentionCandidate(
     val uid: String,
     val lastUpdated: Date?,
     val programUids: List<String> = emptyList(),
+    val organisationUnitUid: String? = null,
 )

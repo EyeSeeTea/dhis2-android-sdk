@@ -22,4 +22,15 @@ internal class RetentionSelector {
                 group.sortedByDescending { it.lastUpdated }.drop(limitByProgram.getValue(programUid)).map { it.uid }
             }
     }
+
+    fun selectByOrgUnit(
+        candidates: List<RetentionCandidate>,
+        limitByOrgUnit: Map<String, Int>,
+    ): List<String> {
+        return candidates
+            .groupBy { it.organisationUnitUid!! }
+            .flatMap { (orgUnitUid, group) ->
+                group.sortedByDescending { it.lastUpdated }.drop(limitByOrgUnit.getValue(orgUnitUid)).map { it.uid }
+            }
+    }
 }

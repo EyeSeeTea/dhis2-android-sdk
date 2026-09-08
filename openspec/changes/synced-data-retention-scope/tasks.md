@@ -139,16 +139,32 @@
   > verify — that `eligibleCandidates()` reads real enrollments correctly
   > — and purges by explicit `uids`, same as every other test in this
   > class.
-- [ ] 3.6 Add a `RetentionSelectorShould` unit test for `PER_ORG_UNIT`
-  scope (two org units under the same program, each with its own eligible
-  candidates beyond a shared per-org-unit limit) verifying each org unit's
-  excess is trimmed independently of the other's eligible count. Implement
-  the minimum to pass: add `RetentionGroupKey.OrgUnit(organisationUnitUid:
-  String)`, add `organisationUnitUid: String?` to `RetentionCandidate`, add
-  a `selectByOrgUnit` overload (or generalize `selectByProgram` into a
-  single grouped-select taking a `(RetentionCandidate) -> RetentionGroupKey`
-  classifier plus `limitByGroup: Map<RetentionGroupKey, Int>` — implementer's
-  call at this point, once two real grouping dimensions exist to compare).
+- [x] 3.6 Add a `RetentionSelectorShould` unit test for `PER_ORG_UNIT`
+  scope (two org units, each with its own eligible candidates beyond a
+  shared per-org-unit limit) verifying each org unit's excess is trimmed
+  independently of the other's eligible count. Implemented the minimum:
+  added `organisationUnitUid: String?` to `RetentionCandidate` and a
+  `RetentionSelector.selectByOrgUnit(candidates, limitByOrgUnit:
+  Map<String, Int>): List<String>` overload — a sibling of
+  `selectByProgram`, same group/sort/trim shape, no shared abstraction
+  between them.
+  > Superseded an earlier version of this task that generalized
+  > `selectByProgram`/`selectByOrgUnit` into a single `selectGrouped(
+  > candidates, limitByGroup: Map<RetentionGroupKey, Int>, groupKeyFor:
+  > (RetentionCandidate) -> RetentionGroupKey)`, adding back both
+  > `RetentionGroupKey` and a `groupKeyFor` callback. Rejected on review:
+  > (a) `groupKeyFor` is the same callback shape already rejected for
+  > `limitFor` in design.md's "`RetentionPurger` splits into a read port
+  > and a write port" section, for the same reason — no caller exists yet
+  > (`SyncedDataRetentionPurger` doesn't call any of these methods until
+  > Group 6) to decide between `Program`/`OrgUnit`, so there was nothing
+  > real forcing the generalization; (b) it was written to anticipate what
+  > Group 6 might need rather than what this task's own red test required,
+  > violating the "no scope/key introduced ahead of a test that exercises
+  > it" rule this same tasks.md states above. The two-sibling-methods
+  > duplication this leaves is intentional and expected until Group 6
+  > brings a real caller that needs to choose between them polymorphically
+  > — only then does generalizing have a consumer to justify it.
 
 ## 4. `EventRetentionPurger` adapts to program-scoped grouping
 
