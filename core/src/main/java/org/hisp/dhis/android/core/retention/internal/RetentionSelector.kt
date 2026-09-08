@@ -17,7 +17,7 @@ internal class RetentionSelector {
         limitByProgram: Map<String, Int>,
     ): List<String> {
         return candidates
-            .groupBy { it.programUid!! }
+            .groupBy { candidate -> candidate.programUids.minBy { limitByProgram.getValue(it) } }
             .flatMap { (programUid, group) ->
                 group.sortedByDescending { it.lastUpdated }.drop(limitByProgram.getValue(programUid)).map { it.uid }
             }

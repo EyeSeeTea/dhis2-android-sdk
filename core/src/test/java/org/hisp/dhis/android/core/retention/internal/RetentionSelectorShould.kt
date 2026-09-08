@@ -24,15 +24,15 @@ class RetentionSelectorShould {
 
     @Test
     fun trim_each_programs_excess_candidates_independently_of_the_other_programs_eligible_count() {
-        val overLimitCandidate = givenACandidateForProgram(
+        val overLimitCandidate = givenACandidateForPrograms(
             uid = "overLimitCandidate",
             lastUpdated = "2026-01-01T00:00:00.000",
-            programUid = "programOverLimit",
+            programUids = listOf("programOverLimit"),
         )
-        val withinLimitCandidate = givenACandidateForProgram(
+        val withinLimitCandidate = givenACandidateForPrograms(
             uid = "withinLimitCandidate",
             lastUpdated = "2026-02-01T00:00:00.000",
-            programUid = "programWithinLimit",
+            programUids = listOf("programWithinLimit"),
         )
 
         val toPurge = selector.selectByProgram(
@@ -46,6 +46,30 @@ class RetentionSelectorShould {
         assertEquals(listOf("overLimitCandidate"), toPurge)
     }
 
+    @Test
+    fun group_a_multi_program_candidate_under_its_most_restrictive_programs_limit() {
+        val singleProgramCandidate = givenACandidateForPrograms(
+            uid = "singleProgramCandidate",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            programUids = listOf("restrictiveProgram"),
+        )
+        val multiProgramCandidate = givenACandidateForPrograms(
+            uid = "multiProgramCandidate",
+            lastUpdated = "2026-02-01T00:00:00.000",
+            programUids = listOf("restrictiveProgram", "permissiveProgram"),
+        )
+
+        val toPurge = selector.selectByProgram(
+            candidates = listOf(singleProgramCandidate, multiProgramCandidate),
+            limitByProgram = mapOf(
+                "restrictiveProgram" to 1,
+                "permissiveProgram" to 5,
+            ),
+        )
+
+        assertEquals(listOf("singleProgramCandidate"), toPurge)
+    }
+
     private fun givenACandidate(uid: String, lastUpdated: String): RetentionCandidate {
         return RetentionCandidate(
             uid = uid,
@@ -53,15 +77,15 @@ class RetentionSelectorShould {
         )
     }
 
-    private fun givenACandidateForProgram(
+    private fun givenACandidateForPrograms(
         uid: String,
         lastUpdated: String,
-        programUid: String,
+        programUids: List<String>,
     ): RetentionCandidate {
         return RetentionCandidate(
             uid = uid,
             lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
-            programUid = programUid,
+            programUids = programUids,
         )
     }
 }

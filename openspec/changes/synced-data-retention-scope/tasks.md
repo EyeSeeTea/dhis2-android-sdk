@@ -102,7 +102,7 @@
   design.md's "`suspend (RetentionGroupKey) -> Int` callback" rejection.
   The existing `select(candidates, limit: Int)` overload (`GLOBAL`, one
   pool) stays unchanged, unaffected, still used by every existing caller.
-- [ ] 3.4 Add a failing `RetentionSelectorShould` test: a TEI candidate
+- [x] 3.4 Add a failing `RetentionSelectorShould` test: a TEI candidate
   enrolled in two programs with different resolved limits is grouped under
   the most-restrictive one (mirrors design.md's most-restrictive-wins
   decision, using `TrackedEntityInstanceRetentionLimitResolver` from Group

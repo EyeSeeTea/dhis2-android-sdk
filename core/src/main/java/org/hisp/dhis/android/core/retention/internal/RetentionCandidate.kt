@@ -5,5 +5,5 @@ import java.util.Date
 internal data class RetentionCandidate(
     val uid: String,
     val lastUpdated: Date?,
-    val programUid: String? = null,
+    val programUids: List<String> = emptyList(),
 )

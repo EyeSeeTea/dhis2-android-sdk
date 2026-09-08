@@ -32,7 +32,13 @@ internal class TrackedEntityRetentionPurger(
 
         return trackedEntityInstanceStore.selectWhere(syncedWhereClause)
             .filter { isTreeRelationshipEligible(it.uid()) }
-            .map { RetentionCandidate(uid = it.uid(), lastUpdated = it.lastUpdated()) }
+            .map {
+                RetentionCandidate(
+                    uid = it.uid(),
+                    lastUpdated = it.lastUpdated(),
+                    programUids = enrollmentsOf(it.uid()).mapNotNull { enrollment -> enrollment.program() }.distinct(),
+                )
+            }
     }
 
     override suspend fun purge(uids: List<String>) {
