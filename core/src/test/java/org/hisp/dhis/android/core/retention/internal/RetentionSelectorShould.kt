@@ -22,10 +22,46 @@ class RetentionSelectorShould {
         assertEquals(listOf("middle", "oldest"), toPurge)
     }
 
+    @Test
+    fun trim_each_programs_excess_candidates_independently_of_the_other_programs_eligible_count() {
+        val overLimitCandidate = givenACandidateForProgram(
+            uid = "overLimitCandidate",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            programUid = "programOverLimit",
+        )
+        val withinLimitCandidate = givenACandidateForProgram(
+            uid = "withinLimitCandidate",
+            lastUpdated = "2026-02-01T00:00:00.000",
+            programUid = "programWithinLimit",
+        )
+
+        val toPurge = selector.selectByProgram(
+            candidates = listOf(overLimitCandidate, withinLimitCandidate),
+            limitByProgram = mapOf(
+                "programOverLimit" to 0,
+                "programWithinLimit" to 1,
+            ),
+        )
+
+        assertEquals(listOf("overLimitCandidate"), toPurge)
+    }
+
     private fun givenACandidate(uid: String, lastUpdated: String): RetentionCandidate {
         return RetentionCandidate(
             uid = uid,
             lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
+        )
+    }
+
+    private fun givenACandidateForProgram(
+        uid: String,
+        lastUpdated: String,
+        programUid: String,
+    ): RetentionCandidate {
+        return RetentionCandidate(
+            uid = uid,
+            lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
+            programUid = programUid,
         )
     }
 }

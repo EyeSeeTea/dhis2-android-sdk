@@ -143,19 +143,16 @@ internal data class RetentionCandidate(
     val organisationUnitUid: String? = null,
 )
 
-internal class RetentionSelector(
-    private val programRetentionLimitResolver: ProgramRetentionLimitResolver,
-    private val trackedEntityInstanceRetentionLimitResolver: TrackedEntityInstanceRetentionLimitResolver,
-) {
-    // Pure function of (candidates, resolved scope, limit lookup) -> uids to purge.
-    // GLOBAL -> one group (RetentionGroupKey.Global), no splitting: exactly today's
+internal class RetentionSelector {
+    // Pure function of (candidates, resolved scope, resolved per-group limits) -> uids to
+    // purge. GLOBAL -> one group (RetentionGroupKey.Global), no splitting: exactly today's
     // single-pool behavior. PER_PROGRAM/PER_ORG_UNIT/etc. -> groupBy the matching
     // RetentionGroupKey per the table above, each group independently
     // sortedByDescending { lastUpdated }.drop(resolvedLimitForThatGroup).
-    suspend fun select(
+    fun select(
         candidates: List<RetentionCandidate>,
         scope: LimitScope,
-        limitFor: suspend (RetentionGroupKey) -> Int,
+        limitByGroup: Map<RetentionGroupKey, Int>,
     ): List<String>
 }
 ```
@@ -163,23 +160,46 @@ internal class RetentionSelector(
 The use case (`SyncedDataRetentionPurger`) is the only caller of both the
 purger and the selector: for each entity type it calls
 `purger.eligibleCandidates()`, resolves the run's `LimitScope` via the
-Group 1-2 domain services, calls `retentionSelector.select(candidates,
-scope, limitFor)` to get the uids to remove, then calls `purger.purge(uids)`.
+Group 1-2 domain services, resolves a limit for every distinct group key
+present among those candidates (the candidates themselves are the only
+source `limitByGroup` needs — no separate query), calls
+`retentionSelector.select(candidates, scope, limitByGroup)` to get the uids
+to remove, then calls `purger.purge(uids)`. Resolving limits stays the use
+case's job and can itself be `suspend`; `RetentionSelector` only ever reads
+an already-resolved map, so it never needs to be `suspend` itself.
 This keeps the purger a pure adapter (query + cascade delete, both
 genuinely Room-specific) and keeps all business logic (grouping policy,
 most-restrictive-wins, sort-and-trim) in one reusable, non-Room-dependent
 service — substitutable to any other persistence technology without
 duplicating the selection logic.
 
-**Alternative considered and rejected — a precomputed
-`Map<RetentionGroupKey, Int>` passed as a plain data structure**: avoids a
-callback, but the caller (use case) cannot know which programUids exist
-among the candidates without first querying them — which is exactly the
-`eligibleCandidates()` read the purger already needs to do. Building the
-map would require either a redundant preliminary query from the use case
-(duplicating store access outside the adapter) or exposing the store to the
-domain layer. The two-port split (read candidates, then write uids) gives
-the use case the grouping-relevant data it needs without either.
+**This is the target shape, built incrementally (see tasks.md Groups
+3.3-7.2), not landed as one commit.** The first version of Group 3
+implemented `RetentionCandidate`/`RetentionSelector`/`RetentionGroupKey`
+in this full shape in a single step and found it violated YAGNI at the
+commit level — fields like `programUids`/`organisationUnitUid` and
+`RetentionGroupKey`'s non-`Program` variants had no test exercising them
+yet. They were stripped back to `RetentionCandidate(uid, lastUpdated)` and
+`RetentionSelector.select(candidates, limit: Int)` (single-pool only,
+matching only the `GLOBAL` case), and tasks.md now rebuilds each grouping
+dimension one red -> green step at a time, each adding only the field/key
+variant its own test requires. The code snippets above and the grouping
+key table describe where this ends up, not what Group 3's first commit
+contains.
+
+**Alternative considered and rejected — a `suspend (RetentionGroupKey) ->
+Int` callback the selector invokes per group it builds**: this was the
+first shape tried for `select`/`selectByProgram`. Rejected once the read
+port existed: by the time the selector runs, the use case already has
+`candidates` from `purger.eligibleCandidates()`, so it already knows every
+distinct group key present — nothing about resolving limits needs to be
+lazy or per-group-on-demand. The callback bought no candidate the selector
+would otherwise have to discover itself; it only made the selector
+`suspend` and coupled it to the shape of an async resolver function for no
+reason. Precomputing `limitByGroup: Map<RetentionGroupKey, Int>` from the
+already-available candidates before calling `select` is strictly simpler:
+`RetentionSelector` stays synchronous, and "how a limit is resolved" stays
+entirely the use case's concern.
 
 **Alternative considered and rejected**: keep `purge(limit: Int)` unchanged
 and resolve one effective global number by summing/flattening group limits

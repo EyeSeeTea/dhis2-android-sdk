@@ -75,31 +75,90 @@
   `RetentionSelector.select(...)` + `purge(uids)`, or an equivalent
   test-only helper — `GLOBAL` scope must reduce to exactly today's
   single-pool behavior).
-- [ ] 3.3 Add a `RetentionSelectorShould` unit test for `PER_ORG_UNIT`
+> Groups 3.3 onward rebuild grouping (`RetentionGroupKey`, per-group limits)
+> incrementally, one commit at a time, each adding only what its own
+> red -> green test requires — no scope/key is introduced ahead of a test
+> that exercises it. This replaces the all-at-once `RetentionGroupKey`
+> (5 variants) + `scope: LimitScope` design from the superseded version of
+> Group 3: that shape is rebuilt piece by piece across 3.3-3.6 instead of
+> landing in one step.
+
+- [x] 3.3 Add a failing `RetentionSelectorShould` test: given two
+  `RetentionCandidate`s tagged with different `programUid`s and a
+  `limitByProgram: Map<String, Int>` giving a different limit per program,
+  each program's excess is purged independently of the other's eligible
+  count (same scenario previously covered by the superseded 3.1(b),
+  rebuilt against the new API). Implement the minimum to pass: add
+  `programUid: String?` to `RetentionCandidate` (single value, not a list —
+  the multi-program TEI case is 3.4, not this task), and a
+  `RetentionSelector.selectByProgram(candidates, limitByProgram: Map<String,
+  Int>): List<String>` overload that groups by `programUid` directly (no
+  `RetentionGroupKey` wrapper — nothing yet needs to distinguish grouping
+  *kinds* at the type level, only to key a map by programUid) and drops
+  each group's resolved limit, read from the map, not resolved by the
+  selector itself: limits are resolved by the use case ahead of the call,
+  since by the time `select`/`selectByProgram` runs the candidates
+  (and therefore every distinct group key) are already known — see
+  design.md's "`suspend (RetentionGroupKey) -> Int` callback" rejection.
+  The existing `select(candidates, limit: Int)` overload (`GLOBAL`, one
+  pool) stays unchanged, unaffected, still used by every existing caller.
+- [ ] 3.4 Add a failing `RetentionSelectorShould` test: a TEI candidate
+  enrolled in two programs with different resolved limits is grouped under
+  the most-restrictive one (mirrors design.md's most-restrictive-wins
+  decision, using `TrackedEntityInstanceRetentionLimitResolver` from Group
+  2 as the resolution rule inside the grouping step). Implement the
+  minimum to pass: change `RetentionCandidate.programUid: String?` to
+  `programUids: List<String>` (breaking change local to this internal
+  package — no external caller yet, per design.md's existing risk note),
+  update `TrackedEntityRetentionPurger.eligibleCandidates()` to populate it
+  from that TEI's distinct `Enrollment.program()` values (query already
+  exists from Group 3.2, currently unused since 3.2/3.3's YAGNI pass —
+  reintroduce it here where a test needs it), update `selectByProgram` to
+  group each candidate under whichever of its `programUids` has the
+  smallest limit in `limitByProgram` (`programUids.minBy {
+  limitByProgram.getValue(it) }`).
+- [ ] 3.5 Add a failing `TrackedEntityRetentionPurgerIntegrationShould`
+  test: two programs with different `PER_PROGRAM` resolved TEI limits (one
+  eligible TEI beyond its program's limit, one eligible TEI within its own
+  program's separate limit) — assert the over-limit program's excess TEI
+  is purged while the other program's TEI, within its own limit, survives.
+  This is the first androidTest to exercise `selectByProgram` end to end
+  against Room. Verify: 3.5 passes using `TrackedEntityRetentionPurger
+  .eligibleCandidates()` + `RetentionSelector.selectByProgram(...)` +
+  `purge(uids)`, plus all pre-existing `TrackedEntityRetentionPurgerIntegrationShould`
+  tests remain green (they use `select(candidates, limit: Int)`,
+  untouched).
+- [ ] 3.6 Add a `RetentionSelectorShould` unit test for `PER_ORG_UNIT`
   scope (two org units under the same program, each with its own eligible
   candidates beyond a shared per-org-unit limit) verifying each org unit's
-  excess is trimmed independently of the other's eligible count.
+  excess is trimmed independently of the other's eligible count. Implement
+  the minimum to pass: add `RetentionGroupKey.OrgUnit(organisationUnitUid:
+  String)`, add `organisationUnitUid: String?` to `RetentionCandidate`, add
+  a `selectByOrgUnit` overload (or generalize `selectByProgram` into a
+  single grouped-select taking a `(RetentionCandidate) -> RetentionGroupKey`
+  classifier plus `limitByGroup: Map<RetentionGroupKey, Int>` — implementer's
+  call at this point, once two real grouping dimensions exist to compare).
 
-## 4. `EventRetentionPurger` adapts to the read/write split
+## 4. `EventRetentionPurger` adapts to program-scoped grouping
 
 **Commit: 4.1 + 4.2 together** (red -> green).
 
 - [ ] 4.1 Add a failing `EventRetentionPurgerIntegrationShould` test: two
   programs with different `PER_PROGRAM` resolved event limits, each with
   TEI-less eligible events beyond their own program's limit — assert each
-  program's excess is purged independently (mirrors 3.2 for events, using
+  program's excess is purged independently (mirrors 3.5 for events, using
   `Event.program()` directly since TEI-less events carry their own program
   field — no multi-program ambiguity, so `RetentionCandidate.programUids`
   is always a single-element list here).
-- [ ] 4.2 Update `EventRetentionPurger` to implement the split
-  `RetentionPurger` form from Group 3: `eligibleCandidates()` maps its
-  existing eligible-event query to `RetentionCandidate` using
-  `Event.program()` and `Event.organisationUnit()` directly; `purge(uids)`
-  runs the existing cascade delete keyed by the given uids. Verify: 4.1
-  passes (via `RetentionSelector` + the new `purge(uids)`), pre-existing
-  tests remain green under `GLOBAL` scope.
+- [ ] 4.2 Update `EventRetentionPurger.eligibleCandidates()` to populate
+  `programUids`/`organisationUnitUid` from `Event.program()`/
+  `Event.organisationUnit()` directly; `purge(uids)` stays unchanged
+  (already keyed by uids since Group 3.2). Verify: 4.1 passes via
+  `RetentionSelector`'s grouped select, pre-existing tests remain green
+  (they use the ungrouped `select(candidates, limit: Int)` overload,
+  untouched).
 
-## 5. Dataset-scoped limit resolver and `DataValueRetentionPurger` adapts
+## 5. Dataset-scoped limit resolver and `DataValueRetentionPurger` grouping
 
 **Commit: 5.1 + 5.2 together** (red -> green).
 
@@ -112,38 +171,53 @@
   different resolved limits, each with eligible data values beyond their
   own data set's limit — assert each data set's excess is purged
   independently of the other's eligible count.
-- [ ] 5.2 Implement `DataSetRetentionLimitResolver` and update
-  `DataValueRetentionPurger` to implement the split `RetentionPurger` form:
-  `eligibleCandidates()` maps to `RetentionCandidate` grouped by
-  `DataValue.dataSet()` (via `RetentionGroupKey.Dataset`, no org-unit
-  dimension); `purge(uids)` runs the existing delete keyed by uids. Verify:
-  5.1 passes, and a `GLOBAL`/no-specific-setting case reduces to today's
-  single-pool behavior (regression check against existing tests).
+- [ ] 5.2 Implement `DataSetRetentionLimitResolver`, add
+  `RetentionGroupKey.Dataset(dataSetUid: String)`, update
+  `DataValueRetentionPurger.eligibleCandidates()` to populate a dataset
+  grouping key from `DataValue.dataSet()` (no org-unit dimension per
+  design.md); `purge(uids)` stays unchanged. Verify: 5.1 passes, and a
+  `GLOBAL`/no-specific-setting case reduces to today's single-pool
+  behavior (regression check against existing tests using the ungrouped
+  `select` overload).
 
-## 6. Wire resolvers and `RetentionSelector` into `SyncedDataRetentionPurger`
+## 6. Wire resolvers and grouped selection into `SyncedDataRetentionPurger`
 
 **Commit: 6.1 + 6.2 together** (red -> green).
 
 - [ ] 6.1 Add a failing test asserting `SyncedDataRetentionPurger` no longer
   requires a caller-supplied `RetentionLimits` for TEI/Event/DataValue —
-  it now orchestrates, per entity type, `purger.eligibleCandidates()` ->
-  resolve the run's `LimitScope`/limit via Groups 1-2/5 ->
-  `retentionSelector.select(...)` -> `purger.purge(uids)`;
+  it now orchestrates, per entity type: `purger.eligibleCandidates()` ->
+  resolve the run's `LimitScope` via Groups 1/5's resolvers ->
+  `GLOBAL` calls `RetentionSelector.select(...)`, any other resolved scope
+  calls the matching grouped-select from Groups 3-5 -> `purger.purge(uids)`;
   `OrphanFileResourceRetentionPurger` keeps receiving an explicit limit via
   its own unchanged `purge(limit: Int)` (no corresponding setting per
   design.md).
 - [ ] 6.2 Update `RetentionLimits`/`SyncedDataRetentionPurger.purge(...)`
   signature accordingly (exact shape per design.md — likely `RetentionLimits`
   shrinks to just the file resource limit, or is removed entirely in favor
-  of a single explicit file-resource-limit parameter), wiring
-  `RetentionSelector` as a shared collaborator across the three
-  group-aware purgers. Verify: 6.1 passes, full `:core` unit + androidTest
-  suite green (`./gradlew testDebugUnitTest` plus instrumented retention
-  tests on `Pixel_9a`).
+  of a single explicit file-resource-limit parameter). Verify: 6.1 passes,
+  full `:core` unit + androidTest suite green (`./gradlew testDebugUnitTest`
+  plus instrumented retention tests on `Pixel_9a`).
 
-## 7. Full verification
+## 7. `PER_OU_AND_PROGRAM` and `ALL_ORG_UNITS` scopes
 
-- [ ] 7.1 Map every scenario in
+**Commit: 7.1 + 7.2 together** (red -> green).
+
+- [ ] 7.1 Add a failing `RetentionSelectorShould` test for
+  `PER_OU_AND_PROGRAM` (a candidate's group is the combination of its
+  org unit and most-restrictive program) and confirm `ALL_ORG_UNITS`
+  reduces to the same grouping key as `PER_ORG_UNIT` per design.md's
+  table (no separate implementation needed, only a test documenting the
+  equivalence).
+- [ ] 7.2 Implement `RetentionGroupKey.OuAndProgram(organisationUnitUid,
+  programUid)` and wire it into the classifier used by
+  `SyncedDataRetentionPurger` from Group 6. Verify: 7.1 passes, full
+  `:core` suite green.
+
+## 8. Full verification
+
+- [ ] 8.1 Map every scenario in
   `openspec/changes/synced-data-retention-scope/specs/synced-data-retention-scope/spec.md`
   and the modified requirement in
   `specs/synced-data-retention-purge/spec.md` against a real test, listing
