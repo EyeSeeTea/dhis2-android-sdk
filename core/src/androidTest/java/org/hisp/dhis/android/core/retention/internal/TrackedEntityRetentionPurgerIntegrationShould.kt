@@ -574,6 +574,67 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         assertThat(eventStore.selectUids()).containsExactly("event")
     }
 
+    @Test
+    fun populate_eligible_candidates_with_the_distinct_programs_of_each_teis_enrollments() = runTest {
+        val singleProgramTei = givenATrackedEntityInstance("singleProgramTei", State.SYNCED, "2026-01-01T00:00:00.000")
+        val multiProgramTei = givenATrackedEntityInstance("multiProgramTei", State.SYNCED, "2026-02-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(singleProgramTei)
+        trackedEntityInstanceStore.insert(multiProgramTei)
+
+        enrollmentStore.insert(
+            givenAnEnrollment("singleProgramEnrollment", singleProgramTei.uid(), program = "programA"),
+        )
+        enrollmentStore.insert(
+            givenAnEnrollment("multiProgramEnrollmentA", multiProgramTei.uid(), program = "programA"),
+        )
+        enrollmentStore.insert(
+            givenAnEnrollment("multiProgramEnrollmentB", multiProgramTei.uid(), program = "programB"),
+        )
+
+        val purger = TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
+        )
+
+        val candidatesByUid = purger.eligibleCandidates().associateBy { it.uid }
+
+        assertThat(candidatesByUid.getValue("singleProgramTei").programUids).containsExactly("programA")
+        assertThat(candidatesByUid.getValue("multiProgramTei").programUids).containsExactly("programA", "programB")
+    }
+
+    @Test
+    fun purge_all_enrollments_of_a_tei_enrolled_in_more_than_one_program() = runTest {
+        val teiToPurge = givenATrackedEntityInstance("teiToPurge", State.SYNCED, "2026-01-01T00:00:00.000")
+        trackedEntityInstanceStore.insert(teiToPurge)
+
+        val enrollmentInProgramA = givenAnEnrollment("enrollmentInProgramA", teiToPurge.uid(), program = "programA")
+        val enrollmentInProgramB = givenAnEnrollment("enrollmentInProgramB", teiToPurge.uid(), program = "programB")
+        enrollmentStore.insert(enrollmentInProgramA)
+        enrollmentStore.insert(enrollmentInProgramB)
+
+        TrackedEntityRetentionPurger(
+            trackedEntityInstanceStore,
+            trackedEntityAttributeValueStore,
+            enrollmentStore,
+            noteStore,
+            eventStore,
+            trackedEntityDataValueStore,
+            valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
+        ).purge(listOf("teiToPurge"))
+
+        assertThat(trackedEntityInstanceStore.selectUids()).isEmpty()
+        assertThat(enrollmentStore.selectUids()).isEmpty()
+    }
+
     private suspend fun givenARelationshipBetweenTeis(relationshipUid: String, fromUid: String, toUid: String) {
         givenARelationship(relationshipUid, RelationshipHelper.teiItem(fromUid), RelationshipHelper.teiItem(toUid))
     }
@@ -620,12 +681,13 @@ class TrackedEntityRetentionPurgerIntegrationShould {
         uid: String,
         trackedEntityInstanceUid: String,
         syncState: State = State.SYNCED,
+        program: String = "program",
     ): Enrollment {
         return Enrollment.builder()
             .uid(uid)
             .trackedEntityInstance(trackedEntityInstanceUid)
             .organisationUnit("organisationUnit")
-            .program("program")
+            .program(program)
             .attributeOptionCombo("attributeOptionCombo")
             .syncState(syncState)
             .aggregatedSyncState(syncState)

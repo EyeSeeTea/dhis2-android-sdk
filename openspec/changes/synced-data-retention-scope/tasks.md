@@ -117,17 +117,28 @@
   group each candidate under whichever of its `programUids` has the
   smallest limit in `limitByProgram` (`programUids.minBy {
   limitByProgram.getValue(it) }`).
-- [ ] 3.5 Add a failing `TrackedEntityRetentionPurgerIntegrationShould`
-  test: two programs with different `PER_PROGRAM` resolved TEI limits (one
-  eligible TEI beyond its program's limit, one eligible TEI within its own
-  program's separate limit) — assert the over-limit program's excess TEI
-  is purged while the other program's TEI, within its own limit, survives.
-  This is the first androidTest to exercise `selectByProgram` end to end
-  against Room. Verify: 3.5 passes using `TrackedEntityRetentionPurger
-  .eligibleCandidates()` + `RetentionSelector.selectByProgram(...)` +
-  `purge(uids)`, plus all pre-existing `TrackedEntityRetentionPurgerIntegrationShould`
-  tests remain green (they use `select(candidates, limit: Int)`,
-  untouched).
+- [x] 3.5 Add two `TrackedEntityRetentionPurgerIntegrationShould` tests
+  exercising both sides of Group 3.4's change end to end against Room: (a)
+  `eligibleCandidates()` populates `programUids` from each TEI's distinct
+  enrollment programs (single-program and multi-program TEIs); (b)
+  `purge(uids)`'s cascade delete (TEI + all its enrollments) is unaffected
+  by a TEI having more than one enrollment/program — same assertion shape
+  as every other cascade test in this class, uids fixed by hand.
+  > Superseded an earlier version of this task that additionally called
+  > `RetentionSelector.selectByProgram(...)` inside the test and asserted
+  > on its purge output — an Ugly Mirror: the test re-executed the exact
+  > selection pipeline `SyncedDataRetentionPurger` will run in production,
+  > so a bug in `selectByProgram`'s grouping/most-restrictive-wins logic
+  > would reproduce in the test's own expected result and stay green, and
+  > an internal, behavior-preserving change to `selectByProgram` (e.g. a
+  > different tie-breaking implementation) would break this integration
+  > test even though the purger's actual observable contract (given fixed
+  > `uids`, purge exactly those) never changed. `RetentionSelectorShould`
+  > (3.3/3.4) already covers grouping/most-restrictive-wins correctness in
+  > isolation, without Room; this task now only covers what only Room can
+  > verify — that `eligibleCandidates()` reads real enrollments correctly
+  > — and purges by explicit `uids`, same as every other test in this
+  > class.
 - [ ] 3.6 Add a `RetentionSelectorShould` unit test for `PER_ORG_UNIT`
   scope (two org units under the same program, each with its own eligible
   candidates beyond a shared per-org-unit limit) verifying each org unit's
