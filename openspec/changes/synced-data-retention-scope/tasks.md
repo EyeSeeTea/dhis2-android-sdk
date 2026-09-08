@@ -170,20 +170,20 @@
 
 **Commit: 4.1 + 4.2 together** (red -> green).
 
-- [ ] 4.1 Add a failing `EventRetentionPurgerIntegrationShould` test: two
-  programs with different `PER_PROGRAM` resolved event limits, each with
-  TEI-less eligible events beyond their own program's limit — assert each
-  program's excess is purged independently (mirrors 3.5 for events, using
-  `Event.program()` directly since TEI-less events carry their own program
-  field — no multi-program ambiguity, so `RetentionCandidate.programUids`
-  is always a single-element list here).
-- [ ] 4.2 Update `EventRetentionPurger.eligibleCandidates()` to populate
-  `programUids`/`organisationUnitUid` from `Event.program()`/
-  `Event.organisationUnit()` directly; `purge(uids)` stays unchanged
-  (already keyed by uids since Group 3.2). Verify: 4.1 passes via
-  `RetentionSelector`'s grouped select, pre-existing tests remain green
-  (they use the ungrouped `select(candidates, limit: Int)` overload,
-  untouched).
+- [x] 4.1 + 4.2 Update `EventRetentionPurger.eligibleCandidates()` to
+  populate `programUids` (single-element, from `Event.program()` directly
+  — TEI-less events carry their own program field, no multi-program
+  ambiguity like TEIs) and `organisationUnitUid` (from
+  `Event.organisationUnit()`); `purge(uids)` stays unchanged (already keyed
+  by uids since Group 3.2). Add an `EventRetentionPurgerIntegrationShould`
+  test asserting `eligibleCandidates()` populates both fields correctly
+  from Room, same shape as 3.5's rebuilt test — no call to
+  `RetentionSelector` from this test: nothing in production composes
+  `EventRetentionPurger` with `RetentionSelector.selectByProgram`/
+  `selectByOrgUnit` yet (that wiring is Group 6), so asserting on that
+  composition here would be the same Ugly Mirror rejected in 3.5.
+  `RetentionSelectorShould` (3.3-3.6) already covers grouping correctness
+  in isolation; pre-existing `purge(uids)` tests remain green, untouched.
 
 ## 5. Dataset-scoped limit resolver and `DataValueRetentionPurger` grouping
 

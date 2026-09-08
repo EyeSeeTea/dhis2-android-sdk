@@ -26,7 +26,14 @@ internal class EventRetentionPurger(
 
         return eventStore.selectWhere(teiLessSyncedWhereClause)
             .filter { relationshipEligibilityChecker.isEligible(it.uid()) }
-            .map { RetentionCandidate(uid = it.uid(), lastUpdated = it.lastUpdated()) }
+            .map {
+                RetentionCandidate(
+                    uid = it.uid(),
+                    lastUpdated = it.lastUpdated(),
+                    programUids = listOfNotNull(it.program()),
+                    organisationUnitUid = it.organisationUnit(),
+                )
+            }
     }
 
     override suspend fun purge(uids: List<String>) {

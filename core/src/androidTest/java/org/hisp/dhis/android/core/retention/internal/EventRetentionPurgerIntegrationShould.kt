@@ -233,6 +233,42 @@ class EventRetentionPurgerIntegrationShould {
         assertThat(eventStore.selectUids()).containsExactly("protectedEvent")
     }
 
+    @Test
+    fun populate_eligible_candidates_with_the_events_own_program_and_org_unit() = runTest {
+        val eventInProgramA = givenATeiLessEvent(
+            "eventInProgramA",
+            State.SYNCED,
+            "2026-01-01T00:00:00.000",
+            program = "programA",
+            organisationUnit = "orgUnitA",
+        )
+        val eventInProgramB = givenATeiLessEvent(
+            "eventInProgramB",
+            State.SYNCED,
+            "2026-02-01T00:00:00.000",
+            program = "programB",
+            organisationUnit = "orgUnitB",
+        )
+        eventStore.insert(eventInProgramA)
+        eventStore.insert(eventInProgramB)
+
+        val purger = EventRetentionPurger(
+            eventStore,
+            trackedEntityDataValueStore,
+            noteStore,
+            valueFileResourcePurger,
+            relationshipEligibilityChecker,
+            relationshipRetentionPurger,
+        )
+
+        val candidatesByUid = purger.eligibleCandidates().associateBy { it.uid }
+
+        assertThat(candidatesByUid.getValue("eventInProgramA").programUids).containsExactly("programA")
+        assertThat(candidatesByUid.getValue("eventInProgramA").organisationUnitUid).isEqualTo("orgUnitA")
+        assertThat(candidatesByUid.getValue("eventInProgramB").programUids).containsExactly("programB")
+        assertThat(candidatesByUid.getValue("eventInProgramB").organisationUnitUid).isEqualTo("orgUnitB")
+    }
+
     private suspend fun givenARelationship(relationshipUid: String, from: RelationshipItem, to: RelationshipItem) {
         relationshipStore.insert(
             Relationship.builder()
@@ -270,13 +306,15 @@ class EventRetentionPurgerIntegrationShould {
         uid: String,
         syncState: State,
         lastUpdated: String,
+        program: String = "program",
+        organisationUnit: String = "organisationUnit",
     ): Event {
         return Event.builder()
             .uid(uid)
             .enrollment(null)
-            .program("program")
+            .program(program)
             .programStage("programStage")
-            .organisationUnit("organisationUnit")
+            .organisationUnit(organisationUnit)
             .attributeOptionCombo("attributeOptionCombo")
             .syncState(syncState)
             .aggregatedSyncState(syncState)
