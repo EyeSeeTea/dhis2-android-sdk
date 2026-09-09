@@ -212,6 +212,52 @@ class SyncedDataRetentionPurgerIntegrationShould {
         }
 
     @Test
+    fun keep_each_org_units_tei_separate_under_per_ou_and_program_scope() = runTest {
+        givenAGlobalProgramSetting(teiDBTrimming = 1, eventsDBTrimming = 500, scope = LimitScope.PER_OU_AND_PROGRAM)
+
+        val orgUnitATei = givenATrackedEntityInstance("orgUnitATei", "2026-01-01T00:00:00.000", "orgUnitA")
+        val orgUnitBTei = givenATrackedEntityInstance("orgUnitBTei", "2026-02-01T00:00:00.000", "orgUnitB")
+
+        trackedEntityInstanceStore.insert(orgUnitATei)
+        trackedEntityInstanceStore.insert(orgUnitBTei)
+        enrollmentStore.insert(
+            givenAnEnrollment("orgUnitATeiEnrollment", orgUnitATei.uid(), "programA", "orgUnitA"),
+        )
+        enrollmentStore.insert(
+            givenAnEnrollment("orgUnitBTeiEnrollment", orgUnitBTei.uid(), "programA", "orgUnitB"),
+        )
+
+        purger.purge()
+
+        val remainingTeiUids = trackedEntityInstanceStore.selectUids()
+
+        assertThat(remainingTeiUids).containsExactly("orgUnitATei", "orgUnitBTei")
+    }
+
+    @Test
+    fun apply_all_org_units_scope_the_same_way_as_per_org_unit() = runTest {
+        givenAGlobalProgramSetting(teiDBTrimming = 1, eventsDBTrimming = 500, scope = LimitScope.ALL_ORG_UNITS)
+
+        val orgUnitATei = givenATrackedEntityInstance("orgUnitATei", "2026-01-01T00:00:00.000", "orgUnitA")
+        val orgUnitBTei = givenATrackedEntityInstance("orgUnitBTei", "2026-02-01T00:00:00.000", "orgUnitB")
+
+        trackedEntityInstanceStore.insert(orgUnitATei)
+        trackedEntityInstanceStore.insert(orgUnitBTei)
+        enrollmentStore.insert(
+            givenAnEnrollment("orgUnitATeiEnrollment", orgUnitATei.uid(), "programA", "orgUnitA"),
+        )
+        enrollmentStore.insert(
+            givenAnEnrollment("orgUnitBTeiEnrollment", orgUnitBTei.uid(), "programA", "orgUnitB"),
+        )
+
+        purger.purge()
+
+        val remainingTeiUids = trackedEntityInstanceStore.selectUids()
+
+        assertThat(remainingTeiUids).containsExactly("orgUnitATei", "orgUnitBTei")
+    }
+
+    @Test
     fun leave_every_data_type_unchanged_when_one_type_fails_partway_through_a_multi_type_purge() = runTest {
         givenAGlobalProgramSetting(teiDBTrimming = 1, eventsDBTrimming = 500)
 
@@ -289,10 +335,11 @@ class SyncedDataRetentionPurgerIntegrationShould {
     private fun givenATrackedEntityInstance(
         uid: String,
         lastUpdated: String,
+        organisationUnit: String = "orgUnit",
     ): TrackedEntityInstance {
         return TrackedEntityInstance.builder()
             .uid(uid)
-            .organisationUnit("orgUnit")
+            .organisationUnit(organisationUnit)
             .syncState(State.SYNCED)
             .aggregatedSyncState(State.SYNCED)
             .lastUpdated(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))
@@ -304,11 +351,12 @@ class SyncedDataRetentionPurgerIntegrationShould {
         uid: String,
         trackedEntityInstanceUid: String,
         program: String,
+        organisationUnit: String = "orgUnit",
     ) = Enrollment.builder()
         .uid(uid)
         .trackedEntityInstance(trackedEntityInstanceUid)
         .program(program)
-        .organisationUnit("orgUnit")
+        .organisationUnit(organisationUnit)
         .attributeOptionCombo("attributeOptionCombo")
         .syncState(State.SYNCED)
         .aggregatedSyncState(State.SYNCED)
@@ -321,12 +369,16 @@ class SyncedDataRetentionPurgerIntegrationShould {
             .dataElement(ObjectWithUid.create(dataElementUid))
             .build()
 
-    private suspend fun givenAGlobalProgramSetting(teiDBTrimming: Int, eventsDBTrimming: Int) {
+    private suspend fun givenAGlobalProgramSetting(
+        teiDBTrimming: Int,
+        eventsDBTrimming: Int,
+        scope: LimitScope = LimitScope.GLOBAL,
+    ) {
         programSettingStore.insert(
             ProgramSetting.builder()
                 .teiDBTrimming(teiDBTrimming)
                 .eventsDBTrimming(eventsDBTrimming)
-                .settingDBTrimming(LimitScope.GLOBAL)
+                .settingDBTrimming(scope)
                 .build(),
         )
     }

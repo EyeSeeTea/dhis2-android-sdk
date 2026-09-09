@@ -304,6 +304,37 @@ reaching `eligibleCandidates()` (already filtered to `SYNCED`) is guaranteed
 to have both, so `RetentionSelector` needs no defensive `!!`/null-handling
 for them.
 
+### `PER_OU_AND_PROGRAM` is a sibling `RetentionSelector` method, not a `RetentionGroupKey` variant
+
+Group 7 closes the last unimplemented `LimitScope`. Consistent with every
+prior grouping dimension in this design (`selectByProgram`, `selectByOrgUnit`,
+`selectByDataset`), `PER_OU_AND_PROGRAM` is `RetentionSelector.selectByOrgUnitAndProgram(
+candidates: List<RetentionCandidate.ByProgramAndOrgUnit>, limitByOrgUnitAndProgram:
+Map<Pair<String, String>, Int>)` — a sibling method keyed by the `(organisationUnitUid,
+programUid)` pair from the grouping-key table above, not a `RetentionGroupKey`
+variant. The unified `RetentionGroupKey`/`select(candidates, scope, limitByGroup)`
+shape sketched earlier in this document (see "`RetentionPurger` splits into a
+read port and a write port") describes a target this change never actually
+lands on: `RetentionGroupKey` was proposed and rejected twice during Group 3
+for having no real caller, and every grouping dimension since — including
+this one — was instead added as its own `selectByX` method once
+`SyncedDataRetentionPurger` (Group 6) became the real, single caller that
+decides which method to call via `when (resolved.scope)`.
+
+The limit for each `(orgUnit, program)` group is the program's own resolved
+limit (same source `PER_PROGRAM` already uses via `programRetentionLimitResolver`
+— no per-org-unit-and-program setting exists, same conclusion as `PER_ORG_UNIT`
+reusing the program's resolved limit for every org unit), just keyed
+additionally by org unit so each org unit's share of that program competes
+for its own slice instead of the whole program's pool.
+
+`ALL_ORG_UNITS`'s equivalence to `PER_ORG_UNIT` (same grouping key per the
+table above) is verified end to end in `SyncedDataRetentionPurgerIntegrationShould`,
+not in `RetentionSelectorShould` — the equivalence lives in
+`SyncedDataRetentionPurger`'s `when (scope)` branch (both values already
+routed to the same `selectByOrgUnit` call in Group 6), not in
+`RetentionSelector`, which has no notion of `LimitScope` at all.
+
 ### DataValue (dataset) limit — no org-unit split
 
 Because `DataSetSetting` has no `LimitScope` field, `DataValueRetentionPurger`

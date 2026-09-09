@@ -118,6 +118,84 @@ class RetentionSelectorShould {
         assertEquals(listOf("overLimitCandidate"), toPurge)
     }
 
+    @Test
+    fun trim_each_org_unit_and_program_combinations_excess_candidates_independently() {
+        val overLimitCandidate = givenACandidateForOrgUnitAndProgram(
+            uid = "overLimitCandidate",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            organisationUnitUid = "orgUnitA",
+            programUid = "programOverLimit",
+        )
+        val withinLimitCandidate = givenACandidateForOrgUnitAndProgram(
+            uid = "withinLimitCandidate",
+            lastUpdated = "2026-02-01T00:00:00.000",
+            organisationUnitUid = "orgUnitA",
+            programUid = "programWithinLimit",
+        )
+
+        val toPurge = selector.selectByOrgUnitAndProgram(
+            candidates = listOf(overLimitCandidate, withinLimitCandidate),
+            limitByOrgUnitAndProgram = mapOf(
+                ("orgUnitA" to "programOverLimit") to 0,
+                ("orgUnitA" to "programWithinLimit") to 1,
+            ),
+        )
+
+        assertEquals(listOf("overLimitCandidate"), toPurge)
+    }
+
+    @Test
+    fun keep_org_units_of_the_same_program_as_separate_groups() {
+        val orgUnitACandidate = givenACandidateForOrgUnitAndProgram(
+            uid = "orgUnitACandidate",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            organisationUnitUid = "orgUnitA",
+            programUid = "sharedProgram",
+        )
+        val orgUnitBCandidate = givenACandidateForOrgUnitAndProgram(
+            uid = "orgUnitBCandidate",
+            lastUpdated = "2026-02-01T00:00:00.000",
+            organisationUnitUid = "orgUnitB",
+            programUid = "sharedProgram",
+        )
+
+        val toPurge = selector.selectByOrgUnitAndProgram(
+            candidates = listOf(orgUnitACandidate, orgUnitBCandidate),
+            limitByOrgUnitAndProgram = mapOf(
+                ("orgUnitA" to "sharedProgram") to 0,
+                ("orgUnitB" to "sharedProgram") to 1,
+            ),
+        )
+
+        assertEquals(listOf("orgUnitACandidate"), toPurge)
+    }
+
+    @Test
+    fun group_a_multi_program_candidate_under_its_org_units_most_restrictive_program_limit() {
+        val singleProgramCandidate = givenACandidateForOrgUnitAndProgram(
+            uid = "singleProgramCandidate",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            organisationUnitUid = "orgUnitA",
+            programUid = "restrictiveProgram",
+        )
+        val multiProgramCandidate = RetentionCandidate.ByProgramAndOrgUnit(
+            uid = "multiProgramCandidate",
+            lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse("2026-02-01T00:00:00.000"),
+            programUids = listOf("restrictiveProgram", "permissiveProgram"),
+            organisationUnitUid = "orgUnitA",
+        )
+
+        val toPurge = selector.selectByOrgUnitAndProgram(
+            candidates = listOf(singleProgramCandidate, multiProgramCandidate),
+            limitByOrgUnitAndProgram = mapOf(
+                ("orgUnitA" to "restrictiveProgram") to 1,
+                ("orgUnitA" to "permissiveProgram") to 5,
+            ),
+        )
+
+        assertEquals(listOf("singleProgramCandidate"), toPurge)
+    }
+
     private fun givenACandidate(uid: String, lastUpdated: String): RetentionCandidate {
         return RetentionCandidate.ByProgramAndOrgUnit(
             uid = uid,
@@ -149,6 +227,20 @@ class RetentionSelectorShould {
             uid = uid,
             lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
             programUids = emptyList(),
+            organisationUnitUid = organisationUnitUid,
+        )
+    }
+
+    private fun givenACandidateForOrgUnitAndProgram(
+        uid: String,
+        lastUpdated: String,
+        organisationUnitUid: String,
+        programUid: String,
+    ): RetentionCandidate.ByProgramAndOrgUnit {
+        return RetentionCandidate.ByProgramAndOrgUnit(
+            uid = uid,
+            lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
+            programUids = listOf(programUid),
             organisationUnitUid = organisationUnitUid,
         )
     }

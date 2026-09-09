@@ -250,16 +250,28 @@
 
 **Commit: 7.1 + 7.2 together** (red -> green).
 
-- [ ] 7.1 Add a failing `RetentionSelectorShould` test for
-  `PER_OU_AND_PROGRAM` (a candidate's group is the combination of its
-  org unit and most-restrictive program) and confirm `ALL_ORG_UNITS`
-  reduces to the same grouping key as `PER_ORG_UNIT` per design.md's
-  table (no separate implementation needed, only a test documenting the
-  equivalence).
-- [ ] 7.2 Implement `RetentionGroupKey.OuAndProgram(organisationUnitUid,
-  programUid)` and wire it into the classifier used by
-  `SyncedDataRetentionPurger` from Group 6. Verify: 7.1 passes, full
-  `:core` suite green.
+- [x] 7.1 Added failing `RetentionSelectorShould` tests for
+  `selectByOrgUnitAndProgram` (a candidate's group is the combination of
+  its org unit and most-restrictive program; org units of the same
+  program are kept as separate groups). `ALL_ORG_UNITS`'s equivalence to
+  `PER_ORG_UNIT` is instead covered end to end in
+  `SyncedDataRetentionPurgerIntegrationShould` (`apply_all_org_units_scope_the_same_way_as_per_org_unit`),
+  since the equivalence is a property of `SyncedDataRetentionPurger`'s
+  `when (scope)` branch (both scopes already routed to `selectByOrgUnit`
+  in Group 6), not of `RetentionSelector` itself, which has no notion of
+  `LimitScope`.
+- [x] 7.2 Implemented `RetentionSelector.selectByOrgUnitAndProgram(candidates:
+  List<RetentionCandidate.ByProgramAndOrgUnit>, limitByOrgUnitAndProgram:
+  Map<Pair<String, String>, Int>)` — a sibling method, not a
+  `RetentionGroupKey` variant (that abstraction was rejected repeatedly in
+  Group 3 for having no real caller at the time; see design.md). Wired
+  into `SyncedDataRetentionPurger`'s `PER_OU_AND_PROGRAM` branch: the
+  limit for each `(orgUnit, program)` combination present among the
+  candidates is the program's own resolved limit (same source `PER_PROGRAM`
+  uses — no per-combination setting exists), keyed additionally by org
+  unit so each org unit's candidates of that program compete for their
+  own slice instead of sharing one program-wide pool. Verify: 7.1 passes,
+  full `:core` suite green (unit + androidTest on `Pixel_9_Pro(AVD)`).
 
 ## 8. Full verification
 

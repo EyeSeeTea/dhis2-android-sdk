@@ -73,8 +73,15 @@ internal class SyncedDataRetentionPurger(
                 retentionSelector.selectByOrgUnit(candidates, limitByOrgUnit)
             }
 
-            LimitScope.PER_OU_AND_PROGRAM ->
-                error("PER_OU_AND_PROGRAM scope is not supported yet")
+            LimitScope.PER_OU_AND_PROGRAM -> {
+                val limitByOrgUnitAndProgram = candidates
+                    .flatMap { candidate -> candidate.programUids.map { candidate.organisationUnitUid to it } }
+                    .distinct()
+                    .associateWith { (_, programUid) ->
+                        programRetentionLimitResolver.resolve(programUid, limitExtractor).limit
+                    }
+                retentionSelector.selectByOrgUnitAndProgram(candidates, limitByOrgUnitAndProgram)
+            }
         }
 
         purger.purge(toPurge)
