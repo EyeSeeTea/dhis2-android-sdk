@@ -261,7 +261,9 @@ class EventRetentionPurgerIntegrationShould {
             relationshipRetentionPurger,
         )
 
-        val candidatesByUid = purger.eligibleCandidates().associateBy { it.uid }
+        val candidatesByUid = purger.eligibleCandidates()
+            .filterIsInstance<RetentionCandidate.ByProgramAndOrgUnit>()
+            .associateBy { it.uid }
 
         assertThat(candidatesByUid.getValue("eventInProgramA").programUids).containsExactly("programA")
         assertThat(candidatesByUid.getValue("eventInProgramA").organisationUnitUid).isEqualTo("orgUnitA")

@@ -27,11 +27,11 @@ internal class EventRetentionPurger(
         return eventStore.selectWhere(teiLessSyncedWhereClause)
             .filter { relationshipEligibilityChecker.isEligible(it.uid()) }
             .map {
-                RetentionCandidate(
+                RetentionCandidate.ByProgramAndOrgUnit(
                     uid = it.uid(),
                     lastUpdated = it.lastUpdated(),
-                    programUids = listOfNotNull(it.program()),
-                    organisationUnitUid = it.organisationUnit(),
+                    programUids = listOf(it.program()!!),
+                    organisationUnitUid = it.organisationUnit()!!,
                 )
             }
     }

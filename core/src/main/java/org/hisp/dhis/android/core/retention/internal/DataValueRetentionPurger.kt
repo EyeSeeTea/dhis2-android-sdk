@@ -1,6 +1,7 @@
 package org.hisp.dhis.android.core.retention.internal
 
 import org.hisp.dhis.android.core.common.State
+import org.hisp.dhis.android.core.dataset.internal.DataSetElementStore
 import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
 import org.koin.core.annotation.Singleton
@@ -8,11 +9,16 @@ import org.koin.core.annotation.Singleton
 @Singleton
 internal class DataValueRetentionPurger(
     private val dataValueStore: DataValueStore,
+    private val dataSetElementStore: DataSetElementStore,
     private val valueFileResourcePurger: ValueFileResourcePurger,
 ) : RetentionPurger {
     override suspend fun eligibleCandidates(): List<RetentionCandidate> {
         return dataValueStore.getDataValuesWithState(State.SYNCED).map {
-            RetentionCandidate(uid = dataValueUid(it), lastUpdated = it.lastUpdated())
+            RetentionCandidate.ByDataset(
+                uid = dataValueUid(it),
+                lastUpdated = it.lastUpdated(),
+                dataSetUids = dataSetElementStore.getDataSetsForDataElement(it.dataElement()!!),
+            )
         }
     }
 

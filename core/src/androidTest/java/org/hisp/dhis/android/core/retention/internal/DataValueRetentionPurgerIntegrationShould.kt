@@ -6,6 +6,7 @@ import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
 import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
+import org.hisp.dhis.android.core.dataset.internal.DataSetElementStore
 import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
@@ -14,6 +15,7 @@ import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFact
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
 import org.hisp.dhis.android.persistence.category.CategoryComboStoreImpl
 import org.hisp.dhis.android.persistence.dataelement.DataElementStoreImpl
+import org.hisp.dhis.android.persistence.dataset.DataSetDataElementLinkStoreImpl
 import org.hisp.dhis.android.persistence.datavalue.DataValueStoreImpl
 import org.hisp.dhis.android.persistence.fileresource.FileResourceStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeStoreImpl
@@ -27,6 +29,7 @@ class DataValueRetentionPurgerIntegrationShould {
 
     private val databaseAdapter = TestDatabaseAdapterFactory.get()
     private val dataValueStore: DataValueStore = DataValueStoreImpl(databaseAdapter)
+    private val dataSetElementStore: DataSetElementStore = DataSetDataElementLinkStoreImpl(databaseAdapter)
     private val dataElementStore: DataElementStore = DataElementStoreImpl(databaseAdapter)
     private val trackedEntityAttributeStore: TrackedEntityAttributeStore =
         TrackedEntityAttributeStoreImpl(databaseAdapter)
@@ -64,7 +67,8 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(oldestSynced, middleSynced, newestSynced, pending))
 
-        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger).purge(listOf(dataValueUid("oldestSynced")))
+        DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger)
+            .purge(listOf(dataValueUid("oldestSynced")))
 
         val remaining = dataValueStore.selectAll()
         val remainingDataElements = remaining.map { it.dataElement() }
@@ -80,7 +84,7 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
 
-        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger)
+        DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger)
             .purge(listOf(dataValueUid("oldestSynced"), dataValueUid("newestSynced")))
 
         val remaining = dataValueStore.selectAll()
@@ -97,7 +101,7 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(oldestSynced, newestSynced, pending))
 
-        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger).purge(emptyList())
+        DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger).purge(emptyList())
 
         val remaining = dataValueStore.selectAll()
         val remainingDataElements = remaining.map { it.dataElement() }
@@ -118,7 +122,7 @@ class DataValueRetentionPurgerIntegrationShould {
 
         dataValueStore.insert(listOf(dataValueToPurge))
 
-        DataValueRetentionPurger(dataValueStore, valueFileResourcePurger)
+        DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger)
             .purge(listOf(dataValueUid("fileDataElement")))
 
         assertThat(fileResourceStore.selectUids()).isEmpty()

@@ -33,10 +33,11 @@ internal class TrackedEntityRetentionPurger(
         return trackedEntityInstanceStore.selectWhere(syncedWhereClause)
             .filter { isTreeRelationshipEligible(it.uid()) }
             .map {
-                RetentionCandidate(
+                RetentionCandidate.ByProgramAndOrgUnit(
                     uid = it.uid(),
                     lastUpdated = it.lastUpdated(),
                     programUids = enrollmentsOf(it.uid()).mapNotNull { enrollment -> enrollment.program() }.distinct(),
+                    organisationUnitUid = it.organisationUnit()!!,
                 )
             }
     }

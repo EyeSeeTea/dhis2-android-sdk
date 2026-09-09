@@ -7,6 +7,7 @@ import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutor
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
 import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
+import org.hisp.dhis.android.core.dataset.internal.DataSetElementStore
 import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
 import org.hisp.dhis.android.core.fileresource.FileResource
@@ -20,6 +21,7 @@ import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityInstanceSt
 import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFactory
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
 import org.hisp.dhis.android.persistence.dataelement.DataElementStoreImpl
+import org.hisp.dhis.android.persistence.dataset.DataSetDataElementLinkStoreImpl
 import org.hisp.dhis.android.persistence.datavalue.DataValueStoreImpl
 import org.hisp.dhis.android.persistence.enrollment.EnrollmentStoreImpl
 import org.hisp.dhis.android.persistence.event.EventStoreImpl
@@ -43,6 +45,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
 
     private val databaseAdapter = TestDatabaseAdapterFactory.get()
     private val dataValueStore: DataValueStore = DataValueStoreImpl(databaseAdapter)
+    private val dataSetElementStore: DataSetElementStore = DataSetDataElementLinkStoreImpl(databaseAdapter)
     private val trackedEntityInstanceStore: TrackedEntityInstanceStore = TrackedEntityInstanceStoreImpl(databaseAdapter)
     private val trackedEntityAttributeValueStore: TrackedEntityAttributeValueStore =
         TrackedEntityAttributeValueStoreImpl(databaseAdapter)
@@ -65,7 +68,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
     private val retentionSelector = RetentionSelector()
 
     private val purger = SyncedDataRetentionPurger(
-        dataValuePurger = DataValueRetentionPurger(dataValueStore, valueFileResourcePurger),
+        dataValuePurger = DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger),
         trackedEntityPurger = TrackedEntityRetentionPurger(
             trackedEntityInstanceStore,
             trackedEntityAttributeValueStore,
@@ -182,7 +185,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
         trackedEntityInstanceStore.insert(newestTei)
 
         val purgerWithFailingFileResourceStep = SyncedDataRetentionPurger(
-            dataValuePurger = DataValueRetentionPurger(dataValueStore, valueFileResourcePurger),
+            dataValuePurger = DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger),
             trackedEntityPurger = TrackedEntityRetentionPurger(
                 trackedEntityInstanceStore,
                 trackedEntityAttributeValueStore,
@@ -266,6 +269,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
     ): TrackedEntityInstance {
         return TrackedEntityInstance.builder()
             .uid(uid)
+            .organisationUnit("orgUnit")
             .syncState(State.SYNCED)
             .aggregatedSyncState(State.SYNCED)
             .lastUpdated(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))

@@ -603,7 +603,9 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             relationshipRetentionPurger,
         )
 
-        val candidatesByUid = purger.eligibleCandidates().associateBy { it.uid }
+        val candidatesByUid = purger.eligibleCandidates()
+            .filterIsInstance<RetentionCandidate.ByProgramAndOrgUnit>()
+            .associateBy { it.uid }
 
         assertThat(candidatesByUid.getValue("singleProgramTei").programUids).containsExactly("programA")
         assertThat(candidatesByUid.getValue("multiProgramTei").programUids).containsExactly("programA", "programB")
@@ -713,6 +715,7 @@ class TrackedEntityRetentionPurgerIntegrationShould {
     ): TrackedEntityInstance {
         return TrackedEntityInstance.builder()
             .uid(uid)
+            .organisationUnit("orgUnit")
             .syncState(syncState)
             .aggregatedSyncState(syncState)
             .lastUpdated(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))

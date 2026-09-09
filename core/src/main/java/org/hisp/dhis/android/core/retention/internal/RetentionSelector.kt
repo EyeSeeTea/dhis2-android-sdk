@@ -13,7 +13,7 @@ internal class RetentionSelector {
     }
 
     fun selectByProgram(
-        candidates: List<RetentionCandidate>,
+        candidates: List<RetentionCandidate.ByProgramAndOrgUnit>,
         limitByProgram: Map<String, Int>,
     ): List<String> {
         return candidates
@@ -24,13 +24,24 @@ internal class RetentionSelector {
     }
 
     fun selectByOrgUnit(
-        candidates: List<RetentionCandidate>,
+        candidates: List<RetentionCandidate.ByProgramAndOrgUnit>,
         limitByOrgUnit: Map<String, Int>,
     ): List<String> {
         return candidates
-            .groupBy { it.organisationUnitUid!! }
+            .groupBy { it.organisationUnitUid }
             .flatMap { (orgUnitUid, group) ->
                 group.sortedByDescending { it.lastUpdated }.drop(limitByOrgUnit.getValue(orgUnitUid)).map { it.uid }
+            }
+    }
+
+    fun selectByDataset(
+        candidates: List<RetentionCandidate.ByDataset>,
+        limitByDataset: Map<String, Int>,
+    ): List<String> {
+        return candidates
+            .groupBy { candidate -> candidate.dataSetUids.minBy { limitByDataset.getValue(it) } }
+            .flatMap { (dataSetUid, group) ->
+                group.sortedByDescending { it.lastUpdated }.drop(limitByDataset.getValue(dataSetUid)).map { it.uid }
             }
     }
 }

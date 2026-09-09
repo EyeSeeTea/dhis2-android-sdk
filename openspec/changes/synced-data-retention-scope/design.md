@@ -217,6 +217,93 @@ it stays a single concrete method called directly by
 3 commit `ec11f4a351`, which already made this change ahead of this
 design revision).
 
+### DataValue → dataset resolution is ambiguous — most-restrictive-wins, same as TEI
+
+**Problem**: unlike `Event`, which carries its own `program` field directly,
+`DataValue` has no `dataSet` field at all — neither in this SDK's local
+table (`dataElement`/`period`/`organisationUnit`/`categoryOptionCombo`/
+`attributeOptionCombo` only) nor in the DHIS2 server's own model
+(`DataValue`'s composite key is exactly those same 5 fields; the `datavalue`
+table has no `datasetid` column). A dataset is a grouping of
+`DataElement`s (`DataSetElement`, many-to-many) — never a property of the
+value itself. The server resolves `dataSet=X` in `dataValueSets` exports by
+joining `datavalue` against the set of `dataElement`s assigned to X; it
+never resolves the reverse direction (given a `DataValue`, which dataset is
+it "from"), because every consumer that needs the relationship — export,
+audit, deletion handlers — always starts from a known dataset and joins
+outward to data elements, never the other way around. Server-side dataset
+deletion (`DataSetDeletionHandler`) confirms this further: deleting a
+`DataSet` does not delete or touch any `DataValue` at all.
+
+This SDK's purge is the first consumer that needs the reverse direction: it
+starts from a loose `DataValue` (`eligibleCandidates()`, filtered by
+`aggregatedSyncState == SYNCED`) and must decide which dataset's limit
+applies to it. Because a `DataElement` can be assigned to more than one
+`DataSet`, a `DataValue`'s dataset membership can be genuinely ambiguous —
+the same shape of problem as a TEI enrolled in more than one program (see
+"Multi-program TEI limit resolution" above), just one hop further removed
+(via `DataElement` instead of directly).
+
+**Decision**: resolve a `DataValue`'s candidate datasets via
+`DataSetDataElementLink` (`dataElement` → every `DataSet` it's assigned to,
+reusing the join `DataValueByDataSetQueryHelper` already has for a related,
+narrower question), resolve each candidate dataset's own limit, and use the
+smallest resolved limit as the value's effective group limit — identical
+rule to TEI's most-restrictive-wins, for the same reason: a value must not
+be able to "hide" behind whichever of its datasets has the most generous
+allowance. A `DataValue` whose `dataElement` belongs to only one dataset
+(the common case) resolves trivially to that dataset's own limit.
+
+**Alternative considered and rejected — reuse
+`DataValueByDataSetQueryHelper.firstValidDataSetQuery`'s "first dataset,
+alphabetically by uid" tie-break**: that resolution already exists in this
+SDK, but for a different question (validating one specific `(dataElement,
+period, organisationUnit, categoryOptionCombo, attributeOptionCombo)` tuple
+against one already-known candidate dataset during data entry, not
+resolving "which of N datasets applies" for retention purposes). Picking
+"alphabetically first" for purge grouping would be arbitrary with respect
+to the actual limits configured — it could just as easily land a value in
+its most permissive dataset as its most restrictive one, silently defeating
+a stricter admin-configured limit on a different dataset the same value
+also belongs to. Rejected for the same reason the TEI section above rejects
+"group by the most recently updated enrollment's program": it optimizes for
+implementation reuse over a limit that means what an admin configured it to
+mean.
+
+### RetentionCandidate is a sealed class; dataset membership is a list, same as program
+
+`RetentionCandidate` is a sealed class with one variant per grouping shape a
+purger actually produces (`ByProgramAndOrgUnit` for `TrackedEntityInstance`
+and `Event` — both have their own `organisationUnit` plus 0+ associated
+programs; `ByDataset` for `DataValue`), instead of one data class carrying
+every field as nullable/defaulted. A flat "bag of nullable fields" would let
+`RetentionSelector.selectByDataset` be called with `Event`/TEI candidates
+(and vice versa) and only fail at runtime on the field that's missing for
+that shape; the sealed class makes that a compile error instead, and each
+`selectByX` in `RetentionSelector` is typed to the one variant it groups by.
+
+Following the same most-restrictive-wins reasoning as "Multi-program TEI
+limit resolution" above, `ByDataset` carries `dataSetUids: List<String>`
+(every dataset the value's `dataElement` is assigned to), not a single
+`dataSetUid` — `selectByDataset` groups each candidate under
+`dataSetUids.minBy { limitByDataset.getValue(it) }`, mirroring
+`selectByProgram`'s `programUids.minBy { ... }` exactly. This removes the
+need for a separate "combined resolver" that would apply most-restrictive-
+wins on top of `DataSetRetentionLimitResolver` + `getDataSetsForDataElement`
+— the selector already does that grouping once the candidate carries the
+full list.
+
+`ByProgramAndOrgUnit.organisationUnitUid` and `programUids`'s elements are
+non-nullable: `Event.program()`/`organisationUnit()` and
+`TrackedEntityInstance.organisationUnit()` are `@Nullable` at the Java/Room
+annotation level only — local creation (`EventCreateProjection`,
+`TrackedEntityInstanceCreateProjection`) requires them `@NonNull`, and for
+`Event`, `EventHandler.deleteIfCondition` deletes any downloaded event with
+a null `organisationUnit` before it can ever be marked `SYNCED`. A candidate
+reaching `eligibleCandidates()` (already filtered to `SYNCED`) is guaranteed
+to have both, so `RetentionSelector` needs no defensive `!!`/null-handling
+for them.
+
 ### DataValue (dataset) limit — no org-unit split
 
 Because `DataSetSetting` has no `LimitScope` field, `DataValueRetentionPurger`

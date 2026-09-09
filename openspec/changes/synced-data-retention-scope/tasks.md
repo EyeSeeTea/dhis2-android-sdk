@@ -189,23 +189,42 @@
 
 **Commit: 5.1 + 5.2 together** (red -> green).
 
-- [ ] 5.1 Add a failing test for a new `DataSetRetentionLimitResolver`
+- [x] 5.1 Add a failing test for a new `DataSetRetentionLimitResolver`
   (mirrors Group 1 but for `DataSetSettingsObjectRepository` /
   `DataSetSetting.periodDSDBTrimming()` — no `LimitScope` field on
   `DataSetSetting`, so this resolver returns only a limit, grouped by
   datasetUid, never further split by org unit per design.md) plus a failing
-  `DataValueRetentionPurgerIntegrationShould` test: two data sets with
-  different resolved limits, each with eligible data values beyond their
-  own data set's limit — assert each data set's excess is purged
-  independently of the other's eligible count.
-- [ ] 5.2 Implement `DataSetRetentionLimitResolver`, add
-  `RetentionGroupKey.Dataset(dataSetUid: String)`, update
-  `DataValueRetentionPurger.eligibleCandidates()` to populate a dataset
-  grouping key from `DataValue.dataSet()` (no org-unit dimension per
-  design.md); `purge(uids)` stays unchanged. Verify: 5.1 passes, and a
-  `GLOBAL`/no-specific-setting case reduces to today's single-pool
-  behavior (regression check against existing tests using the ungrouped
-  `select` overload).
+  `RetentionSelectorShould` test for `selectByDataset` grouping/most-
+  restrictive-wins (same shape as `selectByProgram`'s tests).
+- [x] 5.2 Implement `DataSetRetentionLimitResolver`. `DataValue` has no
+  `dataSet` field at all (neither locally nor server-side — see design.md
+  "DataValue → dataset resolution is ambiguous"), so instead of a single
+  grouping key from a non-existent field: added
+  `DataSetElementStore.getDataSetsForDataElement(dataElementUid)` (new
+  `// EyeSeeTea customization`, resolves via `DataSetDataElementLink`) and
+  `RetentionCandidate.ByDataset(dataSetUids: List<String>)` — a sealed-class
+  variant, not a `RetentionGroupKey` (that abstraction was rejected twice
+  already in Group 3 for having no real caller; see design.md). Updated
+  `DataValueRetentionPurger.eligibleCandidates()` to populate `dataSetUids`
+  via the new store method; `selectByDataset` applies most-restrictive-wins
+  over the list exactly like `selectByProgram` does for `programUids` — no
+  separate "combined resolver" needed. `purge(uids)` stays unchanged.
+  Verify: 5.1 passes, and a `GLOBAL`/no-specific-setting case reduces to
+  today's single-pool behavior (regression check against existing tests
+  using the ungrouped `select` overload).
+- [x] 5.3 Turn `RetentionCandidate` into a sealed class
+  (`ByProgramAndOrgUnit`, `ByDataset`) instead of one data class with every
+  field nullable/defaulted — a flat shape let `selectByDataset` be called
+  with `Event`/TEI candidates (wrong field populated) and fail only at
+  runtime; the sealed class makes that a compile error. Discovered while
+  wiring 5.2: `TrackedEntityInstance` has its own `organisationUnit()`
+  (registration org unit, not derived from enrollments) that
+  `TrackedEntityRetentionPurger.eligibleCandidates()` was not populating —
+  now populated, so TEI and Event share the `ByProgramAndOrgUnit` shape.
+  `organisationUnitUid`/`programUids` elements are non-nullable: confirmed
+  `Event`/`TrackedEntityInstance` local creation requires them, and
+  `EventHandler.deleteIfCondition` deletes any downloaded event with a null
+  `organisationUnit` before it can be marked `SYNCED` — see design.md.
 
 ## 6. Wire resolvers and grouped selection into `SyncedDataRetentionPurger`
 

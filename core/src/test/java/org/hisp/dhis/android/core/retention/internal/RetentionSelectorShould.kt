@@ -94,10 +94,36 @@ class RetentionSelectorShould {
         assertEquals(listOf("overLimitCandidate"), toPurge)
     }
 
+    @Test
+    fun trim_each_data_sets_excess_candidates_independently_of_the_other_data_sets_eligible_count() {
+        val overLimitCandidate = givenACandidateForDataSet(
+            uid = "overLimitCandidate",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            dataSetUid = "dataSetOverLimit",
+        )
+        val withinLimitCandidate = givenACandidateForDataSet(
+            uid = "withinLimitCandidate",
+            lastUpdated = "2026-02-01T00:00:00.000",
+            dataSetUid = "dataSetWithinLimit",
+        )
+
+        val toPurge = selector.selectByDataset(
+            candidates = listOf(overLimitCandidate, withinLimitCandidate),
+            limitByDataset = mapOf(
+                "dataSetOverLimit" to 0,
+                "dataSetWithinLimit" to 1,
+            ),
+        )
+
+        assertEquals(listOf("overLimitCandidate"), toPurge)
+    }
+
     private fun givenACandidate(uid: String, lastUpdated: String): RetentionCandidate {
-        return RetentionCandidate(
+        return RetentionCandidate.ByProgramAndOrgUnit(
             uid = uid,
             lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
+            programUids = emptyList(),
+            organisationUnitUid = "orgUnit",
         )
     }
 
@@ -105,11 +131,12 @@ class RetentionSelectorShould {
         uid: String,
         lastUpdated: String,
         programUids: List<String>,
-    ): RetentionCandidate {
-        return RetentionCandidate(
+    ): RetentionCandidate.ByProgramAndOrgUnit {
+        return RetentionCandidate.ByProgramAndOrgUnit(
             uid = uid,
             lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
             programUids = programUids,
+            organisationUnitUid = "orgUnit",
         )
     }
 
@@ -117,11 +144,24 @@ class RetentionSelectorShould {
         uid: String,
         lastUpdated: String,
         organisationUnitUid: String,
-    ): RetentionCandidate {
-        return RetentionCandidate(
+    ): RetentionCandidate.ByProgramAndOrgUnit {
+        return RetentionCandidate.ByProgramAndOrgUnit(
             uid = uid,
             lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
+            programUids = emptyList(),
             organisationUnitUid = organisationUnitUid,
+        )
+    }
+
+    private fun givenACandidateForDataSet(
+        uid: String,
+        lastUpdated: String,
+        dataSetUid: String,
+    ): RetentionCandidate.ByDataset {
+        return RetentionCandidate.ByDataset(
+            uid = uid,
+            lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
+            dataSetUids = listOf(dataSetUid),
         )
     }
 }
