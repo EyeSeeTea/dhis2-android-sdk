@@ -230,21 +230,24 @@
 
 **Commit: 6.1 + 6.2 together** (red -> green).
 
-- [ ] 6.1 Add a failing test asserting `SyncedDataRetentionPurger` no longer
-  requires a caller-supplied `RetentionLimits` for TEI/Event/DataValue —
-  it now orchestrates, per entity type: `purger.eligibleCandidates()` ->
-  resolve the run's `LimitScope` via Groups 1/5's resolvers ->
-  `GLOBAL` calls `RetentionSelector.select(...)`, any other resolved scope
-  calls the matching grouped-select from Groups 3-5 -> `purger.purge(uids)`;
-  `OrphanFileResourceRetentionPurger` keeps receiving an explicit limit via
-  its own unchanged `purge(limit: Int)` (no corresponding setting per
-  design.md).
-- [ ] 6.2 Update `RetentionLimits`/`SyncedDataRetentionPurger.purge(...)`
-  signature accordingly (exact shape per design.md — likely `RetentionLimits`
-  shrinks to just the file resource limit, or is removed entirely in favor
-  of a single explicit file-resource-limit parameter). Verify: 6.1 passes,
-  full `:core` unit + androidTest suite green (`./gradlew testDebugUnitTest`
-  plus instrumented retention tests on `Pixel_9a`).
+- [x] 6.1 `SyncedDataRetentionPurger` no longer requires a caller-supplied
+  `RetentionLimits` for TEI/Event/DataValue — it orchestrates, per entity
+  type: `purger.eligibleCandidates()` -> resolve each distinct program's
+  limit (`ProgramRetentionLimitResolver`) -> pick the most-restrictive
+  `LimitScope` -> `GLOBAL` calls `RetentionSelector.select(...)`, any other
+  resolved scope calls the matching grouped-select
+  (`selectByProgram`/`selectByOrgUnit`/`selectByOrgUnitAndProgram`) ->
+  `purger.purge(uids)`. `DataValue` follows its own simpler path (always
+  `selectByDataset`, no `LimitScope` — see design.md "DataValue (dataset)
+  limit — no org-unit split"). `OrphanFileResourceRetentionPurger` keeps
+  its unchanged `purge(limit: Int)`, always called with `0` (no setting
+  exists for it — see design.md "RetentionModule" for the constant name).
+- [x] 6.2 `RetentionLimits` was removed entirely (it only ever carried the
+  file resource limit once TEI/Event/DataValue moved to settings-resolved
+  limits) — `SyncedDataRetentionPurger.purge()` takes no parameter.
+  Verified: 6.1's behavior, full `:core` unit + androidTest suite green
+  (`./gradlew testDebugUnitTest` plus instrumented retention tests on
+  `Pixel_9_Pro(AVD)`).
 
 ## 7. `PER_OU_AND_PROGRAM` and `ALL_ORG_UNITS` scopes
 

@@ -48,8 +48,12 @@ including the otherwise-eligible side's own tree.
 
 ### Requirement: Purge respects a caller-supplied retention count limit
 Given a retention count limit, the system SHALL purge only the excess: the
-oldest eligible records, ordered by last-updated time, beyond the limit. Records
-within the limit SHALL be left untouched, regardless of their sync state.
+oldest eligible records, ordered by last-updated time, beyond the limit.
+Records within the limit SHALL be left untouched, regardless of their sync
+state. The retention count limit itself, and whether it applies to all
+eligible records together or to independent groups of them, is resolved as
+described by the `synced-data-retention-scope` capability; this requirement
+governs how the limit is applied once resolved, not how it is obtained.
 
 #### Scenario: Only the oldest excess records are purged
 - **WHEN** there are more eligible records than the configured limit
