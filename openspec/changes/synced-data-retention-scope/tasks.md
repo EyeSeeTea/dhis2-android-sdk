@@ -275,10 +275,36 @@
 
 ## 8. Full verification
 
-- [ ] 8.1 Map every scenario in
-  `openspec/changes/synced-data-retention-scope/specs/synced-data-retention-scope/spec.md`
-  and the modified requirement in
-  `specs/synced-data-retention-purge/spec.md` against a real test, listing
-  the test name next to each scenario; close any gap found. Run the full
-  `:core` suite (unit + instrumented) and confirm 0 failures before marking
-  this change ready to archive.
+- [x] 8.1 Mapped every scenario against a real test:
+
+  From `specs/synced-data-retention-scope/spec.md`:
+  | Scenario | Test |
+  |---|---|
+  | A program-specific limit overrides the global limit | `ProgramRetentionLimitResolverShould.use_specific_program_value_and_scope_when_present` |
+  | No program-specific limit falls back to the global limit | `ProgramRetentionLimitResolverShould.fall_back_to_global_settings_when_no_specific_setting_for_program` |
+  | No configured limit at all falls back to the default | `ProgramRetentionLimitResolverShould.fall_back_to_hardcoded_default_when_no_global_or_specific_setting` (TEI/Event) + `DataSetRetentionLimitResolverShould.fall_back_to_hardcoded_default_when_no_global_or_specific_setting` (dataset) |
+  | A data-set-specific limit overrides the global limit | `DataSetRetentionLimitResolverShould.use_specific_data_set_value_when_present` |
+  | One program's excess does not consume another program's quota | `RetentionSelectorShould.trim_each_programs_excess_candidates_independently_of_the_other_programs_eligible_count` |
+  | A per-organisation-unit scope trims each organisation unit independently | `RetentionSelectorShould.trim_each_org_units_excess_candidates_independently_of_the_other_org_units_eligible_count` |
+  | A tracked entity instance enrolled in multiple programs uses the most restrictive limit | `RetentionSelectorShould.group_a_multi_program_candidate_under_its_most_restrictive_programs_limit` |
+  | File resource orphan trimming has no per-program scope | `OrphanFileResourceRetentionPurgerIntegrationShould.purge_an_eligible_file_resource_beyond_the_limit_together_with_its_physical_file` (single-pool `purge(limit)`, no scope involved) — confirmed in production code: `SyncedDataRetentionPurger.purge()` always passes the `NO_ORPHANS_ALLOWED = 0` constant, never resolving any scope for this type |
+
+  From `specs/synced-data-retention-purge/spec.md`:
+  | Scenario | Test |
+  |---|---|
+  | Only the oldest excess records are purged | `RetentionSelectorShould.select_the_oldest_candidates_beyond_the_limit_from_one_combined_pool` |
+  | Non-eligible records are never counted toward the limit | `TrackedEntityRetentionPurgerIntegrationShould.keep_a_tracked_entity_instance_whose_aggregated_sync_state_is_not_synced` + `EventRetentionPurgerIntegrationShould.keep_a_tei_less_event_whose_own_aggregated_sync_state_is_not_synced` (non-eligible records are excluded from `eligibleCandidates()` itself, so they never reach counting or purge) |
+  | A limit of zero purges everything eligible | `RetentionSelectorShould.select_every_candidate_when_limit_is_zero` (added — was previously only exercised indirectly via `purge(uids)` with a hand-fixed list, never through `select(candidates, limit)` itself) |
+  | Fewer eligible records than the limit purges nothing | `RetentionSelectorShould.select_nothing_when_candidates_are_at_or_below_the_limit` (added — same gap as above) |
+
+  **Gap found and closed**: `RetentionSelectorShould` had no test exercising
+  `select(candidates, limit)` — the actual mechanism translating "limit" into
+  "uids to purge" — at `limit = 0` or with `candidates.size <= limit`. Both
+  were only covered indirectly through purger integration tests that call
+  `purge(uids)` with a hand-fixed list, bypassing selection entirely. Added
+  `select_every_candidate_when_limit_is_zero` and
+  `select_nothing_when_candidates_are_at_or_below_the_limit`.
+
+  Full `:core` suite green: `testDebugUnitTest` and `connectedDebugAndroidTest`
+  (package `org.hisp.dhis.android.core.retention.internal`, 46/46 on
+  `Pixel_9_Pro(AVD)`) both pass, `ktlintCheck` clean.

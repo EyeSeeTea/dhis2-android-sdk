@@ -23,6 +23,26 @@ class RetentionSelectorShould {
     }
 
     @Test
+    fun select_every_candidate_when_limit_is_zero() {
+        val oldest = givenACandidate("oldest", "2026-01-01T00:00:00.000")
+        val newest = givenACandidate("newest", "2026-02-01T00:00:00.000")
+
+        val toPurge = selector.select(candidates = listOf(oldest, newest), limit = 0)
+
+        assertEquals(listOf("newest", "oldest"), toPurge)
+    }
+
+    @Test
+    fun select_nothing_when_candidates_are_at_or_below_the_limit() {
+        val oldest = givenACandidate("oldest", "2026-01-01T00:00:00.000")
+        val newest = givenACandidate("newest", "2026-02-01T00:00:00.000")
+
+        val toPurge = selector.select(candidates = listOf(oldest, newest), limit = 2)
+
+        assertEquals(emptyList<String>(), toPurge)
+    }
+
+    @Test
     fun trim_each_programs_excess_candidates_independently_of_the_other_programs_eligible_count() {
         val overLimitCandidate = givenACandidateForPrograms(
             uid = "overLimitCandidate",
