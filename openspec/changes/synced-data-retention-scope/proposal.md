@@ -46,10 +46,26 @@ resolve its limits from these existing settings instead of a fixed value.
   **BREAKING** for any caller currently constructing `RetentionLimits`
   directly, since the resolution now requires reading
   `ProgramSettings`/`DataSetSettings` rather than accepting bare ints.
+- Expose `SyncedDataRetentionPurger` publicly: `SyncedDataRetentionPurger`
+  has lived in `retention/internal` with no `D2`-reachable entry point since
+  it was introduced (`synced-data-retention-purge`, already archived); this
+  was explicitly out of scope there ("any app-side trigger or UI ... a
+  different repository"). Now that the entity/scope/dataset resolution this
+  change adds is the last missing piece for `purge()` to be safe to call
+  with no caller-supplied parameters, add a new `RetentionModule` (`D2
+  .retentionModule().purge()`) — following the existing `<Domain>Module`
+  pattern (`WipeModule`, `SettingModule`, ...) — as a thin, additive public
+  surface over the already-implemented and already-tested internal
+  orchestration. No behavior changes; this only makes existing, verified
+  behavior reachable from outside the `core` module.
 - Explicitly out of scope (per client decision, 13 Jul): notifying the user
   when a record is purged, and whether TEI-less events are grouped with or
   counted separately from dataset events under the event limit — both left
-  for a future decision, not part of this change.
+  for a future decision, not part of this change. Also out of scope: any
+  app-side wiring (`dhis2-android-capture-app-extra`) that calls the new
+  `D2.retentionModule().purge()` — this change only makes the SDK method
+  callable; consuming it from the app is separate, tracked in that
+  repository once an SDK release containing this change is published.
 
 ## Capabilities
 
@@ -102,8 +118,16 @@ resolve its limits from these existing settings instead of a fixed value.
   (`fileResource` limit in `RetentionLimits`) has no corresponding setting
   field and stays a hardcoded, ungrouped default — see design.md.
 - No `ModuleWiper` interface is touched by this change.
-- Downstream: the caller that currently builds `RetentionLimits` (not yet
-  wired into any app — `SyncedDataRetentionPurger` has no production caller
-  yet per the retention-purge spec) will need to stop supplying limits
-  directly once this lands; that wiring is app-side work tracked separately,
-  not part of this SDK change.
+- New `RetentionModule` (public interface, `core/src/main/java/org/hisp/dhis/android/core/retention/RetentionModule.kt`)
+  + `RetentionModuleImpl` (`retention/internal/RetentionModuleImpl.kt`,
+  `@Singleton`, delegates to the already-implemented
+  `SyncedDataRetentionPurger`) — additive, no existing public type is
+  touched. Wired into `D2DIComponent`/`D2.kt` the same way `WipeModule` is
+  (`val retentionModule: RetentionModule` constructor param, `fun
+  retentionModule(): RetentionModule` accessor).
+- Downstream: the app-side caller (`dhis2-android-capture-app-extra`) still
+  needs its own work — updating the `dhis2sdk` dependency version once this
+  change is released, and wiring `D2.retentionModule().purge()` into its
+  sync flow/settings UI — but that consumption is tracked in that
+  repository, not part of this SDK change. This change's own scope ends at
+  making the method exist and be publicly callable.

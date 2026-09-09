@@ -308,3 +308,34 @@
   Full `:core` suite green: `testDebugUnitTest` and `connectedDebugAndroidTest`
   (package `org.hisp.dhis.android.core.retention.internal`, 46/46 on
   `Pixel_9_Pro(AVD)`) both pass, `ktlintCheck` clean.
+
+## 9. Expose `SyncedDataRetentionPurger` publicly via a new `RetentionModule`
+
+**Commit: 9.1 + 9.2 together** (additive, no red -> green — `purge()`'s
+behavior is already implemented and fully covered by
+`SyncedDataRetentionPurgerIntegrationShould`; this group only makes it
+reachable from outside `core`).
+
+- [x] 9.1 Added `RetentionModule` (public interface,
+  `core/src/main/java/org/hisp/dhis/android/core/retention/RetentionModule.kt`
+  — outside `retention/internal`, matching where `WipeModule`/`SettingModule`
+  live relative to their own `internal/` implementations) with a single
+  `suspend fun purge()`. Added `RetentionModuleImpl`
+  (`retention/internal/RetentionModuleImpl.kt`, `@Singleton`) delegating to
+  the existing `SyncedDataRetentionPurger.purge()` — no new business logic.
+- [x] 9.2 Wired the same way `wipeModule` is wired: `val retentionModule:
+  RetentionModule` added to `D2DIComponent`'s constructor, and `fun
+  retentionModule(): RetentionModule { return d2DIComponent.retentionModule
+  }` added to `D2.kt`. Added `RetentionModuleImplShould` confirming the
+  delegate calls through (a DI/wiring smoke test, not a re-test of
+  `purge()`'s behavior — see design.md "RetentionModule"). Verified: full
+  `:core` suite green (`testDebugUnitTest` + `connectedDebugAndroidTest`,
+  package `org.hisp.dhis.android.core.retention.internal`, 46/46 on
+  `Pixel_9_Pro(AVD)`), `ktlintCheck` clean.
+
+Out of scope for this group (see design.md "Out of scope" under
+`RetentionModule`): publishing a new SDK release, bumping `dhis2sdk` in
+`dhis2-android-capture-app-extra`'s `gradle/libs.versions.toml`, and
+rewriting that app's `AndroidSyncRepository.purgeSyncedData()` (which today
+calls a non-existent `d2.wipeModule().wipeSyncedData()`) to call
+`d2.retentionModule().purge()` instead — all tracked in the app repository.

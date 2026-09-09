@@ -406,11 +406,12 @@ exactly as today, upstream of the new grouping/limit-resolution step.
      `ResolvedRetentionLimit` is `(limit = 500, scope = PER_ORG_UNIT)` — the
      limit comes from global, the scope from the specific setting, a
      combination no admin configured together.
-  2. `MultiProgramRetentionLimitResolver.resolve()` (used for a TEI
-     enrolled in more than one program) picks the whole
-     `ResolvedRetentionLimit` — limit **and** scope — of whichever
-     program resolves to the smallest limit (`minBy { it.limit }`),
-     discarding the scope of every other program in play. If program A
+  2. `SyncedDataRetentionPurger.purgeByProgramAndOrgUnit` (resolving the
+     effective scope for a TEI enrolled in more than one program) picks
+     the whole `ResolvedRetentionLimit` — limit **and** scope — of
+     whichever program resolves to the smallest limit
+     (`resolvedByProgram.values.minBy { it.limit }`), discarding the
+     scope of every other program in play. If program A
      resolves to `(limit=50, scope=PER_ORG_UNIT)` and program B to
      `(limit=10, scope=PER_PROGRAM)`, the TEI (and, in
      `SyncedDataRetentionPurger.purgeByProgramAndOrgUnit`, every other
@@ -426,3 +427,85 @@ exactly as today, upstream of the new grouping/limit-resolution step.
   supported configuration UI — only via direct API writes. Revisit if/when
   the Web App exposes trimming settings and this becomes reachable by
   normal admin configuration.
+
+### `RetentionModule` — a new, additive public module following the existing `<Domain>Module` pattern
+
+**Problem**: `SyncedDataRetentionPurger.purge()` is fully implemented,
+scope-aware (Groups 1-7), and verified against every scenario in both specs
+(Group 8), but it lives in `retention/internal` with no path from `D2` to
+reach it — it has had no production caller since it was introduced in
+`synced-data-retention-purge` (that proposal explicitly left "any app-side
+trigger or UI" out of scope, tracked in the app repository instead). With
+this change's scope resolution landed, `purge()` no longer needs a
+caller-supplied value at all (compare to the pre-`synced-data-retention-scope`
+shape, where a caller had to construct `RetentionLimits` by hand) — the
+only remaining gap is that nothing outside `core` can call it.
+
+**Decision**: add a public module the same way every other domain surface
+is exposed from `D2`, matching the existing `<Domain>Module` interface +
+`<Domain>ModuleImpl` shape (see `WipeModule`/`WipeModuleImpl`,
+`SettingModule`/... for the reference pattern already in this codebase):
+
+```kotlin
+// core/src/main/java/org/hisp/dhis/android/core/retention/RetentionModule.kt
+interface RetentionModule {
+    suspend fun purge()
+}
+
+// core/src/main/java/org/hisp/dhis/android/core/retention/internal/RetentionModuleImpl.kt
+@Singleton
+internal class RetentionModuleImpl(
+    private val syncedDataRetentionPurger: SyncedDataRetentionPurger,
+) : RetentionModule {
+    override suspend fun purge() = syncedDataRetentionPurger.purge()
+}
+```
+
+Wired into `D2DIComponent` (`val retentionModule: RetentionModule`) and
+`D2.kt` (`fun retentionModule(): RetentionModule { return
+d2DIComponent.retentionModule }`), identical to how `wipeModule` is wired
+today. `RetentionModuleImpl` is a pure delegate — no new logic, no new
+tests needed beyond confirming the wiring resolves (a thin
+`RetentionModuleImplShould`/DI smoke check), since `purge()`'s behavior is
+already fully covered by `SyncedDataRetentionPurgerIntegrationShould`.
+
+`purge()` stays `suspend` on the public interface, matching
+`SyncedDataRetentionPurger.purge()` itself and the SDK's newer coroutine-based
+modules (`AggregatedModuleImpl`, `MetadataModuleImpl`) rather than the
+older blocking-with-internal-`runBlocking` shape `WipeModule` uses — there
+is no reason to introduce a blocking wrapper for a module with no legacy
+callers to stay compatible with.
+
+**Naming**: `retention` (module) / `purge()` (method) — not `trimming`.
+`Trimming` is the vocabulary the *server's settings model* uses for its
+field names (`teiDBTrimming`, `periodDSDBTrimming`, `settingDBTrimming`);
+it never names a class, module, or capability anywhere in this codebase.
+`Retention` already names the capability (`synced-data-retention-scope`,
+`synced-data-retention-purge`) and the internal package
+(`core.retention`); `purge` already names the verb used throughout the
+internal classes (`RetentionPurger`, `SyncedDataRetentionPurger.purge()`,
+`TrackedEntityRetentionPurger`, `EventRetentionPurger`,
+`DataValueRetentionPurger`). `RetentionModule`/`purge()` is the smallest
+extension of vocabulary already in use, not a new name introduced at the
+public boundary.
+
+**Alternative considered and rejected — add a fourth method to the
+existing `WipeModule`** (e.g. `wipeModule().wipeSyncedData()`, the name an
+earlier app-side spike already assumed): rejected because `WipeModule`'s
+three existing methods (`wipeEverything`, `wipeMetadata`, `wipeData`) are
+all unconditional, total deletions with no settings/limit concept — mixing
+that with a selective, `LimitScope`-driven purge under the same interface
+name would make `WipeModule` describe two unrelated operations. The
+original `synced-data-retention-purge` proposal already rejected touching
+the shared `ModuleWiper` interface for the same reason (highest-conflict,
+mixes concerns); extending `WipeModule` itself has a smaller blast radius
+than `ModuleWiper` but the semantic mismatch argument still applies. A new,
+narrow, additive interface avoids both problems.
+
+**Out of scope**: consuming `D2.retentionModule().purge()` from
+`dhis2-android-capture-app-extra` — publishing a new SDK release with this
+change and updating the app's `dhis2sdk` dependency version, rewriting the
+app-side sync flow that currently assumes a non-existent
+`wipeModule().wipeSyncedData()`, and any settings UI — is tracked in that
+repository, not here. This change's scope ends at making the method exist
+and be publicly reachable from `D2`.
