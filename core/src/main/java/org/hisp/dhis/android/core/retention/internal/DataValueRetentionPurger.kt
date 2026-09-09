@@ -13,8 +13,12 @@ internal class DataValueRetentionPurger(
     private val valueFileResourcePurger: ValueFileResourcePurger,
 ) : RetentionPurger {
     override suspend fun eligibleCandidates(): List<RetentionCandidate> {
-        return dataValueStore.getDataValuesWithState(State.SYNCED).mapNotNull {
-            val dataSetUids = dataSetElementStore.getDataSetsForDataElement(it.dataElement()!!)
+        val eligible = dataValueStore.getDataValuesWithState(State.SYNCED)
+        val dataSetUidsByDataElement = eligible.mapNotNull { it.dataElement() }.distinct()
+            .associateWith { dataSetElementStore.getDataSetsForDataElement(it) }
+
+        return eligible.mapNotNull {
+            val dataSetUids = dataSetUidsByDataElement.getValue(it.dataElement()!!)
             if (dataSetUids.isEmpty()) {
                 null
             } else {

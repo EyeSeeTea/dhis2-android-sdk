@@ -92,7 +92,6 @@ class SyncedDataRetentionPurgerIntegrationShould {
         givenADataSetSettingCall(dataSetSettingStore),
     )
     private val programRetentionLimitResolver = ProgramRetentionLimitResolver(programSettingsObjectRepository)
-    private val multiProgramRetentionLimitResolver = MultiProgramRetentionLimitResolver(programRetentionLimitResolver)
     private val dataSetRetentionLimitResolver = DataSetRetentionLimitResolver(dataSetSettingsObjectRepository)
 
     private val dataValuePurger = DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger)
@@ -122,7 +121,6 @@ class SyncedDataRetentionPurgerIntegrationShould {
         eventPurger = eventPurger,
         orphanFileResourcePurger = OrphanFileResourceRetentionPurger(FileResourceStoreImpl(databaseAdapter)),
         programRetentionLimitResolver = programRetentionLimitResolver,
-        multiProgramRetentionLimitResolver = multiProgramRetentionLimitResolver,
         dataSetRetentionLimitResolver = dataSetRetentionLimitResolver,
         retentionSelector = retentionSelector,
         d2CallExecutor = d2CallExecutor,
@@ -282,7 +280,6 @@ class SyncedDataRetentionPurgerIntegrationShould {
                 GivingAFailingFileResourceStore(fileResourceStore),
             ),
             programRetentionLimitResolver = programRetentionLimitResolver,
-            multiProgramRetentionLimitResolver = multiProgramRetentionLimitResolver,
             dataSetRetentionLimitResolver = dataSetRetentionLimitResolver,
             retentionSelector = retentionSelector,
             d2CallExecutor = d2CallExecutor,

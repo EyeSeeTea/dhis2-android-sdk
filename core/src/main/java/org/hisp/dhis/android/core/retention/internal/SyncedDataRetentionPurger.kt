@@ -12,7 +12,6 @@ internal class SyncedDataRetentionPurger(
     private val eventPurger: EventRetentionPurger,
     private val orphanFileResourcePurger: OrphanFileResourceRetentionPurger,
     private val programRetentionLimitResolver: ProgramRetentionLimitResolver,
-    private val multiProgramRetentionLimitResolver: MultiProgramRetentionLimitResolver,
     private val dataSetRetentionLimitResolver: DataSetRetentionLimitResolver,
     private val retentionSelector: RetentionSelector,
     private val d2CallExecutor: D2CallExecutorInterface,
@@ -54,22 +53,21 @@ internal class SyncedDataRetentionPurger(
         if (candidates.isEmpty()) return
 
         val programUids = candidates.flatMap { it.programUids }.distinct()
-        val resolved = multiProgramRetentionLimitResolver.resolve(programUids, limitExtractor)
+        val resolvedByProgram = programUids.associateWith { programRetentionLimitResolver.resolve(it, limitExtractor) }
+        val mostRestrictive = resolvedByProgram.values.minBy { it.limit }
 
-        val toPurge = when (resolved.scope) {
+        val toPurge = when (mostRestrictive.scope) {
             LimitScope.GLOBAL ->
-                retentionSelector.select(candidates, resolved.limit)
+                retentionSelector.select(candidates, mostRestrictive.limit)
 
             LimitScope.PER_PROGRAM -> {
-                val limitByProgram = programUids.associateWith {
-                    programRetentionLimitResolver.resolve(it, limitExtractor).limit
-                }
+                val limitByProgram = resolvedByProgram.mapValues { it.value.limit }
                 retentionSelector.selectByProgram(candidates, limitByProgram)
             }
 
             LimitScope.PER_ORG_UNIT, LimitScope.ALL_ORG_UNITS -> {
                 val limitByOrgUnit = candidates.map { it.organisationUnitUid }.distinct()
-                    .associateWith { resolved.limit }
+                    .associateWith { mostRestrictive.limit }
                 retentionSelector.selectByOrgUnit(candidates, limitByOrgUnit)
             }
 
@@ -77,9 +75,7 @@ internal class SyncedDataRetentionPurger(
                 val limitByOrgUnitAndProgram = candidates
                     .flatMap { candidate -> candidate.programUids.map { candidate.organisationUnitUid to it } }
                     .distinct()
-                    .associateWith { (_, programUid) ->
-                        programRetentionLimitResolver.resolve(programUid, limitExtractor).limit
-                    }
+                    .associateWith { (_, programUid) -> resolvedByProgram.getValue(programUid).limit }
                 retentionSelector.selectByOrgUnitAndProgram(candidates, limitByOrgUnitAndProgram)
             }
         }
