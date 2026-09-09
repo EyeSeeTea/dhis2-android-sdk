@@ -1,3 +1,4 @@
+
 ## Context
 
 See proposal.md - Why/What Changes for motivation and scope. Current state
@@ -28,6 +29,125 @@ relevant to this design:
   specific-program override wins if present; otherwise fall back to
   `globalSettings()`; otherwise a hardcoded SDK default. This design reuses
   that precedence, not a new one.
+
+## Final shape
+
+The diagrams below reflect the code as it landed (Groups 1-9), not an
+earlier draft — see the "Decisions" section for how each piece was arrived
+at, including the alternatives that were tried and reverted.
+
+### Orchestration: `purge()` per entity type
+
+Each entity type is purged independently inside one transaction. TEI and
+Event share the same scope-resolution shape (both grouped by program/org
+unit); DataValue has its own, simpler shape (grouped by dataset only, no
+`LimitScope`).
+
+```mermaid
+flowchart LR
+    Public["D2.retentionModule()<br/>.purge()"] --> Purge["SyncedDataRetentionPurger<br/>.purge()"]
+    Purge --> Tx["one transaction"]
+    Tx --> TEI["TEI"]
+    Tx --> Event["Event"]
+    Tx --> DV["DataValue"]
+    Tx --> Orphan["Orphan FileResource<br/>(always purge(0), no setting)"]
+
+    TEI --> ScopeFlow["resolve scope, see below"]
+    Event --> ScopeFlow
+    DV --> DatasetFlow["group by dataset,<br/>see below"]
+```
+
+### How a TEI/Event candidate's group is decided
+
+```mermaid
+flowchart LR
+    Candidates["eligible candidates"] --> Resolve["resolve each program's limit<br/>(ProgramSetting)"]
+    Resolve --> Scope{"most restrictive<br/>LimitScope"}
+
+    Scope -->|GLOBAL| G["one pool, one limit"]
+    Scope -->|PER_PROGRAM| P["one pool per program"]
+    Scope -->|"PER_ORG_UNIT /<br/>ALL_ORG_UNITS"| O["one pool per org unit"]
+    Scope -->|PER_OU_AND_PROGRAM| OP["one pool per<br/>(org unit, program)"]
+
+    G --> Purge2["purge oldest beyond<br/>each pool's limit"]
+    P --> Purge2
+    O --> Purge2
+    OP --> Purge2
+```
+
+### How a DataValue's group is decided
+
+A `DataValue` has no dataset field of its own — its data element can belong
+to more than one dataset, so the value competes under whichever of those
+datasets has the smallest limit (same most-restrictive-wins rule as
+multi-program TEIs, one hop further removed via `DataElement`).
+
+```mermaid
+flowchart LR
+    DVCandidates["eligible DataValues"] --> Resolve2["resolve every candidate<br/>dataset's limit"]
+    Resolve2 --> MostRestrictive["group under the<br/>most restrictive dataset"]
+    MostRestrictive --> Purge3["purge oldest beyond<br/>each pool's limit"]
+```
+### `RetentionCandidate` type hierarchy
+
+```mermaid
+classDiagram
+    class RetentionCandidate {
+        <<sealed>>
+        uid
+        lastUpdated
+    }
+    class ByProgramAndOrgUnit {
+        programUids
+        organisationUnitUid
+    }
+    class ByDataset {
+        dataSetUids
+    }
+    RetentionCandidate <|-- ByProgramAndOrgUnit
+    RetentionCandidate <|-- ByDataset
+
+    class RetentionPurger {
+        <<interface>>
+        eligibleCandidates()
+        purge(uids)
+    }
+    class TrackedEntityRetentionPurger
+    class EventRetentionPurger
+    class DataValueRetentionPurger
+    RetentionPurger <|.. TrackedEntityRetentionPurger
+    RetentionPurger <|.. EventRetentionPurger
+    RetentionPurger <|.. DataValueRetentionPurger
+
+    TrackedEntityRetentionPurger ..> ByProgramAndOrgUnit : produces
+    EventRetentionPurger ..> ByProgramAndOrgUnit : produces
+    DataValueRetentionPurger ..> ByDataset : produces
+```
+
+### Who calls whom
+
+```mermaid
+classDiagram
+    class RetentionModule {
+        <<interface>>
+        purge()
+    }
+    class RetentionModuleImpl
+    RetentionModule <|.. RetentionModuleImpl
+
+    class SyncedDataRetentionPurger {
+        purge()
+    }
+    RetentionModuleImpl --> SyncedDataRetentionPurger : delegates
+
+    class RetentionSelector
+    class ProgramRetentionLimitResolver
+    class DataSetRetentionLimitResolver
+
+    SyncedDataRetentionPurger --> RetentionSelector : groups candidates
+    SyncedDataRetentionPurger --> ProgramRetentionLimitResolver : resolves TEI/Event limits
+    SyncedDataRetentionPurger --> DataSetRetentionLimitResolver : resolves DataValue limits
+```
 
 ## Goals / Non-Goals
 
@@ -460,7 +580,6 @@ internal class RetentionModuleImpl(
     override suspend fun purge() = syncedDataRetentionPurger.purge()
 }
 ```
-
 Wired into `D2DIComponent` (`val retentionModule: RetentionModule`) and
 `D2.kt` (`fun retentionModule(): RetentionModule { return
 d2DIComponent.retentionModule }`), identical to how `wipeModule` is wired
@@ -509,3 +628,4 @@ app-side sync flow that currently assumes a non-existent
 `wipeModule().wipeSyncedData()`, and any settings UI — is tracked in that
 repository, not here. This change's scope ends at making the method exist
 and be publicly reachable from `D2`.
+
