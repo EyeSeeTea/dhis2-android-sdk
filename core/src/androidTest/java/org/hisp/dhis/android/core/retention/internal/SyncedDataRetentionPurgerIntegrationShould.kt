@@ -4,16 +4,27 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutor
+import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.common.State
+import org.hisp.dhis.android.core.data.dataset.DataSetElementSamples
 import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
 import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
+import org.hisp.dhis.android.core.dataset.DataSetElement
 import org.hisp.dhis.android.core.dataset.internal.DataSetElementStore
 import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.datavalue.internal.DataValueStore
+import org.hisp.dhis.android.core.enrollment.Enrollment
 import org.hisp.dhis.android.core.fileresource.FileResource
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceStore
 import org.hisp.dhis.android.core.relationship.internal.RelationshipItemStore
 import org.hisp.dhis.android.core.relationship.internal.RelationshipStore
+import org.hisp.dhis.android.core.settings.DataSetSetting
+import org.hisp.dhis.android.core.settings.DataSetSettingsObjectRepository
+import org.hisp.dhis.android.core.settings.LimitScope
+import org.hisp.dhis.android.core.settings.ProgramSetting
+import org.hisp.dhis.android.core.settings.ProgramSettingsObjectRepository
+import org.hisp.dhis.android.core.settings.internal.DataSetSettingStore
+import org.hisp.dhis.android.core.settings.internal.ProgramSettingStore
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeStore
 import org.hisp.dhis.android.core.trackedentity.internal.TrackedEntityAttributeValueStore
@@ -30,6 +41,8 @@ import org.hisp.dhis.android.persistence.maintenance.D2ErrorStoreImpl
 import org.hisp.dhis.android.persistence.note.NoteStoreImpl
 import org.hisp.dhis.android.persistence.relationship.RelationshipItemStoreImpl
 import org.hisp.dhis.android.persistence.relationship.RelationshipStoreImpl
+import org.hisp.dhis.android.persistence.settings.DataSetSettingStoreImpl
+import org.hisp.dhis.android.persistence.settings.ProgramSettingStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityAttributeValueStoreImpl
 import org.hisp.dhis.android.persistence.trackedentity.TrackedEntityDataValueStoreImpl
@@ -47,6 +60,7 @@ class SyncedDataRetentionPurgerIntegrationShould {
     private val dataValueStore: DataValueStore = DataValueStoreImpl(databaseAdapter)
     private val dataSetElementStore: DataSetElementStore = DataSetDataElementLinkStoreImpl(databaseAdapter)
     private val trackedEntityInstanceStore: TrackedEntityInstanceStore = TrackedEntityInstanceStoreImpl(databaseAdapter)
+    private val enrollmentStore = EnrollmentStoreImpl(databaseAdapter)
     private val trackedEntityAttributeValueStore: TrackedEntityAttributeValueStore =
         TrackedEntityAttributeValueStoreImpl(databaseAdapter)
     private val d2CallExecutor = D2CallExecutor(databaseAdapter, D2ErrorStoreImpl(databaseAdapter))
@@ -61,34 +75,55 @@ class SyncedDataRetentionPurgerIntegrationShould {
     private val relationshipEligibilityChecker = RelationshipEligibilityChecker(
         relationshipItemStore,
         trackedEntityInstanceStore,
-        EnrollmentStoreImpl(databaseAdapter),
+        enrollmentStore,
         EventStoreImpl(databaseAdapter),
     )
     private val relationshipRetentionPurger = RelationshipRetentionPurger(relationshipStore, relationshipItemStore)
     private val retentionSelector = RetentionSelector()
 
+    private val programSettingStore: ProgramSettingStore = ProgramSettingStoreImpl(databaseAdapter)
+    private val dataSetSettingStore: DataSetSettingStore = DataSetSettingStoreImpl(databaseAdapter)
+    private val programSettingsObjectRepository = ProgramSettingsObjectRepository(
+        programSettingStore,
+        givenAProgramSettingCall(programSettingStore),
+    )
+    private val dataSetSettingsObjectRepository = DataSetSettingsObjectRepository(
+        dataSetSettingStore,
+        givenADataSetSettingCall(dataSetSettingStore),
+    )
+    private val programRetentionLimitResolver = ProgramRetentionLimitResolver(programSettingsObjectRepository)
+    private val multiProgramRetentionLimitResolver = MultiProgramRetentionLimitResolver(programRetentionLimitResolver)
+    private val dataSetRetentionLimitResolver = DataSetRetentionLimitResolver(dataSetSettingsObjectRepository)
+
+    private val dataValuePurger = DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger)
+    private val trackedEntityPurger = TrackedEntityRetentionPurger(
+        trackedEntityInstanceStore,
+        trackedEntityAttributeValueStore,
+        enrollmentStore,
+        NoteStoreImpl(databaseAdapter),
+        EventStoreImpl(databaseAdapter),
+        TrackedEntityDataValueStoreImpl(databaseAdapter),
+        valueFileResourcePurger,
+        relationshipEligibilityChecker,
+        relationshipRetentionPurger,
+    )
+    private val eventPurger = EventRetentionPurger(
+        EventStoreImpl(databaseAdapter),
+        TrackedEntityDataValueStoreImpl(databaseAdapter),
+        NoteStoreImpl(databaseAdapter),
+        valueFileResourcePurger,
+        relationshipEligibilityChecker,
+        relationshipRetentionPurger,
+    )
+
     private val purger = SyncedDataRetentionPurger(
-        dataValuePurger = DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger),
-        trackedEntityPurger = TrackedEntityRetentionPurger(
-            trackedEntityInstanceStore,
-            trackedEntityAttributeValueStore,
-            EnrollmentStoreImpl(databaseAdapter),
-            NoteStoreImpl(databaseAdapter),
-            EventStoreImpl(databaseAdapter),
-            TrackedEntityDataValueStoreImpl(databaseAdapter),
-            valueFileResourcePurger,
-            relationshipEligibilityChecker,
-            relationshipRetentionPurger,
-        ),
-        eventPurger = EventRetentionPurger(
-            EventStoreImpl(databaseAdapter),
-            TrackedEntityDataValueStoreImpl(databaseAdapter),
-            NoteStoreImpl(databaseAdapter),
-            valueFileResourcePurger,
-            relationshipEligibilityChecker,
-            relationshipRetentionPurger,
-        ),
+        dataValuePurger = dataValuePurger,
+        trackedEntityPurger = trackedEntityPurger,
+        eventPurger = eventPurger,
         orphanFileResourcePurger = OrphanFileResourceRetentionPurger(FileResourceStoreImpl(databaseAdapter)),
+        programRetentionLimitResolver = programRetentionLimitResolver,
+        multiProgramRetentionLimitResolver = multiProgramRetentionLimitResolver,
+        dataSetRetentionLimitResolver = dataSetRetentionLimitResolver,
         retentionSelector = retentionSelector,
         d2CallExecutor = d2CallExecutor,
     )
@@ -97,10 +132,14 @@ class SyncedDataRetentionPurgerIntegrationShould {
     fun setUp() {
         runBlocking {
             dataValueStore.delete()
+            dataSetElementStore.delete()
             trackedEntityAttributeValueStore.delete()
             trackedEntityInstanceStore.delete()
+            enrollmentStore.delete()
             relationshipItemStore.delete()
             relationshipStore.delete()
+            programSettingStore.delete()
+            dataSetSettingStore.delete()
         }
     }
 
@@ -108,15 +147,21 @@ class SyncedDataRetentionPurgerIntegrationShould {
     fun tearDown() {
         runBlocking {
             dataValueStore.delete()
+            dataSetElementStore.delete()
             trackedEntityAttributeValueStore.delete()
             trackedEntityInstanceStore.delete()
+            enrollmentStore.delete()
             relationshipItemStore.delete()
             relationshipStore.delete()
+            programSettingStore.delete()
+            dataSetSettingStore.delete()
         }
     }
 
     @Test
-    fun purge_each_data_type_independently_under_its_own_limit_in_a_single_call() = runTest {
+    fun purge_each_data_type_independently_under_its_own_global_limit_in_a_single_call() = runTest {
+        givenAGlobalProgramSetting(teiDBTrimming = 1, eventsDBTrimming = 500)
+
         val oldestDataValue = givenADataValue("oldestDataValue", "2026-01-01T00:00:00.000")
         val newestDataValue = givenADataValue("newestDataValue", "2026-02-01T00:00:00.000")
 
@@ -127,52 +172,49 @@ class SyncedDataRetentionPurgerIntegrationShould {
 
         trackedEntityInstanceStore.insert(oldestTei)
         trackedEntityInstanceStore.insert(newestTei)
+        enrollmentStore.insert(givenAnEnrollment("oldestTeiEnrollment", oldestTei.uid(), "programA"))
+        enrollmentStore.insert(givenAnEnrollment("newestTeiEnrollment", newestTei.uid(), "programA"))
 
-        purger.purge(
-            RetentionLimits(
-                dataValue = 1,
-                trackedEntityInstance = 1,
-                event = 0,
-                fileResource = 0,
-            ),
-        )
+        purger.purge()
 
         val remainingDataElements = dataValueStore.selectAll().map { it.dataElement() }
         val remainingTeiUids = trackedEntityInstanceStore.selectUids()
 
-        assertThat(remainingDataElements).containsExactly("newestDataValue")
+        assertThat(remainingDataElements).containsExactly("oldestDataValue", "newestDataValue")
         assertThat(remainingTeiUids).containsExactly("newestTei")
     }
 
     @Test
-    fun trim_data_values_under_their_limit_without_affecting_an_eligible_tracked_entity_instance() = runTest {
-        val oldestDataValue = givenADataValue("oldestDataValue", "2026-01-01T00:00:00.000")
-        val newestDataValue = givenADataValue("newestDataValue", "2026-02-01T00:00:00.000")
+    fun trim_data_values_under_their_own_dataset_limit_without_affecting_an_eligible_tracked_entity_instance() =
+        runTest {
+            givenAGlobalProgramSetting(teiDBTrimming = 500, eventsDBTrimming = 500)
+            givenAGlobalDataSetSetting(periodDSDBTrimming = 0)
 
-        dataValueStore.insert(listOf(oldestDataValue, newestDataValue))
+            val oldestDataValue = givenADataValue("oldestDataValue", "2026-01-01T00:00:00.000")
+            val newestDataValue = givenADataValue("newestDataValue", "2026-02-01T00:00:00.000")
 
-        val eligibleTei = givenATrackedEntityInstance("eligibleTei", "2026-01-01T00:00:00.000")
+            dataValueStore.insert(listOf(oldestDataValue, newestDataValue))
+            dataSetElementStore.insert(givenADataSetElement("dataSetA", "oldestDataValue"))
+            dataSetElementStore.insert(givenADataSetElement("dataSetA", "newestDataValue"))
 
-        trackedEntityInstanceStore.insert(eligibleTei)
+            val eligibleTei = givenATrackedEntityInstance("eligibleTei", "2026-01-01T00:00:00.000")
 
-        purger.purge(
-            RetentionLimits(
-                dataValue = 0,
-                trackedEntityInstance = 1,
-                event = 0,
-                fileResource = 0,
-            ),
-        )
+            trackedEntityInstanceStore.insert(eligibleTei)
+            enrollmentStore.insert(givenAnEnrollment("eligibleTeiEnrollment", eligibleTei.uid(), "programA"))
 
-        val remainingDataElements = dataValueStore.selectAll().map { it.dataElement() }
-        val remainingTeiUids = trackedEntityInstanceStore.selectUids()
+            purger.purge()
 
-        assertThat(remainingDataElements).isEmpty()
-        assertThat(remainingTeiUids).containsExactly("eligibleTei")
-    }
+            val remainingDataElements = dataValueStore.selectAll().map { it.dataElement() }
+            val remainingTeiUids = trackedEntityInstanceStore.selectUids()
+
+            assertThat(remainingDataElements).isEmpty()
+            assertThat(remainingTeiUids).containsExactly("eligibleTei")
+        }
 
     @Test
     fun leave_every_data_type_unchanged_when_one_type_fails_partway_through_a_multi_type_purge() = runTest {
+        givenAGlobalProgramSetting(teiDBTrimming = 1, eventsDBTrimming = 500)
+
         val oldestDataValue = givenADataValue("oldestDataValue", "2026-01-01T00:00:00.000")
         val newestDataValue = givenADataValue("newestDataValue", "2026-02-01T00:00:00.000")
 
@@ -183,44 +225,25 @@ class SyncedDataRetentionPurgerIntegrationShould {
 
         trackedEntityInstanceStore.insert(oldestTei)
         trackedEntityInstanceStore.insert(newestTei)
+        enrollmentStore.insert(givenAnEnrollment("oldestTeiEnrollment", oldestTei.uid(), "programA"))
+        enrollmentStore.insert(givenAnEnrollment("newestTeiEnrollment", newestTei.uid(), "programA"))
 
         val purgerWithFailingFileResourceStep = SyncedDataRetentionPurger(
-            dataValuePurger = DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger),
-            trackedEntityPurger = TrackedEntityRetentionPurger(
-                trackedEntityInstanceStore,
-                trackedEntityAttributeValueStore,
-                EnrollmentStoreImpl(databaseAdapter),
-                NoteStoreImpl(databaseAdapter),
-                EventStoreImpl(databaseAdapter),
-                TrackedEntityDataValueStoreImpl(databaseAdapter),
-                valueFileResourcePurger,
-                relationshipEligibilityChecker,
-                relationshipRetentionPurger,
-            ),
-            eventPurger = EventRetentionPurger(
-                EventStoreImpl(databaseAdapter),
-                TrackedEntityDataValueStoreImpl(databaseAdapter),
-                NoteStoreImpl(databaseAdapter),
-                valueFileResourcePurger,
-                relationshipEligibilityChecker,
-                relationshipRetentionPurger,
-            ),
+            dataValuePurger = dataValuePurger,
+            trackedEntityPurger = trackedEntityPurger,
+            eventPurger = eventPurger,
             orphanFileResourcePurger = OrphanFileResourceRetentionPurger(
                 GivingAFailingFileResourceStore(fileResourceStore),
             ),
+            programRetentionLimitResolver = programRetentionLimitResolver,
+            multiProgramRetentionLimitResolver = multiProgramRetentionLimitResolver,
+            dataSetRetentionLimitResolver = dataSetRetentionLimitResolver,
             retentionSelector = retentionSelector,
             d2CallExecutor = d2CallExecutor,
         )
 
         try {
-            purgerWithFailingFileResourceStep.purge(
-                RetentionLimits(
-                    dataValue = 1,
-                    trackedEntityInstance = 1,
-                    event = 0,
-                    fileResource = 0,
-                ),
-            )
+            purgerWithFailingFileResourceStep.purge()
         } catch (expected: Exception) {
             // Expected: the orphanFileResourcePurger step fails after dataValue and
             // trackedEntityInstance already ran, forcing the whole composed
@@ -275,5 +298,44 @@ class SyncedDataRetentionPurgerIntegrationShould {
             .lastUpdated(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated))
             .deleted(false)
             .build()
+    }
+
+    private fun givenAnEnrollment(
+        uid: String,
+        trackedEntityInstanceUid: String,
+        program: String,
+    ) = Enrollment.builder()
+        .uid(uid)
+        .trackedEntityInstance(trackedEntityInstanceUid)
+        .program(program)
+        .organisationUnit("orgUnit")
+        .attributeOptionCombo("attributeOptionCombo")
+        .syncState(State.SYNCED)
+        .aggregatedSyncState(State.SYNCED)
+        .deleted(false)
+        .build()
+
+    private fun givenADataSetElement(dataSetUid: String, dataElementUid: String): DataSetElement =
+        DataSetElementSamples.getDataSetElement().toBuilder()
+            .dataSet(ObjectWithUid.create(dataSetUid))
+            .dataElement(ObjectWithUid.create(dataElementUid))
+            .build()
+
+    private suspend fun givenAGlobalProgramSetting(teiDBTrimming: Int, eventsDBTrimming: Int) {
+        programSettingStore.insert(
+            ProgramSetting.builder()
+                .teiDBTrimming(teiDBTrimming)
+                .eventsDBTrimming(eventsDBTrimming)
+                .settingDBTrimming(LimitScope.GLOBAL)
+                .build(),
+        )
+    }
+
+    private suspend fun givenAGlobalDataSetSetting(periodDSDBTrimming: Int) {
+        dataSetSettingStore.insert(
+            DataSetSetting.builder()
+                .periodDSDBTrimming(periodDSDBTrimming)
+                .build(),
+        )
     }
 }

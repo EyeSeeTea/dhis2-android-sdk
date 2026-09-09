@@ -4,12 +4,15 @@ import org.hisp.dhis.android.core.settings.ProgramSetting
 import org.koin.core.annotation.Singleton
 
 @Singleton
-internal class TrackedEntityInstanceRetentionLimitResolver(
+internal class MultiProgramRetentionLimitResolver(
     private val programRetentionLimitResolver: ProgramRetentionLimitResolver,
 ) {
-    suspend fun resolve(programUids: List<String>): ResolvedRetentionLimit {
+    suspend fun resolve(
+        programUids: List<String>,
+        limitExtractor: (ProgramSetting) -> Int?,
+    ): ResolvedRetentionLimit {
         return programUids
-            .map { programRetentionLimitResolver.resolve(it) { setting: ProgramSetting -> setting.teiDBTrimming() } }
+            .map { programRetentionLimitResolver.resolve(it, limitExtractor) }
             .minBy { it.limit }
     }
 }

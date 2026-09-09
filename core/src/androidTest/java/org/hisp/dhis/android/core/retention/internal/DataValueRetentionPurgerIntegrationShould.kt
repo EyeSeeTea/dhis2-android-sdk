@@ -3,7 +3,9 @@ package org.hisp.dhis.android.core.retention.internal
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.common.State
+import org.hisp.dhis.android.core.data.dataset.DataSetElementSamples
 import org.hisp.dhis.android.core.data.datavalue.DataValueSamples
 import org.hisp.dhis.android.core.dataelement.internal.DataElementStore
 import org.hisp.dhis.android.core.dataset.internal.DataSetElementStore
@@ -42,6 +44,7 @@ class DataValueRetentionPurgerIntegrationShould {
     fun setUp() {
         runBlocking {
             dataValueStore.delete()
+            dataSetElementStore.delete()
             dataElementStore.delete()
             fileResourceStore.delete()
             categoryComboStore.delete()
@@ -52,6 +55,7 @@ class DataValueRetentionPurgerIntegrationShould {
     fun tearDown() {
         runBlocking {
             dataValueStore.delete()
+            dataSetElementStore.delete()
             dataElementStore.delete()
             fileResourceStore.delete()
             categoryComboStore.delete()
@@ -126,6 +130,26 @@ class DataValueRetentionPurgerIntegrationShould {
             .purge(listOf(dataValueUid("fileDataElement")))
 
         assertThat(fileResourceStore.selectUids()).isEmpty()
+    }
+
+    @Test
+    fun exclude_a_data_value_whose_data_element_is_not_assigned_to_any_data_set() = runTest {
+        val assignedDataValue = givenADataValue("assignedDataElement", State.SYNCED, "2026-01-01T00:00:00.000")
+        val unassignedDataValue = givenADataValue("unassignedDataElement", State.SYNCED, "2026-01-01T00:00:00.000")
+
+        dataValueStore.insert(listOf(assignedDataValue, unassignedDataValue))
+        dataSetElementStore.insert(
+            DataSetElementSamples.getDataSetElement().toBuilder()
+                .dataSet(ObjectWithUid.create("dataSetA"))
+                .dataElement(ObjectWithUid.create("assignedDataElement"))
+                .build(),
+        )
+
+        val candidateUids = DataValueRetentionPurger(dataValueStore, dataSetElementStore, valueFileResourcePurger)
+            .eligibleCandidates()
+            .map { it.uid }
+
+        assertThat(candidateUids).containsExactly(dataValueUid("assignedDataElement"))
     }
 
     private fun givenADataValue(

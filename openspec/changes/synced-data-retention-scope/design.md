@@ -359,3 +359,39 @@ exactly as today, upstream of the new grouping/limit-resolution step.
   code risk: the resolver still works correctly if these settings are
   API-set directly or added later; `GLOBAL`/default behavior is unaffected
   in the meantime. Documented as a Non-Goal, not blocking this change.
+- **Known limitation — `ProgramSetting`'s fields are independently nullable,
+  so a program's `limit` and `scope` can be resolved from different
+  sources within the same `ProgramRetentionLimitResolver.resolve()` call.**
+  All fields on `ProgramSetting` (`teiDBTrimming`, `eventsDBTrimming`,
+  `settingDBTrimming`, ...) are `@Nullable` and independent of each other —
+  nothing in the model enforces that a specific setting which overrides
+  `settingDBTrimming` also defines `teiDBTrimming`/`eventsDBTrimming`, or
+  vice versa. `resolve()` falls back specific → global → default
+  *per field*, not per record, so two inconsistent configurations produce
+  a silently blended result instead of an error:
+  1. A program's specific setting defines `settingDBTrimming = PER_ORG_UNIT`
+     but leaves `teiDBTrimming` unset; the global setting has
+     `teiDBTrimming = 500` with `settingDBTrimming = GLOBAL`. The resolved
+     `ResolvedRetentionLimit` is `(limit = 500, scope = PER_ORG_UNIT)` — the
+     limit comes from global, the scope from the specific setting, a
+     combination no admin configured together.
+  2. `MultiProgramRetentionLimitResolver.resolve()` (used for a TEI
+     enrolled in more than one program) picks the whole
+     `ResolvedRetentionLimit` — limit **and** scope — of whichever
+     program resolves to the smallest limit (`minBy { it.limit }`),
+     discarding the scope of every other program in play. If program A
+     resolves to `(limit=50, scope=PER_ORG_UNIT)` and program B to
+     `(limit=10, scope=PER_PROGRAM)`, the TEI (and, in
+     `SyncedDataRetentionPurger.purgeByProgramAndOrgUnit`, every other
+     candidate in that same purge run) is grouped under B's `PER_PROGRAM`
+     scope — A's `PER_ORG_UNIT` configuration is silently ignored for that
+     run, even though it is the setting the admin wrote for A's own
+     records.
+
+  → Not fixed in this change: there is no product requirement yet on how
+  to reconcile a mismatched limit/scope pair, and today's Settings Web App
+  cannot even set these trimming fields (see the risk above), so the
+  inconsistent shapes described here are not reachable through the
+  supported configuration UI — only via direct API writes. Revisit if/when
+  the Web App exposes trimming settings and this becomes reachable by
+  normal admin configuration.

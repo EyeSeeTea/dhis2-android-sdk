@@ -1,7 +1,5 @@
 package org.hisp.dhis.android.core.retention.internal
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.hisp.dhis.android.core.settings.LimitScope
 import org.hisp.dhis.android.core.settings.ProgramSetting
 import org.hisp.dhis.android.core.settings.ProgramSettingsObjectRepository
@@ -20,9 +18,7 @@ internal class ProgramRetentionLimitResolver(
         programUid: String,
         limitExtractor: (ProgramSetting) -> Int?,
     ): ResolvedRetentionLimit {
-        val programSettings = withContext(Dispatchers.IO) {
-            programSettingsObjectRepository.blockingGet()
-        }
+        val programSettings = programSettingsObjectRepository.blockingGet()
 
         val specificSetting = programSettings?.specificSettings()?.get(programUid)
         val globalSetting = programSettings?.globalSettings()
