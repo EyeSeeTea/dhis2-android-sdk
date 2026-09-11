@@ -28,6 +28,8 @@
 
 package org.hisp.dhis.android.core.dataset.internal
 
+import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.data.database.LinkStoreAbstractIntegrationShould
 import org.hisp.dhis.android.core.data.dataset.DataSetElementSamples
@@ -36,6 +38,7 @@ import org.hisp.dhis.android.core.utils.integration.mock.TestDatabaseAdapterFact
 import org.hisp.dhis.android.core.utils.runner.D2JunitRunner
 import org.hisp.dhis.android.persistence.dataset.DataSetDataElementLinkStoreImpl
 import org.hisp.dhis.android.persistence.dataset.DataSetDataElementLinkTableInfo
+import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(D2JunitRunner::class)
@@ -57,5 +60,29 @@ class DataSetElementStoreIntegrationShould : LinkStoreAbstractIntegrationShould<
             .toBuilder()
             .dataSet(ObjectWithUid.create("updated_data_set_uid"))
             .build()
+    }
+
+    // EyeSeeTea customization - synced-data-retention-scope: dataset resolution for DataValue retention grouping
+    @Test
+    fun return_every_data_set_a_data_element_is_assigned_to() = runTest {
+        val store = DataSetDataElementLinkStoreImpl(TestDatabaseAdapterFactory.get())
+        val sharedDataElement = "sharedDataElement"
+
+        store.insert(
+            DataSetElementSamples.getDataSetElement().toBuilder()
+                .dataSet(ObjectWithUid.create("dataSetA"))
+                .dataElement(ObjectWithUid.create(sharedDataElement))
+                .build(),
+        )
+        store.insert(
+            DataSetElementSamples.getDataSetElement().toBuilder()
+                .dataSet(ObjectWithUid.create("dataSetB"))
+                .dataElement(ObjectWithUid.create(sharedDataElement))
+                .build(),
+        )
+
+        val dataSetUids = store.getDataSetsForDataElement(sharedDataElement)
+
+        assertThat(dataSetUids).containsExactly("dataSetA", "dataSetB")
     }
 }
