@@ -64,6 +64,7 @@ import org.hisp.dhis.android.core.program.ProgramDIModule
 import org.hisp.dhis.android.core.programstageworkinglist.ProgramStageWorkingListDIModule
 import org.hisp.dhis.android.core.relationship.RelationshipDIModule
 import org.hisp.dhis.android.core.resource.internal.ResourceDIModule
+import org.hisp.dhis.android.core.retention.internal.RetentionDIModule
 import org.hisp.dhis.android.core.server.ServerDIModule
 import org.hisp.dhis.android.core.settings.SettingsDIModule
 import org.hisp.dhis.android.core.sms.SmsDIModule
@@ -128,6 +129,7 @@ internal object DhisAndroidSdkKoinContext {
                 ProgramStageWorkingListDIModule().module,
                 RelationshipDIModule().module,
                 ResourceDIModule().module,
+                RetentionDIModule().module,
                 ServerDIModule().module,
                 SettingsDIModule().module,
                 SmsDIModule().module,
