@@ -36,6 +36,7 @@ public final class org/hisp/dhis/android/core/D2 {
 	public final fun periodModule ()Lorg/hisp/dhis/android/core/period/PeriodModule;
 	public final fun programModule ()Lorg/hisp/dhis/android/core/program/ProgramModule;
 	public final fun relationshipModule ()Lorg/hisp/dhis/android/core/relationship/RelationshipModule;
+	public final fun retentionModule ()Lorg/hisp/dhis/android/core/retention/RetentionModule;
 	public final fun serverModule ()Lorg/hisp/dhis/android/core/server/ServerModule;
 	public final fun settingModule ()Lorg/hisp/dhis/android/core/settings/SettingModule;
 	public final fun smsModule ()Lorg/hisp/dhis/android/core/sms/SmsModule;
@@ -8551,6 +8552,10 @@ public final class org/hisp/dhis/android/core/resource/internal/Resource$Type : 
 	public static final field TRACKED_ENTITY_TYPE Lorg/hisp/dhis/android/core/resource/internal/Resource$Type;
 	public static fun valueOf (Ljava/lang/String;)Lorg/hisp/dhis/android/core/resource/internal/Resource$Type;
 	public static fun values ()[Lorg/hisp/dhis/android/core/resource/internal/Resource$Type;
+}
+
+public abstract interface class org/hisp/dhis/android/core/retention/RetentionModule {
+	public abstract fun purge (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class org/hisp/dhis/android/core/server/LoginConfig {

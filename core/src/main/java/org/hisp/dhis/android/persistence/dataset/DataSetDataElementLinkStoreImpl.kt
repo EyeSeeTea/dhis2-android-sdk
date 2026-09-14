@@ -83,4 +83,13 @@ internal class DataSetDataElementLinkStoreImpl(
         val dao = daoProvider()
         return dao.stringListRawQuery(RoomRawQuery(query)).firstOrNull()
     }
+
+    // EyeSeeTea customization - synced-data-retention-scope: dataset resolution for DataValue retention grouping
+    override suspend fun getDataSetsForDataElement(dataElementUid: String): List<String> {
+        val whereClause = WhereClauseBuilder()
+            .appendKeyStringValue(DataSetDataElementLinkTableInfo.Columns.DATA_ELEMENT, dataElementUid)
+            .build()
+        val selectStatement = builder.selectWhere(whereClause)
+        return selectRawQuery(selectStatement).map { it.dataSet()!!.uid() }
+    }
 }

@@ -41,4 +41,7 @@ internal interface DataSetElementStore : LinkStore<DataSetElement> {
         categoryOptionComboUid: String,
         attributeOptionComboUid: String,
     ): String?
+
+    // EyeSeeTea customization - synced-data-retention-scope: dataset resolution for DataValue retention grouping
+    suspend fun getDataSetsForDataElement(dataElementUid: String): List<String>
 }
