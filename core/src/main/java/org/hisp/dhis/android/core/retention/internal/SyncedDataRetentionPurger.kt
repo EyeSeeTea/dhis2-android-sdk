@@ -1,6 +1,9 @@
 package org.hisp.dhis.android.core.retention.internal
 
 import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutorInterface
+import org.hisp.dhis.android.core.maintenance.D2Error
+import org.hisp.dhis.android.core.maintenance.D2ErrorCode
+import org.hisp.dhis.android.core.maintenance.D2ErrorComponent
 import org.hisp.dhis.android.core.settings.LimitScope
 import org.hisp.dhis.android.core.settings.ProgramSetting
 import org.koin.core.annotation.Singleton
@@ -18,10 +21,25 @@ internal class SyncedDataRetentionPurger(
 ) {
     suspend fun purge() {
         d2CallExecutor.executeD2CallTransactionally {
-            purgeTrackedEntityInstances()
-            purgeEvents()
-            purgeDataValues()
-            orphanFileResourcePurger.purge(NO_ORPHANS_ALLOWED)
+            try {
+                purgeTrackedEntityInstances()
+                purgeEvents()
+                purgeDataValues()
+                orphanFileResourcePurger.purge(NO_ORPHANS_ALLOWED)
+            } catch (d2Error: D2Error) {
+                throw d2Error
+            } catch (e: Exception) {
+                // D2CallExecutor's generic handler discards the original exception's
+                // message ("Unexpected error calling ..."). Wrap it here, where the real
+                // failure is known, so callers (and the sync error log) get something
+                // actionable instead of a description with no diagnostic value.
+                throw D2Error.builder()
+                    .errorComponent(D2ErrorComponent.SDK)
+                    .errorCode(D2ErrorCode.UNEXPECTED)
+                    .errorDescription("Retention purge failed: ${e.message}")
+                    .originalException(e)
+                    .build()
+            }
         }
     }
 
