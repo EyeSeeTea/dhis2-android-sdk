@@ -19,6 +19,7 @@ internal class SyncedDataRetentionPurger(
     private val retentionSelector: RetentionSelector,
     private val d2CallExecutor: D2CallExecutorInterface,
 ) {
+    @Suppress("TooGenericExceptionCaught")
     suspend fun purge() {
         d2CallExecutor.executeD2CallTransactionally {
             try {
