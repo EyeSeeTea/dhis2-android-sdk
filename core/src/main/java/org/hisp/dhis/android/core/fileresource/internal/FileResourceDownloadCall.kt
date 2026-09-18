@@ -148,13 +148,18 @@ internal class FileResourceDownloadCall(
                 downloadAndPersistFiles(
                     values = trackerDataValues,
                     maxContentLength = params.maxContentLength,
-                    download = { v, _ ->
-                        fileResourceNetworkHandlder.getFileFromEventValue(
-                            v,
-                            FileResizerHelper.Dimension.MEDIUM.name,
-                        )
+                    download = { v, dimension ->
+                        when (v.valueType) {
+                            ValueType.IMAGE ->
+                                fileResourceNetworkHandlder.getImageFromEventValue(v.value, dimension)
+
+                            ValueType.FILE_RESOURCE ->
+                                fileResourceNetworkHandlder.getFileFromEventValue(v.value)
+
+                            else -> null
+                        }
                     },
-                    getUid = { v -> v.value() },
+                    getUid = { v -> v.value.value() },
                 )
             }
         }
