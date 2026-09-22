@@ -42,3 +42,15 @@ and does not require a commit.
 
 **Commit: none** for Group 3 unless verification reveals a defect; any resulting
 fix must be paired with its regression test in a separate red-to-green commit.
+
+## 4. Record the surviving EyeSeeTea customization
+
+- [ ] 4.1 After implementation and verification are complete, document the
+      disabled-account login handling in `eyeseetea-docs/customizations.md` and
+      add the matching `// EyeSeeTea customization - Disabled account login
+      handling` comment next to the minimal production logic that must survive
+      upstream upgrades; verify the documented files and behavior match the
+      final diff.
+
+**Commit: 4.1 alone** as the final documentation commit, after the implementation
+and verification commits are complete.
