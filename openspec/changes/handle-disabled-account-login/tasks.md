@@ -14,13 +14,13 @@
 
 ## 2. Preserve cleanup failure and existing login behavior
 
-- [ ] 2.1 Add behavior-level coverage at the account-management boundary proving
+- [x] 2.1 Add behavior-level coverage at the account-management boundary proving
       that a disabled login emits at most one disabled-account deletion event and
       that cleanup failure when no local account exists does not replace
       `USER_ACCOUNT_DISABLED`; add the minimal implementation adjustment only if
       current behavior does not satisfy the scenarios, and verify the focused
       tests pass.
-- [ ] 2.2 Run the complete `LogInCallUnitShould` test class to verify successful
+- [x] 2.2 Run the complete `LogInCallUnitShould` test class to verify successful
       login plus TOTP, email, SMS, offline, and legacy-login behavior remains
       green.
 
