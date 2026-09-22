@@ -44,6 +44,7 @@ import org.hisp.dhis.android.core.systeminfo.SystemInfo
 import org.hisp.dhis.android.core.systeminfo.internal.SystemInfoCall
 import org.hisp.dhis.android.core.user.AuthenticatedUser
 import org.hisp.dhis.android.core.user.User
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -162,8 +163,8 @@ class LogInCallUnitShould : BaseCallShould() {
     ) {
         try {
             block.invoke()
+            fail("Expected D2Error${errorCode?.let { " with code $it" } ?: ""}")
         } catch (responseError: D2Error) {
-            assertThat(responseError).isInstanceOf(D2Error::class.java)
             if (errorCode != null) assertThat(responseError.errorCode()).isEqualTo(errorCode)
         }
     }
@@ -222,6 +223,25 @@ class LogInCallUnitShould : BaseCallShould() {
         whenever(credentialsSecureStore.get()).thenReturn(credentials)
         whenever(userIdStore.get()).thenReturn("userId")
         assertD2Error(D2ErrorCode.ALREADY_AUTHENTICATED) { login() }
+    }
+
+    @Test
+    fun return_user_account_disabled_without_requesting_user_details() = runTest {
+        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.ACCOUNT_DISABLED.toString()) }
+
+        assertD2Error(D2ErrorCode.USER_ACCOUNT_DISABLED) { login() }
+
+        verify(userNetworkHandler, never()).getUser(any())
+    }
+
+    @Test
+    fun not_establish_session_when_user_account_is_disabled() = runTest {
+        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.ACCOUNT_DISABLED.toString()) }
+
+        assertD2Error(D2ErrorCode.USER_ACCOUNT_DISABLED) { login() }
+
+        verify(credentialsSecureStore, never()).set(any())
+        verify(authenticatedUserStore, never()).updateOrInsertWhere(any())
     }
 
     @Test

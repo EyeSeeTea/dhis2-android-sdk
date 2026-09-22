@@ -1,12 +1,11 @@
 ## 1. Handle the disabled status at the login response boundary
 
-- [ ] 1.1 Add behavior-level tests to `LogInCallUnitShould` proving that an
+- [x] 1.1 Add behavior-level tests to `LogInCallUnitShould` proving that an
       `/api/auth/login` response with `loginStatus = ACCOUNT_DISABLED` returns
       `D2ErrorCode.USER_ACCOUNT_DISABLED`, never calls `getUser(true)`, does not
-      persist credentials or authenticated-user state, and requests disabled
-      account cleanup exactly once; verify the new tests fail against the current
-      implementation.
-- [ ] 1.2 Extend the login-response status validation to map
+      persist credentials or authenticated-user state; verify the new tests fail
+      against the current implementation.
+- [x] 1.2 Extend the login-response status validation to map
       `ACCOUNT_DISABLED` to `USER_ACCOUNT_DISABLED` before credential persistence
       and user retrieval, and rename the 2FA-specific validation helper to match
       its broader responsibility; verify all tests from 1.1 pass.
@@ -15,10 +14,12 @@
 
 ## 2. Preserve cleanup failure and existing login behavior
 
-- [ ] 2.1 Add a behavior-level test proving that a cleanup failure when no local
-      account exists does not replace `USER_ACCOUNT_DISABLED`; add the minimal
-      implementation adjustment only if the existing catch path does not already
-      satisfy the test, and verify the focused test passes.
+- [ ] 2.1 Add behavior-level coverage at the account-management boundary proving
+      that a disabled login emits at most one disabled-account deletion event and
+      that cleanup failure when no local account exists does not replace
+      `USER_ACCOUNT_DISABLED`; add the minimal implementation adjustment only if
+      current behavior does not satisfy the scenarios, and verify the focused
+      tests pass.
 - [ ] 2.2 Run the complete `LogInCallUnitShould` test class to verify successful
       login plus TOTP, email, SMS, offline, and legacy-login behavior remains
       green.

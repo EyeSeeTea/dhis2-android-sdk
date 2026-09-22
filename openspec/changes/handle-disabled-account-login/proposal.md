@@ -42,9 +42,9 @@ extend.
   its disabled-account error/cleanup handling.
 - **Network behavior**: `/api/me` is no longer requested after
   `/api/auth/login` reports `ACCOUNT_DISABLED`.
-- **Public behavior**: existing consumers receive the already-public
-  `D2ErrorCode.USER_ACCOUNT_DISABLED`; no new public API or error code is
-  required.
+- **Public behavior**: add `D2ErrorCode.ACCOUNT_DISABLED` to represent the wire
+  login status consistently with the existing 2FA status values, while consumers
+  continue receiving `D2ErrorCode.USER_ACCOUNT_DISABLED` as the login failure.
 - **Persistence and events**: an existing local account may still be removed
   according to current SDK policy, but the same failed login must not request
   duplicate deletion or account-deletion emission.
@@ -54,4 +54,5 @@ extend.
 - **Downstream apps**: user-facing copy and navigation after receiving
   `USER_ACCOUNT_DISABLED` remain app responsibilities and are outside this SDK
   change.
-- **Compatibility**: additive bug fix with no breaking API or dependency changes.
+- **Compatibility**: additive enum value and bug fix with no breaking API or
+  dependency changes.

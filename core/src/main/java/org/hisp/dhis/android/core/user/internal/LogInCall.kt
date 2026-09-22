@@ -236,7 +236,7 @@ internal class LogInCall(
                 )
             }.getOrThrow()
 
-            generate2FAErrorIfRequired(response)
+            generateLoginErrorIfRequired(response)
 
             credentialsSecureStore.set(credentials)
 
@@ -281,8 +281,12 @@ internal class LogInCall(
         }
     }
 
-    private fun generate2FAErrorIfRequired(response: LoginResponse) {
+    private fun generateLoginErrorIfRequired(response: LoginResponse) {
         val error = when (response.loginStatus) {
+            D2ErrorCode.ACCOUNT_DISABLED.toString() -> D2Error.builder()
+                .errorCode(D2ErrorCode.USER_ACCOUNT_DISABLED)
+                .errorDescription("Account disabled")
+                .build()
             // 2.41 error
             D2ErrorCode.INCORRECT_TWO_FACTOR_CODE.toString() -> D2Error.builder()
                 .errorCode(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE)

@@ -41,7 +41,8 @@ This change affects only the `user` module. It does not use or modify
 - Changing whether disabled accounts are removed from local storage; this design
   preserves the existing security policy.
 - Changing downstream app dialogs, navigation, or session-event subscriptions.
-- Adding a new public error code or changing the wire value returned by DHIS2.
+- Changing the wire value returned by DHIS2 or the existing
+  `USER_ACCOUNT_DISABLED` failure exposed to login callers.
 - Refactoring all login statuses into a new public model.
 - Changing upstream's direct Basic Auth login flow.
 
@@ -49,8 +50,9 @@ This change affects only the `user` module. It does not use or modify
 
 ### Map the wire status to the existing SDK error before storing credentials
 
-Extend the response-status validation immediately after `/api/auth/login` so
-`ACCOUNT_DISABLED` creates a `D2Error` with
+Add `D2ErrorCode.ACCOUNT_DISABLED` alongside the existing 2FA wire-status values
+and extend the response-status validation immediately after `/api/auth/login` so
+its string representation creates a `D2Error` with
 `D2ErrorCode.USER_ACCOUNT_DISABLED`. Rename the helper from its 2FA-specific
 name to reflect that it validates all terminal login statuses.
 
@@ -65,9 +67,9 @@ global catcher. Rejected because it retains an unnecessary request, delays the
 correct result, and ignores the authoritative status already returned by the
 login endpoint.
 
-Alternative considered: introduce a new `ACCOUNT_DISABLED` public error enum
-matching the wire value. Rejected because `USER_ACCOUNT_DISABLED` already
-expresses the SDK-domain condition and is mapped by existing consumers.
+`ACCOUNT_DISABLED` represents the protocol status only; the thrown error remains
+`USER_ACCOUNT_DISABLED`, which already expresses the SDK-domain condition and is
+mapped by existing consumers.
 
 ### Keep cleanup in `handleOnlineException`
 
