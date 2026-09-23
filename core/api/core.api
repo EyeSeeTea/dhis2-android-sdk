@@ -6354,7 +6354,6 @@ public abstract class org/hisp/dhis/android/core/maintenance/D2Error$Builder {
 }
 
 public final class org/hisp/dhis/android/core/maintenance/D2ErrorCode : java/lang/Enum {
-	public static final field ACCOUNT_DISABLED Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field ALREADY_AUTHENTICATED Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field ALREADY_EXECUTED Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;
 	public static final field API_INVALID_QUERY Lorg/hisp/dhis/android/core/maintenance/D2ErrorCode;

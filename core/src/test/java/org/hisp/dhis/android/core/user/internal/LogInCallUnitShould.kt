@@ -27,27 +27,21 @@
  */
 package org.hisp.dhis.android.core.user.internal
 
-import android.content.Context
 import com.google.common.truth.Truth.assertThat
-import io.reactivex.Completable
 import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.arch.api.executors.internal.CoroutineAPICallExecutor
 import org.hisp.dhis.android.core.arch.api.executors.internal.CoroutineAPICallExecutorMock
-import org.hisp.dhis.android.core.arch.db.access.DatabaseManager
 import org.hisp.dhis.android.core.arch.helpers.UserHelper
 import org.hisp.dhis.android.core.arch.storage.internal.Credentials
 import org.hisp.dhis.android.core.arch.storage.internal.CredentialsSecureStore
 import org.hisp.dhis.android.core.arch.storage.internal.UserIdInMemoryStore
 import org.hisp.dhis.android.core.common.BaseCallShould
-import org.hisp.dhis.android.core.configuration.internal.DatabaseConfigurationHelper
-import org.hisp.dhis.android.core.configuration.internal.DatabaseConfigurationInsecureStore
 import org.hisp.dhis.android.core.configuration.internal.MultiUserDatabaseManager
 import org.hisp.dhis.android.core.maintenance.D2Error
 import org.hisp.dhis.android.core.maintenance.D2ErrorCode
 import org.hisp.dhis.android.core.settings.internal.GeneralSettingCall
 import org.hisp.dhis.android.core.systeminfo.SystemInfo
 import org.hisp.dhis.android.core.systeminfo.internal.SystemInfoCall
-import org.hisp.dhis.android.core.user.AccountDeletionReason
 import org.hisp.dhis.android.core.user.AuthenticatedUser
 import org.hisp.dhis.android.core.user.User
 import org.junit.Assert.fail
@@ -116,9 +110,6 @@ class LogInCallUnitShould : BaseCallShould() {
 
     private suspend fun login(twoFactorCode: String? = null) =
         instantiateCall(USERNAME, PASSWORD, SERVER_URL, twoFactorCode)
-
-    private suspend fun loginWith(accountManager: AccountManagerImpl) =
-        instantiateCall(USERNAME, PASSWORD, SERVER_URL, null, accountManager)
 
     private suspend fun instantiateCall(
         username: String?,
@@ -237,7 +228,7 @@ class LogInCallUnitShould : BaseCallShould() {
 
     @Test
     fun return_user_account_disabled_without_requesting_user_details() = runTest {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.ACCOUNT_DISABLED.toString()) }
+        whenLoginAPICall { LoginResponse(loginStatus = ACCOUNT_DISABLED_LOGIN_STATUS) }
 
         assertD2Error(D2ErrorCode.USER_ACCOUNT_DISABLED) { login() }
 
@@ -246,7 +237,7 @@ class LogInCallUnitShould : BaseCallShould() {
 
     @Test
     fun not_establish_session_when_user_account_is_disabled() = runTest {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.ACCOUNT_DISABLED.toString()) }
+        whenLoginAPICall { LoginResponse(loginStatus = ACCOUNT_DISABLED_LOGIN_STATUS) }
 
         assertD2Error(D2ErrorCode.USER_ACCOUNT_DISABLED) { login() }
 
@@ -255,27 +246,12 @@ class LogInCallUnitShould : BaseCallShould() {
     }
 
     @Test
-    fun emit_one_disabled_account_deletion_event() = runTest {
-        val accountManager = givenAnAccountManagerWithoutLocalAccount()
-        val deletionObserver = accountManager.accountDeletionObservable().test()
+    fun not_delete_account_when_user_account_is_disabled() = runTest {
         givenServerReportsDisabledAccount()
 
-        assertD2Error(D2ErrorCode.USER_ACCOUNT_DISABLED) {
-            loginWith(accountManager)
-        }
+        assertD2Error(D2ErrorCode.USER_ACCOUNT_DISABLED) { login() }
 
-        deletionObserver.assertValue(AccountDeletionReason.ACCOUNT_DISABLED)
-        deletionObserver.assertValueCount(1)
-    }
-
-    @Test
-    fun preserve_disabled_error_when_cleanup_fails_for_missing_local_account() = runTest {
-        val accountManager = givenAnAccountManagerWhoseCleanupFails()
-        givenServerReportsDisabledAccount()
-
-        assertD2Error(D2ErrorCode.USER_ACCOUNT_DISABLED) {
-            loginWith(accountManager)
-        }
+        verifyNoInteractions(accountManager)
     }
 
     @Test
@@ -404,32 +380,8 @@ class LogInCallUnitShould : BaseCallShould() {
     }
 
     private fun givenServerReportsDisabledAccount() {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.ACCOUNT_DISABLED.toString()) }
+        whenLoginAPICall { LoginResponse(loginStatus = ACCOUNT_DISABLED_LOGIN_STATUS) }
     }
-
-    private fun givenAnAccountManagerWithoutLocalAccount(
-        logOutResult: Completable = Completable.complete(),
-    ): AccountManagerImpl {
-        val logOutCall: LogOutCall = mock()
-        val databasesConfigurationStore: DatabaseConfigurationInsecureStore = mock()
-        whenever(logOutCall.logOut()).thenReturn(logOutResult)
-        whenever(databasesConfigurationStore.get()).thenReturn(null)
-        return AccountManagerImpl(
-            databasesConfigurationStore = databasesConfigurationStore,
-            multiUserDatabaseManager = multiUserDatabaseManager,
-            databaseManager = mock<DatabaseManager>(),
-            credentialsSecureStore = credentialsSecureStore,
-            logOutCall = logOutCall,
-            context = mock<Context>(),
-            databaseConfigurationHelper = mock<DatabaseConfigurationHelper>(),
-            connectLogoutHandler = mock<ConnectLogoutHandler>(),
-        )
-    }
-
-    private fun givenAnAccountManagerWhoseCleanupFails(): AccountManagerImpl =
-        givenAnAccountManagerWithoutLocalAccount(
-            logOutResult = Completable.error(IllegalStateException("Account cleanup failed")),
-        )
 
     companion object {
         private const val USERNAME = "test_username"
@@ -438,5 +390,6 @@ class LogInCallUnitShould : BaseCallShould() {
         private const val BASE_URL = "https://dhis-instance.org"
         private const val SERVER_URL = BASE_URL
         private const val TWO_FACTOR_CODE = "test_password"
+        private const val ACCOUNT_DISABLED_LOGIN_STATUS = "ACCOUNT_DISABLED"
     }
 }

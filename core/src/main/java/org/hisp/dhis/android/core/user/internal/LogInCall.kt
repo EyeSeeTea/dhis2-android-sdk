@@ -37,7 +37,6 @@ import org.hisp.dhis.android.core.configuration.internal.ServerUrlParser
 import org.hisp.dhis.android.core.maintenance.D2Error
 import org.hisp.dhis.android.core.maintenance.D2ErrorCode
 import org.hisp.dhis.android.core.systeminfo.internal.SystemInfoCall
-import org.hisp.dhis.android.core.user.AccountDeletionReason
 import org.hisp.dhis.android.core.user.AuthenticatedUser
 import org.hisp.dhis.android.core.user.User
 import org.hisp.dhis.android.core.user.oauth2.OAuth2State
@@ -89,23 +88,13 @@ internal class LogInCall(
             if (d2Error.isOffline) {
                 tryLoginOffline(credentials, d2Error)
             } else {
-                throw handleOnlineException(d2Error, credentials)
+                throw handleOnlineException(d2Error)
             }
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
-    private fun handleOnlineException(d2Error: D2Error, credentials: Credentials?): D2Error {
-        return if (d2Error.errorCode() == D2ErrorCode.USER_ACCOUNT_DISABLED) {
-            try {
-                if (credentials != null) {
-                    accountManager.deleteAccountAndEmit(credentials, AccountDeletionReason.ACCOUNT_DISABLED)
-                }
-                d2Error
-            } catch (e: Exception) {
-                d2Error
-            }
-        } else if (d2Error.errorCode() == D2ErrorCode.UNEXPECTED ||
+    private fun handleOnlineException(d2Error: D2Error): D2Error {
+        return if (d2Error.errorCode() == D2ErrorCode.UNEXPECTED ||
             d2Error.errorCode() == D2ErrorCode.API_RESPONSE_PROCESS_ERROR
         ) {
             exceptions.noDHIS2Server()
@@ -217,7 +206,7 @@ internal class LogInCall(
             )
             loginOnline(user, credentials)
         } catch (d2Error: D2Error) {
-            throw handleOnlineException(d2Error, credentials)
+            throw handleOnlineException(d2Error)
         }
     }
 
@@ -283,7 +272,7 @@ internal class LogInCall(
 
     private fun generateLoginErrorIfRequired(response: LoginResponse) {
         val error = when (response.loginStatus) {
-            D2ErrorCode.ACCOUNT_DISABLED.toString() -> D2Error.builder()
+            ACCOUNT_DISABLED_LOGIN_STATUS -> D2Error.builder()
                 .errorCode(D2ErrorCode.USER_ACCOUNT_DISABLED)
                 .errorDescription("Account disabled")
                 .build()
@@ -320,5 +309,9 @@ internal class LogInCall(
             else -> null
         }
         error?.let { throw it }
+    }
+
+    private companion object {
+        const val ACCOUNT_DISABLED_LOGIN_STATUS = "ACCOUNT_DISABLED"
     }
 }

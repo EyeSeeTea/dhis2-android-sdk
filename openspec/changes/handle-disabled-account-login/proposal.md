@@ -14,9 +14,9 @@ login screen without explaining the failure to the user.
   result and expose it through the existing `USER_ACCOUNT_DISABLED` SDK error.
 - Stop the login flow before credentials are persisted or `/api/me` is requested
   when the authentication response already reports a disabled account.
-- Preserve the existing disabled-account cleanup policy for an already-stored
-  account, while ensuring that the login result remains observable by the caller
-  and that cleanup is not initiated twice for the same failed login.
+- Do not delete local account data or emit a global account-deletion event for a
+  disabled result returned during a login attempt. The existing policy for a
+  disabled account detected during an established session remains unchanged.
 - Add regression coverage for the server sequence observed in DHIS2 2.43:
   HTTP 200 with `{"loginStatus":"ACCOUNT_DISABLED"}` from `/api/auth/login`.
 - Keep successful login and all supported TOTP, email, and SMS two-factor states
@@ -28,8 +28,8 @@ login screen without explaining the failure to the user.
 
 - `disabled-account-login`: defines how username/password authentication handles
   a disabled-account status returned by the login endpoint, including early
-  termination, error reporting, follow-up request suppression, and single cleanup
-  semantics.
+  termination, error reporting, follow-up request suppression, and preservation
+  of local account data.
 
 ### Modified Capabilities
 
@@ -39,20 +39,19 @@ extend.
 ## Impact
 
 - **Affected domain module**: `user`, specifically the EyeSeeTea login flow and
-  its disabled-account error/cleanup handling.
+  its disabled-account error handling.
 - **Network behavior**: `/api/me` is no longer requested after
   `/api/auth/login` reports `ACCOUNT_DISABLED`.
-- **Public behavior**: add `D2ErrorCode.ACCOUNT_DISABLED` to represent the wire
-  login status consistently with the existing 2FA status values, while consumers
-  continue receiving `D2ErrorCode.USER_ACCOUNT_DISABLED` as the login failure.
-- **Persistence and events**: an existing local account may still be removed
-  according to current SDK policy, but the same failed login must not request
-  duplicate deletion or account-deletion emission.
+- **Public behavior**: keep `ACCOUNT_DISABLED` as an internal wire-status value;
+  consumers receive only the existing `D2ErrorCode.USER_ACCOUNT_DISABLED` login
+  failure and do not need a second mapping for the same condition.
+- **Persistence and events**: a disabled login attempt neither modifies an
+  existing local account nor emits an account-deletion event. The upstream
+  cleanup behavior for an established session is unchanged.
 - **Unaffected modules**: event, enrollment, trackedentity, datavalue,
   fileresource, relationship, and the shared `ModuleWiper` interface are not
   touched.
 - **Downstream apps**: user-facing copy and navigation after receiving
   `USER_ACCOUNT_DISABLED` remain app responsibilities and are outside this SDK
   change.
-- **Compatibility**: additive enum value and bug fix with no breaking API or
-  dependency changes.
+- **Compatibility**: bug fix with no public API or dependency changes.

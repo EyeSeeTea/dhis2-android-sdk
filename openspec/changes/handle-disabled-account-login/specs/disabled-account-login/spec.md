@@ -26,20 +26,22 @@ when the login endpoint reports `ACCOUNT_DISABLED`.
 - **THEN** the submitted credentials are not retained as an authenticated session
 - **AND** no authenticated user is stored for that attempt
 
-### Requirement: Disabled-account cleanup occurs at most once
-The SDK SHALL preserve its existing local-account removal policy for a disabled
-account, but MUST initiate at most one account removal and one corresponding
-disabled-account notification for a single failed login attempt.
+### Requirement: Disabled login preserves local account data
+The SDK MUST NOT remove local account data, log out an account, or emit an
+account-deletion notification because the login endpoint reports
+`ACCOUNT_DISABLED`.
 
 #### Scenario: A local account exists for the disabled user
 - **WHEN** a login attempt for that account receives `ACCOUNT_DISABLED`
-- **THEN** the SDK removes the local account according to the existing disabled-account policy
-- **AND** emits the disabled-account deletion reason once
+- **THEN** the SDK returns `USER_ACCOUNT_DISABLED`
+- **AND** retains the local account and its unsynchronized data
+- **AND** does not emit an account-deletion notification
 
 #### Scenario: No local account exists for the disabled user
 - **WHEN** a first login attempt receives `ACCOUNT_DISABLED` and no matching local account exists
 - **THEN** the SDK still returns `USER_ACCOUNT_DISABLED`
-- **AND** cleanup failure does not replace or hide the authentication error
+- **AND** the SDK does not emit an account-deletion notification
+- **AND** the SDK does not invoke account cleanup
 
 ### Requirement: Other login statuses retain their behavior
 The SDK SHALL preserve the existing behavior for successful authentication and
