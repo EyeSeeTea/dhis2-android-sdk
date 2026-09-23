@@ -56,7 +56,7 @@ fix must be paired with its regression test in a separate red-to-green commit.
 
 ## 5. Record the surviving EyeSeeTea customization
 
-- [ ] 5.1 After implementation and verification are complete, document the
+- [x] 5.1 After implementation and verification are complete, document the
       disabled-account login handling in `eyeseetea-docs/customizations.md` and
       add the matching `// EyeSeeTea customization - Disabled account login
       handling` comment next to the minimal production logic that must survive

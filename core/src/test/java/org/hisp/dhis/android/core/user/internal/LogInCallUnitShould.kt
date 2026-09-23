@@ -116,7 +116,6 @@ class LogInCallUnitShould : BaseCallShould() {
         password: String?,
         serverUrl: String?,
         twoFactorCode: String?,
-        accountManager: AccountManagerImpl = this.accountManager,
     ): User {
         return LogInCall(
             coroutineAPICallExecutor, userNetworkHandler, credentialsSecureStore,
@@ -158,6 +157,7 @@ class LogInCallUnitShould : BaseCallShould() {
         assertD2Error(D2ErrorCode.SERVER_URL_MALFORMED) { instantiateCall(USERNAME, PASSWORD, "this is no URL", null) }
     }
 
+    // EyeSeeTea customization - Disabled account login handling
     private suspend fun <P> assertD2Error(
         errorCode: D2ErrorCode? = null,
         block: suspend () -> P,
@@ -226,6 +226,7 @@ class LogInCallUnitShould : BaseCallShould() {
         assertD2Error(D2ErrorCode.ALREADY_AUTHENTICATED) { login() }
     }
 
+    // EyeSeeTea customization - Disabled account login handling
     @Test
     fun return_user_account_disabled_without_requesting_user_details() = runTest {
         whenLoginAPICall { LoginResponse(loginStatus = ACCOUNT_DISABLED_LOGIN_STATUS) }
@@ -247,7 +248,7 @@ class LogInCallUnitShould : BaseCallShould() {
 
     @Test
     fun not_delete_account_when_user_account_is_disabled() = runTest {
-        givenServerReportsDisabledAccount()
+        whenLoginAPICall { LoginResponse(loginStatus = ACCOUNT_DISABLED_LOGIN_STATUS) }
 
         assertD2Error(D2ErrorCode.USER_ACCOUNT_DISABLED) { login() }
 
@@ -379,10 +380,6 @@ class LogInCallUnitShould : BaseCallShould() {
         verify(userIdStore).set("test_uid")
     }
 
-    private fun givenServerReportsDisabledAccount() {
-        whenLoginAPICall { LoginResponse(loginStatus = ACCOUNT_DISABLED_LOGIN_STATUS) }
-    }
-
     companion object {
         private const val USERNAME = "test_username"
         private const val UID = "test_uid"
@@ -390,6 +387,8 @@ class LogInCallUnitShould : BaseCallShould() {
         private const val BASE_URL = "https://dhis-instance.org"
         private const val SERVER_URL = BASE_URL
         private const val TWO_FACTOR_CODE = "test_password"
+
+        // EyeSeeTea customization - Disabled account login handling
         private const val ACCOUNT_DISABLED_LOGIN_STATUS = "ACCOUNT_DISABLED"
     }
 }
