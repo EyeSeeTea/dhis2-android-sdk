@@ -126,6 +126,39 @@ Spec: `openspec/changes/synced-data-retention-scope/` (not archived yet —
 `AndroidSyncRepository.purgeSyncedData()`, which currently calls a
 non-existent `d2.wipeModule().wipeSyncedData()`, and any settings UI).
 
+### 1.3 Disabled account handling at the login response boundary
+
+Status: `active` — implemented on `fix/account-disabled-login`, pending
+publication in the next EyeSeeTea SDK artifact.
+
+Production implementation and public contract:
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/LogInCall.kt`
+- `core/src/main/java/org/hisp/dhis/android/core/maintenance/D2ErrorCode.java`
+- `core/api/core.api`
+
+Regression coverage:
+- `core/src/test/java/org/hisp/dhis/android/core/user/internal/LogInCallUnitShould.kt`
+
+Spec: `openspec/changes/handle-disabled-account-login/`
+
+What it does:
+The EyeSeeTea username/password flow examines the HTTP 200 response from
+`/api/auth/login` before establishing a session. When its payload contains
+`loginStatus = ACCOUNT_DISABLED`, the SDK returns the existing public domain
+error `D2ErrorCode.USER_ACCOUNT_DISABLED` immediately. `ACCOUNT_DISABLED`
+remains an internal wire value rather than a second public error code.
+`D2ErrorCode.java` and the generated `core.api` snapshot are part of the
+contract verification: neither exposes a new public `ACCOUNT_DISABLED` enum
+value. Generated API snapshots do not carry customization comments.
+
+The terminal result occurs before credentials or authenticated-user state are
+persisted and before `/api/me` is requested. A rejected login does not invoke
+account cleanup, emit `AccountDeletionReason.ACCOUNT_DISABLED`, or remove a
+previously stored account and its potentially unsynchronized data. This is
+deliberately separate from the upstream `UserAccountDisabledErrorCatcher`
+behavior for an account disabled during an established session, which remains
+unchanged.
+
 ## 2. Oslo bug fixes
 
 ### 2.1 `ALTER TABLE` migration script fix
