@@ -463,17 +463,20 @@ class TrackedEntityRetentionPurgerIntegrationShould {
             RelationshipHelper.eventItem(unrelatedEvent.uid()),
         )
 
-        TrackedEntityRetentionPurger(
-            trackedEntityInstanceStore,
-            trackedEntityAttributeValueStore,
-            enrollmentStore,
-            noteStore,
-            eventStore,
-            trackedEntityDataValueStore,
-            valueFileResourcePurger,
-            relationshipEligibilityChecker,
-            relationshipRetentionPurger,
-        ).purge(listOf("teiToPurge"))
+        // Deleting an enrollment cascades to its RelationshipItems in the app, as with TEIs.
+        withForeignKeysEnforcedAsInProduction {
+            TrackedEntityRetentionPurger(
+                trackedEntityInstanceStore,
+                trackedEntityAttributeValueStore,
+                enrollmentStore,
+                noteStore,
+                eventStore,
+                trackedEntityDataValueStore,
+                valueFileResourcePurger,
+                relationshipEligibilityChecker,
+                relationshipRetentionPurger,
+            ).purge(listOf("teiToPurge"))
+        }
 
         assertThat(enrollmentStore.selectUids()).containsExactly("unrelatedEnrollment")
         assertThat(relationshipStore.selectUids()).isEmpty()

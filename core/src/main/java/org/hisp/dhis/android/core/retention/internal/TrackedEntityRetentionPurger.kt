@@ -61,8 +61,8 @@ internal class TrackedEntityRetentionPurger(
                 }
 
                 noteStore.getForEnrollment(enrollment.uid()).forEach { noteStore.delete(it.uid()) }
-                enrollmentStore.delete(enrollment.uid())
                 relationshipRetentionPurger.purgeForEntity(enrollment.uid())
+                enrollmentStore.delete(enrollment.uid())
             }
 
             relationshipRetentionPurger.purgeForEntity(teiUid)
