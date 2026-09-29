@@ -4,12 +4,20 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.arch.call.executors.internal.D2CallExecutorInterface
 import org.hisp.dhis.android.core.maintenance.D2Error
+import org.hisp.dhis.android.core.settings.LimitScope
+import org.hisp.dhis.android.core.settings.ProgramSetting
+import org.hisp.dhis.android.core.settings.ProgramSettings
+import org.hisp.dhis.android.core.settings.ProgramSettingsObjectRepository
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.verifyBlocking
+import org.mockito.kotlin.whenever
+import java.text.SimpleDateFormat
 
 @RunWith(JUnit4::class)
 class SyncedDataRetentionPurgerShould {
@@ -18,9 +26,8 @@ class SyncedDataRetentionPurgerShould {
     private val trackedEntityPurger: TrackedEntityRetentionPurger = mock()
     private val eventPurger: EventRetentionPurger = mock()
     private val orphanFileResourcePurger: OrphanFileResourceRetentionPurger = mock()
-    private val programRetentionLimitResolver: ProgramRetentionLimitResolver = mock()
+    private val programSettingsObjectRepository: ProgramSettingsObjectRepository = mock()
     private val dataSetRetentionLimitResolver: DataSetRetentionLimitResolver = mock()
-    private val retentionSelector: RetentionSelector = mock()
 
     // A real pass-through, not a mock: it runs the lambda exactly like the production
     // D2CallExecutor would for a non-D2Error failure, so the test exercises the actual
@@ -35,9 +42,9 @@ class SyncedDataRetentionPurgerShould {
         trackedEntityPurger = trackedEntityPurger,
         eventPurger = eventPurger,
         orphanFileResourcePurger = orphanFileResourcePurger,
-        programRetentionLimitResolver = programRetentionLimitResolver,
+        programRetentionLimitResolver = ProgramRetentionLimitResolver(programSettingsObjectRepository),
         dataSetRetentionLimitResolver = dataSetRetentionLimitResolver,
-        retentionSelector = retentionSelector,
+        retentionSelector = RetentionSelector(),
         d2CallExecutor = runningTheGivenCallDirectly,
     )
 
@@ -57,9 +64,60 @@ class SyncedDataRetentionPurgerShould {
         assertThat(actual!!.errorDescription()).contains("Disk is full")
     }
 
+    @Test
+    fun trim_tracked_entities_under_the_global_limit_when_none_of_them_has_a_program() = runTest {
+        givenAGlobalTeiLimit(teiDBTrimming = 1, settingDBTrimming = LimitScope.PER_PROGRAM)
+        givenTrackedEntityCandidates(
+            givenACandidateWithoutProgram(uid = "oldestWithoutProgram", lastUpdated = "2026-01-01T00:00:00.000"),
+            givenACandidateWithoutProgram(uid = "newestWithoutProgram", lastUpdated = "2026-02-01T00:00:00.000"),
+        )
+        givenNoEventOrDataValueCandidates()
+
+        purger.purge()
+
+        verifyBlocking(trackedEntityPurger) { purge(listOf("oldestWithoutProgram")) }
+    }
+
     private fun givenTrackedEntityCandidatesThatFailWhilePurging(failureMessage: String) {
         trackedEntityPurger.stub {
             onBlocking { eligibleCandidates() } doThrow RuntimeException(failureMessage)
         }
+    }
+
+    private fun givenAGlobalTeiLimit(teiDBTrimming: Int, settingDBTrimming: LimitScope) {
+        val globalSetting = ProgramSetting.builder()
+            .teiDBTrimming(teiDBTrimming)
+            .settingDBTrimming(settingDBTrimming)
+            .build()
+        val programSettings = ProgramSettings.builder()
+            .globalSettings(globalSetting)
+            .specificSettings(emptyMap())
+            .build()
+
+        whenever(programSettingsObjectRepository.blockingGet()) doReturn programSettings
+    }
+
+    private fun givenTrackedEntityCandidates(vararg candidates: RetentionCandidate) {
+        trackedEntityPurger.stub {
+            onBlocking { eligibleCandidates() } doReturn candidates.toList()
+        }
+    }
+
+    private fun givenNoEventOrDataValueCandidates() {
+        eventPurger.stub {
+            onBlocking { eligibleCandidates() } doReturn emptyList()
+        }
+        dataValuePurger.stub {
+            onBlocking { eligibleCandidates() } doReturn emptyList()
+        }
+    }
+
+    private fun givenACandidateWithoutProgram(uid: String, lastUpdated: String): RetentionCandidate {
+        return RetentionCandidate.ByProgramAndOrgUnit(
+            uid = uid,
+            lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
+            programUids = emptyList(),
+            organisationUnitUid = "orgUnit",
+        )
     }
 }

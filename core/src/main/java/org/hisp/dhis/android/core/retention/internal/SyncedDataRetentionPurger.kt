@@ -73,7 +73,8 @@ internal class SyncedDataRetentionPurger(
 
         val programUids = candidates.flatMap { it.programUids }.distinct()
         val resolvedByProgram = programUids.associateWith { programRetentionLimitResolver.resolve(it, limitExtractor) }
-        val mostRestrictive = resolvedByProgram.values.minBy { it.limit }
+        val global = programRetentionLimitResolver.resolveGlobal(limitExtractor)
+        val mostRestrictive = resolvedByProgram.values.minByOrNull { it.limit } ?: global
 
         val toPurge = when (mostRestrictive.scope) {
             LimitScope.GLOBAL ->
@@ -81,8 +82,7 @@ internal class SyncedDataRetentionPurger(
 
             LimitScope.PER_PROGRAM -> {
                 val limitByProgram = resolvedByProgram.mapValues { it.value.limit }
-                val limitWithoutProgram = programRetentionLimitResolver.resolveGlobalLimit(limitExtractor)
-                retentionSelector.selectByProgram(candidates, limitByProgram, limitWithoutProgram)
+                retentionSelector.selectByProgram(candidates, limitByProgram, global.limit)
             }
 
             LimitScope.PER_ORG_UNIT, LimitScope.ALL_ORG_UNITS -> {
@@ -96,8 +96,7 @@ internal class SyncedDataRetentionPurger(
                     .flatMap { candidate -> candidate.programUids.map { candidate.organisationUnitUid to it } }
                     .distinct()
                     .associateWith { (_, programUid) -> resolvedByProgram.getValue(programUid).limit }
-                val limitWithoutProgram = programRetentionLimitResolver.resolveGlobalLimit(limitExtractor)
-                retentionSelector.selectByOrgUnitAndProgram(candidates, limitByOrgUnitAndProgram, limitWithoutProgram)
+                retentionSelector.selectByOrgUnitAndProgram(candidates, limitByOrgUnitAndProgram, global.limit)
             }
         }
 

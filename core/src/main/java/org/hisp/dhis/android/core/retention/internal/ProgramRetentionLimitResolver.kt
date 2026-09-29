@@ -34,10 +34,13 @@ internal class ProgramRetentionLimitResolver(
         return ResolvedRetentionLimit(limit, scope)
     }
 
-    suspend fun resolveGlobalLimit(limitExtractor: (ProgramSetting) -> Int?): Int {
+    suspend fun resolveGlobal(limitExtractor: (ProgramSetting) -> Int?): ResolvedRetentionLimit {
         val globalSetting = programSettingsObjectRepository.blockingGet()?.globalSettings()
 
-        return globalSetting?.let(limitExtractor) ?: DEFAULT_LIMIT
+        return ResolvedRetentionLimit(
+            limit = globalSetting?.let(limitExtractor) ?: DEFAULT_LIMIT,
+            scope = globalSetting?.settingDBTrimming() ?: LimitScope.GLOBAL,
+        )
     }
 
     companion object {

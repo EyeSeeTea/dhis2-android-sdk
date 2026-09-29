@@ -96,7 +96,7 @@ class ProgramRetentionLimitResolverShould {
     }
 
     @Test
-    fun resolve_global_limit_from_global_settings_ignoring_specific_settings() = runTest {
+    fun resolve_global_limit_and_scope_from_global_settings_ignoring_specific_settings() = runTest {
         val specificSetting = givenAProgramSetting(
             uid = "program1",
             teiDBTrimming = 50,
@@ -106,7 +106,7 @@ class ProgramRetentionLimitResolverShould {
         val globalSetting = givenAGlobalProgramSetting(
             teiDBTrimming = 200,
             eventsDBTrimming = 150,
-            settingDBTrimming = LimitScope.PER_PROGRAM,
+            settingDBTrimming = LimitScope.PER_ORG_UNIT,
         )
         val programSettings = givenAProgramSettings(
             globalSettings = globalSetting,
@@ -115,18 +115,20 @@ class ProgramRetentionLimitResolverShould {
 
         whenever(programSettingsObjectRepository.blockingGet()) doReturn programSettings
 
-        val result = resolver.resolveGlobalLimit { it.teiDBTrimming() }
+        val result = resolver.resolveGlobal { it.teiDBTrimming() }
 
-        assertEquals(200, result)
+        assertEquals(200, result.limit)
+        assertEquals(LimitScope.PER_ORG_UNIT, result.scope)
     }
 
     @Test
-    fun resolve_global_limit_to_hardcoded_default_when_no_global_setting() = runTest {
+    fun resolve_global_limit_and_scope_to_hardcoded_defaults_when_no_global_setting() = runTest {
         whenever(programSettingsObjectRepository.blockingGet()) doReturn null
 
-        val result = resolver.resolveGlobalLimit { it.teiDBTrimming() }
+        val result = resolver.resolveGlobal { it.teiDBTrimming() }
 
-        assertEquals(ProgramRetentionLimitResolver.DEFAULT_LIMIT, result)
+        assertEquals(ProgramRetentionLimitResolver.DEFAULT_LIMIT, result.limit)
+        assertEquals(LimitScope.GLOBAL, result.scope)
     }
 
     private fun givenAProgramSetting(
