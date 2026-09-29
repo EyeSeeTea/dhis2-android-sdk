@@ -66,6 +66,36 @@ other group's eligible record count.
 - **THEN** the tracked entity instance is evaluated against the smallest of
   those programs' resolved limits
 
+### Requirement: A tracked entity instance without enrollments is trimmed against the global limit
+A synced tracked entity instance with no enrollment has no program to resolve
+a limit from. It SHALL be trimmed against the globally configured retention
+count limit, and SHALL NOT change the scope resolved from the programs of the
+other eligible records.
+
+#### Scenario: A per-program scope trims tracked entity instances without enrollments as their own group
+- **WHEN** the resolved scope splits eligible records by program, and some
+  eligible tracked entity instances have no enrollment
+- **THEN** those tracked entity instances are grouped together and trimmed
+  against the global retention count limit, independently of every
+  program's group
+
+#### Scenario: A per-organisation-unit-and-program scope trims them per organisation unit
+- **WHEN** the resolved scope splits eligible records by organisation unit
+  and program, and some eligible tracked entity instances have no enrollment
+- **THEN** those tracked entity instances are grouped by organisation unit
+  and each group is trimmed against the global retention count limit
+
+#### Scenario: Tracked entity instances without enrollments do not change the resolved scope
+- **WHEN** some eligible tracked entity instances have enrollments and others
+  have none
+- **THEN** the scope is resolved only from the programs of the enrolled
+  tracked entity instances, as if the ones without enrollment were not there
+
+#### Scenario: No eligible record has a program
+- **WHEN** none of the eligible tracked entity instances has an enrollment
+- **THEN** they are trimmed against the global retention count limit using
+  the globally configured scope
+
 ### Requirement: A retention limit without a matching scope field is applied globally
 A retention count limit for which no per-program, per-data-set, or
 per-organisation-unit scope exists SHALL be applied as a single limit across
