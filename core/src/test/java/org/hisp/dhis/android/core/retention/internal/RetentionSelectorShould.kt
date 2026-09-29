@@ -188,6 +188,7 @@ class RetentionSelectorShould {
                 ("orgUnitA" to "programOverLimit") to 0,
                 ("orgUnitA" to "programWithinLimit") to 1,
             ),
+            limitWithoutProgram = 0,
         )
 
         assertEquals(listOf("overLimitCandidate"), toPurge)
@@ -214,6 +215,7 @@ class RetentionSelectorShould {
                 ("orgUnitA" to "sharedProgram") to 0,
                 ("orgUnitB" to "sharedProgram") to 1,
             ),
+            limitWithoutProgram = 0,
         )
 
         assertEquals(listOf("orgUnitACandidate"), toPurge)
@@ -240,9 +242,48 @@ class RetentionSelectorShould {
                 ("orgUnitA" to "restrictiveProgram") to 1,
                 ("orgUnitA" to "permissiveProgram") to 5,
             ),
+            limitWithoutProgram = 0,
         )
 
         assertEquals(listOf("singleProgramCandidate"), toPurge)
+    }
+
+    @Test
+    fun trim_each_org_units_candidates_without_a_program_as_their_own_group_under_the_without_program_limit() {
+        val programCandidate = givenACandidateForOrgUnitAndProgram(
+            uid = "programCandidate",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            organisationUnitUid = "orgUnitA",
+            programUid = "program",
+        )
+        val orgUnitAOldestWithoutProgram = givenACandidateForOrgUnit(
+            uid = "orgUnitAOldestWithoutProgram",
+            lastUpdated = "2026-02-01T00:00:00.000",
+            organisationUnitUid = "orgUnitA",
+        )
+        val orgUnitANewestWithoutProgram = givenACandidateForOrgUnit(
+            uid = "orgUnitANewestWithoutProgram",
+            lastUpdated = "2026-03-01T00:00:00.000",
+            organisationUnitUid = "orgUnitA",
+        )
+        val orgUnitBWithoutProgram = givenACandidateForOrgUnit(
+            uid = "orgUnitBWithoutProgram",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            organisationUnitUid = "orgUnitB",
+        )
+
+        val toPurge = selector.selectByOrgUnitAndProgram(
+            candidates = listOf(
+                programCandidate,
+                orgUnitAOldestWithoutProgram,
+                orgUnitANewestWithoutProgram,
+                orgUnitBWithoutProgram,
+            ),
+            limitByOrgUnitAndProgram = mapOf(("orgUnitA" to "program") to 1),
+            limitWithoutProgram = 1,
+        )
+
+        assertEquals(listOf("orgUnitAOldestWithoutProgram"), toPurge)
     }
 
     private fun givenACandidate(uid: String, lastUpdated: String): RetentionCandidate {

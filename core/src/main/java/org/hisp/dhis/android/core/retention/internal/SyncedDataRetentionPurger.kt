@@ -96,7 +96,8 @@ internal class SyncedDataRetentionPurger(
                     .flatMap { candidate -> candidate.programUids.map { candidate.organisationUnitUid to it } }
                     .distinct()
                     .associateWith { (_, programUid) -> resolvedByProgram.getValue(programUid).limit }
-                retentionSelector.selectByOrgUnitAndProgram(candidates, limitByOrgUnitAndProgram)
+                val limitWithoutProgram = programRetentionLimitResolver.resolveGlobalLimit(limitExtractor)
+                retentionSelector.selectByOrgUnitAndProgram(candidates, limitByOrgUnitAndProgram, limitWithoutProgram)
             }
         }
 
