@@ -1,5 +1,6 @@
 package org.hisp.dhis.android.core.retention.internal
 
+import androidx.room.useWriterConnection
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -194,14 +195,18 @@ class EventRetentionPurgerIntegrationShould {
             RelationshipHelper.teiItem(eligibleTei.uid()),
         )
 
-        EventRetentionPurger(
-            eventStore,
-            trackedEntityDataValueStore,
-            noteStore,
-            valueFileResourcePurger,
-            relationshipEligibilityChecker,
-            relationshipRetentionPurger,
-        ).purge(listOf("eventToPurge"))
+        // The shared test database disables foreign keys, but the app enforces them: deleting an
+        // event cascades to its RelationshipItems, which is what the relationship purge relies on.
+        withForeignKeysEnforcedAsInProduction {
+            EventRetentionPurger(
+                eventStore,
+                trackedEntityDataValueStore,
+                noteStore,
+                valueFileResourcePurger,
+                relationshipEligibilityChecker,
+                relationshipRetentionPurger,
+            ).purge(listOf("eventToPurge"))
+        }
 
         assertThat(eventStore.selectUids()).isEmpty()
         assertThat(relationshipStore.selectUids()).isEmpty()
@@ -269,6 +274,23 @@ class EventRetentionPurgerIntegrationShould {
         assertThat(candidatesByUid.getValue("eventInProgramA").organisationUnitUid).isEqualTo("orgUnitA")
         assertThat(candidatesByUid.getValue("eventInProgramB").programUids).containsExactly("programB")
         assertThat(candidatesByUid.getValue("eventInProgramB").organisationUnitUid).isEqualTo("orgUnitB")
+    }
+
+    private suspend fun withForeignKeysEnforcedAsInProduction(block: suspend () -> Unit) {
+        setForeignKeysEnabled(true)
+        try {
+            block()
+        } finally {
+            setForeignKeysEnabled(false)
+        }
+    }
+
+    private suspend fun setForeignKeysEnabled(enabled: Boolean) {
+        // PRAGMA foreign_keys is a no-op inside a transaction, so it cannot go through
+        // DatabaseAdapter.setForeignKeyConstraintsEnabled, which wraps it in one.
+        databaseAdapter.getCurrentDatabase().useWriterConnection { transactor ->
+            transactor.usePrepared("PRAGMA foreign_keys = ${if (enabled) "ON" else "OFF"};") { it.step() }
+        }
     }
 
     private suspend fun givenARelationship(relationshipUid: String, from: RelationshipItem, to: RelationshipItem) {

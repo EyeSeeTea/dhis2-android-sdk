@@ -43,8 +43,8 @@ internal class EventRetentionPurger(
                 valueFileResourcePurger.purgeIfDataElementReferencesFile(it.dataElement(), it.value())
             }
             noteStore.getForEvent(eventUid).forEach { noteStore.delete(it.uid()) }
-            eventStore.delete(eventUid)
             relationshipRetentionPurger.purgeForEntity(eventUid)
+            eventStore.delete(eventUid)
         }
     }
 }
