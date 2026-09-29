@@ -65,6 +65,22 @@ class SyncedDataRetentionPurgerShould {
     }
 
     @Test
+    fun wrap_an_unexpected_failure_without_a_message_with_its_exception_type_instead_of_null() = runTest {
+        givenTrackedEntityCandidatesThatFailWithoutAMessage()
+
+        val actual =
+            try {
+                purger.purge()
+                null
+            } catch (d2Error: D2Error) {
+                d2Error
+            }
+
+        assertThat(actual).isNotNull()
+        assertThat(actual!!.errorDescription()).contains("NoSuchElementException")
+    }
+
+    @Test
     fun trim_tracked_entities_under_the_global_limit_when_none_of_them_has_a_program() = runTest {
         givenAGlobalTeiLimit(teiDBTrimming = 1, settingDBTrimming = LimitScope.PER_PROGRAM)
         givenTrackedEntityCandidates(
@@ -81,6 +97,12 @@ class SyncedDataRetentionPurgerShould {
     private fun givenTrackedEntityCandidatesThatFailWhilePurging(failureMessage: String) {
         trackedEntityPurger.stub {
             onBlocking { eligibleCandidates() } doThrow RuntimeException(failureMessage)
+        }
+    }
+
+    private fun givenTrackedEntityCandidatesThatFailWithoutAMessage() {
+        trackedEntityPurger.stub {
+            onBlocking { eligibleCandidates() } doThrow NoSuchElementException()
         }
     }
 

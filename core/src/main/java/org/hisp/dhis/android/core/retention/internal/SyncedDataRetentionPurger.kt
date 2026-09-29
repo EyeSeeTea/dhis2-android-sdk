@@ -37,7 +37,7 @@ internal class SyncedDataRetentionPurger(
                 throw D2Error.builder()
                     .errorComponent(D2ErrorComponent.SDK)
                     .errorCode(D2ErrorCode.UNEXPECTED)
-                    .errorDescription("Retention purge failed: ${e.message}")
+                    .errorDescription("Retention purge failed: ${e.message ?: e.toString()}")
                     .originalException(e)
                     .build()
             }
