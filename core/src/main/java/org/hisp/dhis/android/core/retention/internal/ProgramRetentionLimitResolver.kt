@@ -34,6 +34,12 @@ internal class ProgramRetentionLimitResolver(
         return ResolvedRetentionLimit(limit, scope)
     }
 
+    suspend fun resolveGlobalLimit(limitExtractor: (ProgramSetting) -> Int?): Int {
+        val globalSetting = programSettingsObjectRepository.blockingGet()?.globalSettings()
+
+        return globalSetting?.let(limitExtractor) ?: DEFAULT_LIMIT
+    }
+
     companion object {
         const val DEFAULT_LIMIT = 500
     }

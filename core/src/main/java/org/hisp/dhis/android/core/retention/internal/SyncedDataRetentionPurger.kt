@@ -81,7 +81,8 @@ internal class SyncedDataRetentionPurger(
 
             LimitScope.PER_PROGRAM -> {
                 val limitByProgram = resolvedByProgram.mapValues { it.value.limit }
-                retentionSelector.selectByProgram(candidates, limitByProgram)
+                val limitWithoutProgram = programRetentionLimitResolver.resolveGlobalLimit(limitExtractor)
+                retentionSelector.selectByProgram(candidates, limitByProgram, limitWithoutProgram)
             }
 
             LimitScope.PER_ORG_UNIT, LimitScope.ALL_ORG_UNITS -> {

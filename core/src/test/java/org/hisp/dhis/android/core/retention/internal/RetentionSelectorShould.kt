@@ -61,6 +61,7 @@ class RetentionSelectorShould {
                 "programOverLimit" to 0,
                 "programWithinLimit" to 1,
             ),
+            limitWithoutProgram = 0,
         )
 
         assertEquals(listOf("overLimitCandidate"), toPurge)
@@ -85,9 +86,37 @@ class RetentionSelectorShould {
                 "restrictiveProgram" to 1,
                 "permissiveProgram" to 5,
             ),
+            limitWithoutProgram = 0,
         )
 
         assertEquals(listOf("singleProgramCandidate"), toPurge)
+    }
+
+    @Test
+    fun trim_candidates_without_a_program_as_their_own_group_under_the_without_program_limit() {
+        val programCandidate = givenACandidateForPrograms(
+            uid = "programCandidate",
+            lastUpdated = "2026-01-01T00:00:00.000",
+            programUids = listOf("program"),
+        )
+        val oldestWithoutProgram = givenACandidateForPrograms(
+            uid = "oldestWithoutProgram",
+            lastUpdated = "2026-02-01T00:00:00.000",
+            programUids = emptyList(),
+        )
+        val newestWithoutProgram = givenACandidateForPrograms(
+            uid = "newestWithoutProgram",
+            lastUpdated = "2026-03-01T00:00:00.000",
+            programUids = emptyList(),
+        )
+
+        val toPurge = selector.selectByProgram(
+            candidates = listOf(programCandidate, oldestWithoutProgram, newestWithoutProgram),
+            limitByProgram = mapOf("program" to 1),
+            limitWithoutProgram = 1,
+        )
+
+        assertEquals(listOf("oldestWithoutProgram"), toPurge)
     }
 
     @Test
