@@ -94,6 +94,36 @@ class SyncedDataRetentionPurgerShould {
         verifyBlocking(trackedEntityPurger) { purge(listOf("oldestWithoutProgram")) }
     }
 
+    @Test
+    fun resolve_the_scope_only_from_the_programs_even_when_the_global_limit_is_more_restrictive() = runTest {
+        givenAGlobalAndAProgramTeiLimit(
+            globalTeiDBTrimming = 1,
+            globalSettingDBTrimming = LimitScope.GLOBAL,
+            programUid = "program",
+            programTeiDBTrimming = 5,
+            programSettingDBTrimming = LimitScope.PER_PROGRAM,
+        )
+        givenTrackedEntityCandidates(
+            givenACandidateForProgram(
+                uid = "oldestWithProgram",
+                lastUpdated = "2026-01-01T00:00:00.000",
+                programUid = "program",
+            ),
+            givenACandidateForProgram(
+                uid = "newestWithProgram",
+                lastUpdated = "2026-02-01T00:00:00.000",
+                programUid = "program",
+            ),
+            givenACandidateWithoutProgram(uid = "oldestWithoutProgram", lastUpdated = "2026-03-01T00:00:00.000"),
+            givenACandidateWithoutProgram(uid = "newestWithoutProgram", lastUpdated = "2026-04-01T00:00:00.000"),
+        )
+        givenNoEventOrDataValueCandidates()
+
+        purger.purge()
+
+        verifyBlocking(trackedEntityPurger) { purge(listOf("oldestWithoutProgram")) }
+    }
+
     private fun givenTrackedEntityCandidatesThatFailWhilePurging(failureMessage: String) {
         trackedEntityPurger.stub {
             onBlocking { eligibleCandidates() } doThrow RuntimeException(failureMessage)
@@ -119,6 +149,30 @@ class SyncedDataRetentionPurgerShould {
         whenever(programSettingsObjectRepository.blockingGet()) doReturn programSettings
     }
 
+    private fun givenAGlobalAndAProgramTeiLimit(
+        globalTeiDBTrimming: Int,
+        globalSettingDBTrimming: LimitScope,
+        programUid: String,
+        programTeiDBTrimming: Int,
+        programSettingDBTrimming: LimitScope,
+    ) {
+        val globalSetting = ProgramSetting.builder()
+            .teiDBTrimming(globalTeiDBTrimming)
+            .settingDBTrimming(globalSettingDBTrimming)
+            .build()
+        val programSetting = ProgramSetting.builder()
+            .uid(programUid)
+            .teiDBTrimming(programTeiDBTrimming)
+            .settingDBTrimming(programSettingDBTrimming)
+            .build()
+        val programSettings = ProgramSettings.builder()
+            .globalSettings(globalSetting)
+            .specificSettings(mapOf(programUid to programSetting))
+            .build()
+
+        whenever(programSettingsObjectRepository.blockingGet()) doReturn programSettings
+    }
+
     private fun givenTrackedEntityCandidates(vararg candidates: RetentionCandidate) {
         trackedEntityPurger.stub {
             onBlocking { eligibleCandidates() } doReturn candidates.toList()
@@ -139,6 +193,15 @@ class SyncedDataRetentionPurgerShould {
             uid = uid,
             lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
             programUids = emptyList(),
+            organisationUnitUid = "orgUnit",
+        )
+    }
+
+    private fun givenACandidateForProgram(uid: String, lastUpdated: String, programUid: String): RetentionCandidate {
+        return RetentionCandidate.ByProgramAndOrgUnit(
+            uid = uid,
+            lastUpdated = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(lastUpdated),
+            programUids = listOf(programUid),
             organisationUnitUid = "orgUnit",
         )
     }
