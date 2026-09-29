@@ -56,8 +56,8 @@ internal class TrackedEntityRetentionPurger(
                 val events = eventStore.selectWhere(eventsWhereClause)
 
                 events.forEach { event ->
-                    purgeEvent(event.uid())
                     relationshipRetentionPurger.purgeForEntity(event.uid())
+                    purgeEvent(event.uid())
                 }
 
                 noteStore.getForEnrollment(enrollment.uid()).forEach { noteStore.delete(it.uid()) }
