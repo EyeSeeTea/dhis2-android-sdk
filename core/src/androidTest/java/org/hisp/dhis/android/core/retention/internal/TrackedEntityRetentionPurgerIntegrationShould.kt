@@ -1,5 +1,6 @@
 package org.hisp.dhis.android.core.retention.internal
 
+import androidx.room.useWriterConnection
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -391,24 +392,28 @@ class TrackedEntityRetentionPurgerIntegrationShould {
     }
 
     @Test
-    fun purge_a_relationship_when_purging_both_of_its_fully_synced_teis() = runTest {
+    fun purge_a_relationship_when_purging_its_tei_with_foreign_keys_enforced_as_in_production() = runTest {
         val teiA = givenATrackedEntityInstance("teiA", State.SYNCED, "2026-01-01T00:00:00.000")
         val teiB = givenATrackedEntityInstance("teiB", State.SYNCED, "2025-01-01T00:00:00.000")
         trackedEntityInstanceStore.insert(teiA)
         trackedEntityInstanceStore.insert(teiB)
         givenARelationshipBetweenTeis("relationship", "teiA", "teiB")
 
-        TrackedEntityRetentionPurger(
-            trackedEntityInstanceStore,
-            trackedEntityAttributeValueStore,
-            enrollmentStore,
-            noteStore,
-            eventStore,
-            trackedEntityDataValueStore,
-            valueFileResourcePurger,
-            relationshipEligibilityChecker,
-            relationshipRetentionPurger,
-        ).purge(listOf("teiA", "teiB"))
+        // The shared test database disables foreign keys, but the app enforces them: deleting a
+        // TEI cascades to its RelationshipItems, which is what the relationship purge relies on.
+        withForeignKeysEnforcedAsInProduction {
+            TrackedEntityRetentionPurger(
+                trackedEntityInstanceStore,
+                trackedEntityAttributeValueStore,
+                enrollmentStore,
+                noteStore,
+                eventStore,
+                trackedEntityDataValueStore,
+                valueFileResourcePurger,
+                relationshipEligibilityChecker,
+                relationshipRetentionPurger,
+            ).purge(listOf("teiA", "teiB"))
+        }
 
         assertThat(trackedEntityInstanceStore.selectUids()).isEmpty()
         assertThat(relationshipStore.selectUids()).isEmpty()
@@ -635,6 +640,23 @@ class TrackedEntityRetentionPurgerIntegrationShould {
 
         assertThat(trackedEntityInstanceStore.selectUids()).isEmpty()
         assertThat(enrollmentStore.selectUids()).isEmpty()
+    }
+
+    private suspend fun withForeignKeysEnforcedAsInProduction(block: suspend () -> Unit) {
+        setForeignKeysEnabled(true)
+        try {
+            block()
+        } finally {
+            setForeignKeysEnabled(false)
+        }
+    }
+
+    private suspend fun setForeignKeysEnabled(enabled: Boolean) {
+        // PRAGMA foreign_keys is a no-op inside a transaction, so it cannot go through
+        // DatabaseAdapter.setForeignKeyConstraintsEnabled, which wraps it in one.
+        databaseAdapter.getCurrentDatabase().useWriterConnection { transactor ->
+            transactor.usePrepared("PRAGMA foreign_keys = ${if (enabled) "ON" else "OFF"};") { it.step() }
+        }
     }
 
     private suspend fun givenARelationshipBetweenTeis(relationshipUid: String, fromUid: String, toUid: String) {

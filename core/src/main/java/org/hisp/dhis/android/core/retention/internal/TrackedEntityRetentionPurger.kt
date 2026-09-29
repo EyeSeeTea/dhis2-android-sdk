@@ -65,8 +65,8 @@ internal class TrackedEntityRetentionPurger(
                 relationshipRetentionPurger.purgeForEntity(enrollment.uid())
             }
 
-            trackedEntityInstanceStore.delete(teiUid)
             relationshipRetentionPurger.purgeForEntity(teiUid)
+            trackedEntityInstanceStore.delete(teiUid)
         }
     }
 
