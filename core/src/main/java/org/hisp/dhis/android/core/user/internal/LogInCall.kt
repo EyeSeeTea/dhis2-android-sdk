@@ -93,7 +93,7 @@ internal class LogInCall(
         }
     }
 
-    // EyeSeeTea customization - Disabled account login handling
+    // EyeSeeTea customization - Disabled Account Login Handling
     private fun handleOnlineException(d2Error: D2Error): D2Error {
         return if (d2Error.errorCode() == D2ErrorCode.UNEXPECTED ||
             d2Error.errorCode() == D2ErrorCode.API_RESPONSE_PROCESS_ERROR
@@ -273,7 +273,7 @@ internal class LogInCall(
 
     private fun generateLoginErrorIfRequired(response: LoginResponse) {
         val error = when (response.loginStatus) {
-            // EyeSeeTea customization - Disabled account login handling
+            // EyeSeeTea customization - Disabled Account Login Handling
             ACCOUNT_DISABLED_LOGIN_STATUS -> D2Error.builder()
                 .errorCode(D2ErrorCode.USER_ACCOUNT_DISABLED)
                 .errorDescription("Account disabled")
@@ -313,7 +313,7 @@ internal class LogInCall(
         error?.let { throw it }
     }
 
-    // EyeSeeTea customization - Disabled account login handling
+    // EyeSeeTea customization - Disabled Account Login Handling
     private companion object {
         const val ACCOUNT_DISABLED_LOGIN_STATUS = "ACCOUNT_DISABLED"
     }

@@ -62,7 +62,7 @@ class DataSetElementStoreIntegrationShould : LinkStoreAbstractIntegrationShould<
             .build()
     }
 
-    // EyeSeeTea customization - synced-data-retention-scope: dataset resolution for DataValue retention grouping
+    // EyeSeeTea customization - Synced Data Retention Scope
     @Test
     fun return_every_data_set_a_data_element_is_assigned_to() = runTest {
         val store = DataSetDataElementLinkStoreImpl(TestDatabaseAdapterFactory.get())
