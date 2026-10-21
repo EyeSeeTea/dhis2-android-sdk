@@ -1,4 +1,4 @@
-# synced-data-retention-scope Specification
+# Synced Data Retention Scope
 
 ## Purpose
 

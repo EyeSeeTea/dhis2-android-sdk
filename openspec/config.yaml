@@ -22,16 +22,28 @@ context: |
     - Published as:   JitPack, group `com.github.EyeSeeTea`, artifact `android-core`
     - Current version: see `dhis2AndroidSdkVersion` in `gradle/libs.versions.toml` —
                        do not hardcode it here, it changes on every version bump.
-    - Base branch:    develop-eyeseetea is the shared fork baseline. It can lag
-                       behind pushed-but-unmerged `feature/bring_last_changes_*`
-                       branches. Before branching new work, check
-                       `git log --oneline develop-eyeseetea..origin/feature/bring_last_changes_*`
-                       for any unmerged upgrade branch and prefer branching from the
-                       most recent one over develop-eyeseetea if it is ahead and not
-                       diverged (`git merge-base --is-ancestor develop-eyeseetea <branch>`).
-    - Consumers:      dhis2-android-capture-app-extra (develop-eyeseetea branch and
-                       client forks, e.g. feature-oca/*), via
+    - Fork branch:    develop-eyeseetea. One layer: Oslo -> this fork, no per-client
+                       branches. Oslo upgrades merge a tagged release through
+                       `origin/upstream/<version>` into `feature/upgrade_<version>`
+                       (see eyeseetea-docs/upgrade/upgrade-plan.md).
+    - Consumers:      EyeSeeTea/dhis2-android-capture-app (develop-eyeseetea branch and
+                       client branches, e.g. feature-oca/*, feature-widp/*), via
                        `com.github.EyeSeeTea:dhis2-android-sdk:<version>`
+
+  ## Customization model
+
+    - One spec per EyeSeeTea customization in `openspec/specs/<capability>/spec.md`,
+      whatever its origin (EyeSeeTea-wide or requested by one client): every
+      customization ships to every consumer of the same artifact.
+    - The spec's top-level `# <Title>` is the customization title. The same string
+      MUST be used as the section heading in `eyeseetea-docs/customization-files.md`
+      (technical inventory + feature commits) and
+      `eyeseetea-docs/upgrade/validation-checklist.md`, and in code comments as
+      `// EyeSeeTea customization - <Title>`.
+    - Upgrades from Oslo are modeled as changes named `upgrade-to-<version>`; they
+      preserve every active spec at the requirements level.
+    - Agent guidance for the fork lives in `AGENTS-eyeseetea.md`; merge rules in
+      `eyeseetea-docs/upgrade/conflict-rules.md`.
 
   ## Repository layout (relevant)
 
@@ -78,16 +90,19 @@ context: |
     - Build/publish tooling (JitPack, `EyeSeeTea.md`) — documented there, not here.
     - Downstream app behavior (worker scheduling, Settings UI, per-fork gating) —
       belongs to the OpenSpec tree of the consuming app repo
-      (dhis2-android-capture-app-extra), which should reference the spec here by
+      (EyeSeeTea/dhis2-android-capture-app), which should reference the spec here by
       name rather than duplicating it.
 
 rules:
   proposal:
+    - "When the change is an Oslo upgrade, state the target Oslo tag explicitly and list, under Impact, which customizations touch Oslo files that changed between the two tags."
+    - "Under Impact, say which files are new EyeSeeTea-owned files and which are edits to Oslo files, so reviewers can assess the conflict surface before approving."
     - "State which domain modules (event, enrollment, trackedentity, datavalue, fileresource, relationship, ...) are affected, since each needs its own ModuleWiper change."
     - "If the change touches the shared `ModuleWiper` interface itself, call this out explicitly under Impact — it is a change that touches every existing wiper implementation (~30+), which is the highest-conflict-surface option available and should be justified over alternatives (e.g. a separate opt-in interface)."
 
   specs:
     - "Spec folders and file names use kebab-case and match the `openspec/specs/<capability>/spec.md` layout."
+    - "Every spec starts with a human `# <Title>` line (Title Case, no slug, no 'Specification' suffix). It is the customization title used verbatim in `customization-files.md`, `validation-checklist.md` and `// EyeSeeTea customization - <Title>` code comments. After archiving a change, check the synced spec still starts with it."
     - "Use SHALL and MUST for normative requirements. Avoid should/may."
     - "Every Requirement has at least one `#### Scenario:` with WHEN/THEN."
     - "Scenarios use exactly 4 hashtags (####). 3 hashtags or bullets fail silently."
@@ -98,6 +113,8 @@ rules:
     - "Call out whether the design relies on `aggregatedSyncState` (existing, tested) vs. introduces new sync-state computation — prefer reusing the former."
     - "For anything reading `ProgramSetting`/`DataSetSetting` trimming fields, document the resolution order between GLOBAL and PER_PROGRAM/PER_ORG_UNIT scope explicitly."
     - "Classify whether the change is additive (new class, new method on a narrow new interface) or modifies a shared interface/class every module depends on — prefer additive."
+    - "When the design touches Oslo files, follow the placement hierarchy and comment convention in `eyeseetea-docs/upgrade/conflict-rules.md` and name the technique used from `eyeseetea-docs/customization-techniques.md` (or add a new one)."
+    - "For upgrade changes, classify the expected conflict areas with the categories of conflict-rules.md: accept_theirs, manual_reapply_on_theirs, defer_after_build_verification."
 
   tasks:
     - "Each task is small enough to complete in one focused session and to be committed independently (test-first: add a behavior-level test in `core/src/test/` first, then the minimal implementation to make it pass, as one commit)."
@@ -107,3 +124,4 @@ rules:
     - "Integration tests requiring real Room persistence go in `core/src/androidTest/`; everything else (mockable collaborators) goes in `core/src/test/` following the existing `<Class>Should.kt` naming."
     - "For anything touching real DB delete/retention semantics (row selection, cascade, transactional rollback), tests MUST assert on observable state — rows actually present/absent when re-querying a real database after the call — not on which internal method was invoked with which arguments. Do not mock `TableWiper` or per-module wiper collaborators to verify a delete happened; insert real rows, call the public API, re-read the table. Mocking collaborators is acceptable only at the true system boundary (e.g. simulating a write failure to test transactional rollback), never to observe the class under test's own delete logic."
     - "Each behavior test states, in its name or a comment, the observable contract it verifies (e.g. \"rows exceeding the limit are gone after purge\") rather than the mechanism (e.g. \"wipeTableWhereSynced is called\") — a reviewer should be able to tell what broke for the user from the test name alone."
+    - "A change that adds or alters a customization ends with a documentation task: the spec title, its `customization-files.md` section 2 entry and section 4 feature commits, its `validation-checklist.md` entry, and titled code comments; `check_upgrade_docs.py` passes."
