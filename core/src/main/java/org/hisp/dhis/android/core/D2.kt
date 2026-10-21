@@ -60,6 +60,7 @@ import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModule
 import org.hisp.dhis.android.core.period.PeriodModule
 import org.hisp.dhis.android.core.program.ProgramModule
 import org.hisp.dhis.android.core.relationship.RelationshipModule
+import org.hisp.dhis.android.core.retention.RetentionModule
 import org.hisp.dhis.android.core.server.ServerModule
 import org.hisp.dhis.android.core.settings.SettingModule
 import org.hisp.dhis.android.core.sms.SmsModule
@@ -236,6 +237,10 @@ class D2 internal constructor(internal val d2DIComponent: D2DIComponent) {
 
     fun wipeModule(): WipeModule {
         return d2DIComponent.wipeModule
+    }
+
+    fun retentionModule(): RetentionModule {
+        return d2DIComponent.retentionModule
     }
 
     fun smsModule(): SmsModule {
