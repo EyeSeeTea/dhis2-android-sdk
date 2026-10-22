@@ -62,6 +62,7 @@ internal class D2DIComponent(
     val metadataModule: MetadataModuleImpl,
     val aggregatedModule: AggregatedModuleImpl,
     val wipeModule: WipeModule,
+    // EyeSeeTea customization - Synced Data Retention Scope
     val retentionModule: RetentionModule,
     val databaseAdapter: DatabaseAdapter,
     val userIdInMemoryStore: UserIdInMemoryStore,
