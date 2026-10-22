@@ -57,9 +57,6 @@ data class D2Configuration(
     fun networkPlugins(): List<NetworkPlugin<Any, Any>> = networkPlugins
     fun context(): Context = context
 
-    // EyeSeeTea customization - Original Size Image Download
-    fun fileResizerDimension(): FileResizerHelper.Dimension? = fileResizerDimension
-
     fun toBuilder(): Builder = D2ConfigurationBuilder.from(this)
 
     class Builder : D2ConfigurationBuilder()

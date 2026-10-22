@@ -74,7 +74,6 @@ public final class org/hisp/dhis/android/core/D2Configuration {
 	public final fun copy (Ljava/lang/String;Ljava/lang/String;IIILjava/util/List;Ljava/util/List;Ljava/util/List;Landroid/content/Context;Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;)Lorg/hisp/dhis/android/core/D2Configuration;
 	public static synthetic fun copy$default (Lorg/hisp/dhis/android/core/D2Configuration;Ljava/lang/String;Ljava/lang/String;IIILjava/util/List;Ljava/util/List;Ljava/util/List;Landroid/content/Context;Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;ILjava/lang/Object;)Lorg/hisp/dhis/android/core/D2Configuration;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun fileResizerDimension ()Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;
 	public final fun getAppName ()Ljava/lang/String;
 	public final fun getAppVersion ()Ljava/lang/String;
 	public final fun getConnectTimeoutInSeconds ()I

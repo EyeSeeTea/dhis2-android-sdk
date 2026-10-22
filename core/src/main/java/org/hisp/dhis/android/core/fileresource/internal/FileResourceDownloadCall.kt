@@ -294,7 +294,7 @@ internal class FileResourceDownloadCall(
         val fileIsImage = fileResource.contentType()?.startsWith("image") ?: false
         // EyeSeeTea customization - Original Size Image Download
         val scalingDimension = getDimension(
-            d2Configuration.fileResizerDimension(),
+            d2Configuration.fileResizerDimension,
             contentLength,
             maxContentLength?.toLong(),
             fileIsImage,

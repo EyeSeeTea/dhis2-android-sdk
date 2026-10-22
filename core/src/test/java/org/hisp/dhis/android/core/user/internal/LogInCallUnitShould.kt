@@ -210,9 +210,7 @@ class LogInCallUnitShould : BaseCallShould() {
                 credentialsCaptor.capture(),
             ),
         ).thenReturn(loginResponse)
-
         login()
-
         assertThat(USERNAME).isEqualTo(credentialsCaptor.firstValue.username)
         assertThat(PASSWORD).isEqualTo(credentialsCaptor.firstValue.password)
     }
@@ -352,52 +350,20 @@ class LogInCallUnitShould : BaseCallShould() {
 
     // EyeSeeTea customization - Two-Factor Authentication Login
     @Test
-    fun throw_d2_error_if_two_factor_code_is_invalid() = runTest {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.INCORRECT_TWO_FACTOR_CODE.toString()) }
+    fun throw_d2_error_for_each_two_factor_login_status() = runTest {
+        listOf(
+            D2ErrorCode.INCORRECT_TWO_FACTOR_CODE,
+            D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP,
+            D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT,
+            D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL,
+            D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS,
+            D2ErrorCode.SMS_TWO_FACTOR_CODE_SENT,
+            D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_SMS,
+        ).forEach { errorCode ->
+            whenLoginAPICall { LoginResponse(loginStatus = errorCode.toString()) }
 
-        assertD2Error(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE) { login(TWO_FACTOR_CODE) }
-    }
-
-    @Test
-    fun throw_d2_error_if_two_factor_code_totp_is_invalid() = runTest {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP.toString()) }
-
-        assertD2Error(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_TOTP) { login(TWO_FACTOR_CODE) }
-    }
-
-    @Test
-    fun throw_d2_error_if_two_factor_code_email_is_sent() = runTest {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT.toString()) }
-
-        assertD2Error(D2ErrorCode.EMAIL_TWO_FACTOR_CODE_SENT) { login(TWO_FACTOR_CODE) }
-    }
-
-    @Test
-    fun throw_d2_error_if_two_factor_code_email_is_invalid() = runTest {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL.toString()) }
-
-        assertD2Error(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_EMAIL) { login(TWO_FACTOR_CODE) }
-    }
-
-    @Test
-    fun throw_d2_error_if_two_factor_many_send_attempts() = runTest {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS.toString()) }
-
-        assertD2Error(D2ErrorCode.TWO_FACTOR_MANY_SEND_ATTEMPTS) { login(TWO_FACTOR_CODE) }
-    }
-
-    @Test
-    fun throw_d2_error_if_two_factor_code_sms_is_sent() = runTest {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.SMS_TWO_FACTOR_CODE_SENT.toString()) }
-
-        assertD2Error(D2ErrorCode.SMS_TWO_FACTOR_CODE_SENT) { login(TWO_FACTOR_CODE) }
-    }
-
-    @Test
-    fun throw_d2_error_if_two_factor_code_sms_is_invalid() = runTest {
-        whenLoginAPICall { LoginResponse(loginStatus = D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_SMS.toString()) }
-
-        assertD2Error(D2ErrorCode.INCORRECT_TWO_FACTOR_CODE_SMS) { login(TWO_FACTOR_CODE) }
+            assertD2Error(errorCode) { login(TWO_FACTOR_CODE) }
+        }
     }
 
     @Test
