@@ -64,8 +64,8 @@ class RelationshipDeletedOnServerRealIntegrationShould : BaseRealIntegrationTest
     private lateinit var trackedEntityType: String
 
     private var programUid: String? = null
-    private var orgUnitUid: String? = null
-    private var relationshipTypeUid: String? = null
+    private lateinit var orgUnitUid: String
+    private lateinit var relationshipTypeUid: String
 
     @Before
     override fun setUp() {
@@ -95,11 +95,11 @@ class RelationshipDeletedOnServerRealIntegrationShould : BaseRealIntegrationTest
         println("========================================")
         println("STEP 1: Downloading metadata...")
         println("========================================")
-        d2.userModule().logIn(username, password, url, null).blockingGet()
+        d2.userModule().logIn(username, password, url).blockingGet()
         d2.metadataModule().blockingDownload()
 
         programUid = "IpHINAT79UW"
-        orgUnitUid = d2.organisationUnitModule().organisationUnits().blockingGet().firstOrNull()?.uid()
+        orgUnitUid = d2.organisationUnitModule().organisationUnits().blockingGet().firstOrNull()?.uid()!!
         relationshipTypeUid = "XdP5nraLPZ0"
         trackedEntityType = "nEenWmSyUEp"
 

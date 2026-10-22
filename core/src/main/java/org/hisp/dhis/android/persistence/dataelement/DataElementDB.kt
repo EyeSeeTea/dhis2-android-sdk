@@ -12,7 +12,6 @@ import org.hisp.dhis.android.persistence.common.EntityDB
 import org.hisp.dhis.android.persistence.common.ObjectWithStyleDB
 import org.hisp.dhis.android.persistence.common.ObjectWithUidDB
 import org.hisp.dhis.android.persistence.common.applyBaseNameableFields
-import org.hisp.dhis.android.persistence.common.applyStyleFields
 import org.hisp.dhis.android.persistence.option.OptionSetDB
 
 @Entity(
@@ -46,6 +45,7 @@ internal data class DataElementDB(
     override val displayShortName: String?,
     override val description: String?,
     override val displayDescription: String?,
+    // EyeSeeTea customization - URL Data Element Field
     val url: String?,
     val valueType: String?,
     val zeroIsSignificant: Boolean?,
@@ -63,7 +63,7 @@ internal data class DataElementDB(
     override fun toDomain(): DataElement {
         return DataElement.builder().apply {
             applyBaseNameableFields(this@DataElementDB)
-            applyStyleFields(this@DataElementDB)
+            style(this@DataElementDB.toDomainStyle())
             valueType?.let { valueType(ValueType.valueOf(it)) }
             zeroIsSignificant(zeroIsSignificant)
             aggregationType(aggregationType)
@@ -73,6 +73,7 @@ internal data class DataElementDB(
             optionSet?.let { optionSet(ObjectWithUidDB(it).toDomain()) }
             categoryCombo(ObjectWithUidDB(categoryCombo).toDomain())
             fieldMask(fieldMask)
+            // EyeSeeTea customization - URL Data Element Field
             url(url)
         }.build()
     }
@@ -90,6 +91,7 @@ internal fun DataElement.toDB(): DataElementDB {
         displayShortName = displayShortName(),
         description = description(),
         displayDescription = displayDescription(),
+        // EyeSeeTea customization - URL Data Element Field
         url = url(),
         valueType = valueType()?.name,
         zeroIsSignificant = zeroIsSignificant(),

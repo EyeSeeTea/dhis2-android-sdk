@@ -34,6 +34,7 @@ import org.hisp.dhis.android.core.arch.storage.internal.CredentialsSecureStore
 import org.koin.core.annotation.Single
 import org.koin.core.annotation.Singleton
 
+// EyeSeeTea customization - Automatic Logout On Unauthorized Session
 @Singleton
 @Single
 internal class ConnectLogoutHandler(

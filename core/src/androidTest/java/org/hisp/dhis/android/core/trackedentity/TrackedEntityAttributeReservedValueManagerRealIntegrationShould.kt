@@ -125,7 +125,7 @@ internal class TrackedEntityAttributeReservedValueManagerRealIntegrationShould :
             val program = Program.builder().uid(programUid)
                 .categoryCombo(ObjectWithUid.create(categoryCombo.uid()))
                 .enrollmentCategoryCombo(ObjectWithUid.create(categoryCombo.uid()))
-                .access(Access.create(null, null, DataAccess.create(true, true))).build()
+                .access(Access.create(true, true, DataAccess.create(true, true))).build()
             koin.get<ProgramStore>().insert(program)
             val programTrackedEntityAttribute = ProgramTrackedEntityAttribute.builder()
                 .uid("ptea_uid")
@@ -328,7 +328,7 @@ internal class TrackedEntityAttributeReservedValueManagerRealIntegrationShould :
     private fun login() {
         try {
             if (!d2.userModule().isLogged().blockingGet()) {
-                d2.userModule().logIn(username, password, url, null).blockingGet()
+                d2.userModule().logIn(username, password, url).blockingGet()
             }
         } catch (ignored: Exception) {
         }

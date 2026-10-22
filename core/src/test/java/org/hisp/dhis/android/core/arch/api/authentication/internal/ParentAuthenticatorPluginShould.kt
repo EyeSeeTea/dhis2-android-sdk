@@ -29,28 +29,22 @@
 package org.hisp.dhis.android.core.arch.api.authentication.internal
 
 import com.google.common.truth.Truth
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.request.get
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.client.statement.request
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.headersOf
+import io.ktor.client.*
+import io.ktor.client.engine.mock.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.coroutines.test.runTest
 import org.hisp.dhis.android.core.arch.storage.internal.Credentials
 import org.hisp.dhis.android.core.arch.storage.internal.CredentialsSecureStore
 import org.hisp.dhis.android.core.arch.storage.internal.UserIdInMemoryStore
 import org.hisp.dhis.android.core.user.internal.ConnectLogoutHandler
-import org.hisp.dhis.android.core.user.oauth2.internal.OAuth2LogoutHandler
+import org.hisp.dhis.android.core.user.internal.LogInExceptions
 import org.hisp.dhis.android.core.user.oauth2.internal.OAuth2TokenRefresher
 import org.hisp.dhis.android.core.user.openid.OpenIDConnectLogoutHandler
+import org.hisp.dhis.android.core.user.openid.OpenIDConnectStateSecureStore
 import org.hisp.dhis.android.core.user.openid.OpenIDConnectTokenRefresher
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.*
 import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito
@@ -72,11 +66,15 @@ class ParentAuthenticatorPluginShould {
     private lateinit var oauth2TokenRefresher: OAuth2TokenRefresher
 
     @Mock
-    private lateinit var oauth2LogoutHandler: OAuth2LogoutHandler
+    private lateinit var logInExceptions: LogInExceptions
 
     @Mock
     private lateinit var logoutHandler: OpenIDConnectLogoutHandler
 
+    @Mock
+    private lateinit var openIDConnectStateSecureStore: OpenIDConnectStateSecureStore
+
+    // EyeSeeTea customization - Automatic Logout On Unauthorized Session
     @Mock
     private lateinit var dhisLogoutHandler: ConnectLogoutHandler
 
@@ -105,13 +103,13 @@ class ParentAuthenticatorPluginShould {
                 credentialsSecureStore,
                 tokenRefresher,
                 userIdHelper,
-                logoutHandler,
+                openIDConnectStateSecureStore,
+                logInExceptions,
             ),
             OAuth2Authenticator(
-                credentialsSecureStore,
                 lazy { oauth2TokenRefresher },
                 userIdHelper,
-                oauth2LogoutHandler,
+                logInExceptions,
             ),
             cookieHelper,
         )
@@ -123,7 +121,7 @@ class ParentAuthenticatorPluginShould {
 
     @Test
     fun return_test_and_user_when_server_take_request() = runTest {
-        val credentials = Credentials("test_user", "test_server", "test_password", null)
+        val credentials = Credentials("test_user", "test_server", "test_password", null, null)
         Mockito.`when`(credentialsSecureStore.get()).thenReturn(credentials)
         Mockito.`when`(userIdStore.get()).thenReturn("user-id")
 

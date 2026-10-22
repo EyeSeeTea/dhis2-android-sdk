@@ -46,8 +46,10 @@ interface AccountManager {
 
     fun accountDeletionObservable(): Observable<AccountDeletionReason>
 
+    // EyeSeeTea customization - Change Server URL
     @Throws(D2Error::class)
     fun changeServerUrl(newServerURL: String)
 
+    // EyeSeeTea customization - Automatic Logout On Unauthorized Session
     fun logOutObservable(): Observable<Unit>
 }

@@ -15,22 +15,24 @@ This file is for:
 
 This file is not for:
 - stable merge rules (those go in `conflict-rules.md`)
-- final customization inventory (that goes in `customizations.md`)
-- long-term functional documentation
+- final customization inventory (that goes in `customization-files.md`)
+- functional documentation (that goes in `openspec/specs/`)
 
 ## Header
 
 - Upstream source: `dhis2/dhis2-android-sdk`
-- From Oslo version/commit: `<from>`
+- From Oslo version: `<from>`
 - To Oslo version (tag): `<version>`
-- Upstream tag branch: `upstream/<version>`
+- Upstream tag branch: `origin/upstream/<version>`
 - Upgrade branch: `feature/upgrade_<version>`
+- OpenSpec change: `openspec/changes/upgrade-to-<version>/`
 - Started on: `<date>`
 - Status: `in_progress`
 
 ## Progress
 
-- upstream fetched: `yes/no`
+- upstream tag branch pushed: `yes/no`
+- upgrade change proposed: `yes/no`
 - merge started: `yes/no`
 - easy conflicts resolved: `yes/no`
 - manual conflicts pending: `yes/no`
@@ -40,23 +42,25 @@ This file is not for:
 
 | File | Classification | Expected delta | Customization | Status | Notes |
 |------|----------------|----------------|---------------|--------|-------|
-| path/to/file | accept_theirs / manual_reapply_on_theirs / defer_after_build_verification | one helper call / one assertion / absorbed upstream | customization title or `n/a` | pending / resolved_keep_theirs / resolved_manual_merge / needs_validation | short reason |
+| path/to/file | accept_theirs / manual_reapply_on_theirs / defer_after_build_verification | one helper call / one assertion / absorbed upstream | spec title or `n/a` | pending / resolved_keep_theirs / resolved_manual_merge / needs_validation | short reason |
 
 ## Open Questions
 
 - question 1
-- question 2
 
 ## Validation Notes
 
-- `./gradlew ktlintCheck`:
-- `./gradlew testDebugUnitTest testDhis2DebugUnitTest testAndroidHostTest`:
-- targeted `androidTest` for touched modules:
-- manual checks (see `upgrade/validation-checklist.md`):
+- `./gradlew :core:ktlintCheck :core:detekt`:
+- `./gradlew :core:testDebugUnitTest`:
+- `./gradlew :core:apiCheck` (or `:core:releaseApiCheck`):
+- targeted `connectedDebugAndroidTest` (see `validation-checklist.md`):
+- manual checks (see `validation-checklist.md`):
+- `python3 eyeseetea-docs/scripts/check_upgrade_docs.py`:
 
 ## Finalization
 
-- surviving customizations moved to `customizations.md`: `yes/no`
+- surviving customizations reflected in specs and `customization-files.md`: `yes/no`
+- absorbed customizations removed (code, spec, inventory, checklist): `yes/no`
 - stable rules moved to `conflict-rules.md`: `yes/no`
-- temporary notes ready to archive/remove: `yes/no`
 - unexplained diff remaining against upstream: `yes/no`
+- upgrade change archived and this file deleted: `yes/no`

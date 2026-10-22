@@ -1,29 +1,148 @@
 # Validation Checklist
 
-Manual validation flows for the customizations in `customizations.md`.
+Validation flows per customization. Each section heading is the exact
+`# <Title>` of the matching `openspec/specs/<capability>/spec.md`.
 
-There is no UI in this repository — validation is mostly the automated
-suite. This checklist exists for the parts a test suite alone does not give
-enough confidence on: real migrations, real encrypted databases, real
-account state, and behavior only observable from the consuming app.
+There is no UI in this repository, so validation is mostly the automated
+suite. The manual checks cover what a test suite alone does not give enough
+confidence on: real migrations, real encrypted databases, real account state,
+and behavior only observable from the consuming app (build it against the
+local SDK with the composite build described in `EyeSeeTea.md`).
 
 Run after any Oslo upgrade, and after touching a customization directly.
 
-## 0. Full automated suite (baseline, always run first)
+## 0. Full automated suite (always first)
 
 ```bash
-./gradlew ktlintCheck
-./gradlew testDebugUnitTest testDhis2DebugUnitTest testAndroidHostTest
+./gradlew :core:ktlintCheck :core:detekt
+./gradlew :core:testDebugUnitTest
+./gradlew :core:releaseApiCheck
 ```
 
-Targeted `androidTest` per touched module — see `AGENTS.md` for the
-per-module task naming. If the automated suite fails, stop here; the manual
-checks below assume a green suite.
+If the automated suite fails, stop here; the checks below assume a green
+suite. `connectedDebugAndroidTest` commands need a device or emulator.
 
-## 1. Encryption key preserved when a renamed database is opened
+## 1. Synced Data Retention Purge
 
-Covers: `core/src/main/java/org/hisp/dhis/android/core/configuration/internal/migration/Migration301.kt`,
-`DatabaseEncryptionPasswordManager.kt`.
+Automated coverage:
+```bash
+./gradlew :core:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=org.hisp.dhis.android.core.retention.internal
+```
+
+Manual check (from the consuming app, OCA flavor):
+- [ ] With more synced TEIs, events and data values than the configured
+      limit, run the purge: the oldest synced records beyond the limit are
+      gone, the rest remain.
+- [ ] A record with pending changes (or a tree with any non-synced
+      descendant) is never purged.
+
+## 2. Synced Data Relationships Purge
+
+Automated coverage: the `retention.internal` package run in section 1
+(`RelationshipEligibilityCheckerIntegrationShould`,
+`RelationshipRetentionPurgerIntegrationShould`).
+
+Manual check: none required unless Oslo changes the relationship schema or
+its FK cascade; then run the package above and confirm no relationship row
+points at a purged entity.
+
+## 3. Synced Data Retention Scope
+
+Automated coverage:
+```bash
+./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.retention.internal.*"
+./gradlew :core:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.hisp.dhis.android.core.dataset.internal.DataSetElementStoreIntegrationShould
+```
+
+Manual check (from the consuming app, OCA flavor):
+- [ ] With per-program limits configured in the Android Settings Web App,
+      each program keeps its own limit; one program's excess does not consume
+      another program's quota.
+- [ ] Re-verify if Oslo changes `ProgramSetting`, `DataSetSetting`,
+      `LimitScope` or the `DataSetDataElementLink` table.
+
+## 4. Disabled Account Login Handling
+
+Automated coverage:
+```bash
+./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.user.internal.LogInCallUnitShould"
+```
+
+Manual check (from the consuming app):
+- [ ] Log in with a disabled account: the app shows the disabled-account
+      error, not "bad credentials".
+- [ ] With a previously stored account on the device, a rejected login does
+      not delete that account or its unsynced data.
+
+## 5. Two-Factor Authentication Login
+
+Automated coverage:
+```bash
+./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.user.internal.LogInCallUnitShould"
+./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.arch.api.authentication.internal.ParentAuthenticatorPluginShould"
+```
+
+Manual check (from the consuming app, against a 2.41+ server):
+- [ ] A user without 2FA logs in.
+- [ ] A TOTP user is asked for the code, a wrong code is rejected, the right
+      code logs in.
+- [ ] An email or SMS 2FA user gets the "code sent" answer, then logs in with
+      the received code.
+- [ ] A server older than 2.41 (no `/api/auth/login`) still logs in through
+      the fallback.
+- [ ] Offline login with a known account still works.
+
+## 6. Automatic Logout On Unauthorized Session
+
+Automated coverage: none in this repository beyond the login tests; the app
+side is covered by WIDP's `OpenIdSessionTest`.
+
+Manual check (from the consuming app, WIDP):
+- [ ] Logged in with username/password, invalidate the session on the server
+      (change the password or revoke the session) and trigger a sync: the app
+      returns to login with "session expired".
+- [ ] A wrong password at login shows the login error, not a logout.
+
+## 7. Change Server URL
+
+Manual check (from the consuming app, SPIP / Sports / WIDP):
+- [ ] Change the server URL from the app to another address of the same
+      instance: requests go to the new URL and local data is still there.
+- [ ] Log out and log in again with the new URL: the same database opens.
+- [ ] An account for another user on the device is not changed.
+
+## 8. Original Size Image Download
+
+Automated coverage:
+```bash
+./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.fileresource.internal.GetDimensionShould"
+```
+
+Manual check (from the consuming app, SPIP, or WIDP once it sets the
+dimension):
+- [ ] With `fileResizerDimension(ORIGINAL)`, sync a tracker image larger than
+      the medium size: the stored file has the original resolution, also when
+      it is above the sync settings' `fileMaxLengthBytes`.
+- [ ] Without the setting, the same image is stored at the size Oslo selects
+      (never above medium).
+- [ ] A non-image file resource downloads the same with and without the
+      setting.
+
+## 9. URL Data Element Field
+
+Manual check (from the consuming app, WIDP):
+- [ ] After a metadata sync, an event form field whose data element has a
+      `url` shows that URL under its description.
+- [ ] Upgrade a device with existing data to the build under test: the app
+      opens and data element URLs are still there (migrations `85.sql` and
+      `175.sql`).
+
+## Oslo bug fixes
+
+Fixes listed in section 3 of `customization-files.md`. Their checks are
+removed together with the fix when Oslo ships its own.
+
+### Encryption key preserved on database rename
 
 Automated coverage:
 ```bash
@@ -31,47 +150,32 @@ Automated coverage:
 ./gradlew :core:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.hisp.dhis.android.core.configuration.internal.DatabaseConfigurationMigrationIntegrationShould
 ```
 
-Manual check (do this if the migration path itself changed, not just
-unrelated code near it):
-- [ ] Install a build from before this fork's DB-rename migration on a real
-      device/emulator, log in with an **encrypted** account, sync some
-      data.
-- [ ] Update to the build under test (containing `Migration301`) without
-      uninstalling.
-- [ ] Confirm the app opens without `SQLiteNotADatabaseException` and the
-      previously synced data is still there.
-- [ ] Confirm a **non-encrypted** account migrates the same way with no
-      regression (the fix must not affect the non-encrypted path).
+Manual check (only if the migration path itself changed):
+- [ ] Install a build from before the DB-rename migration, log in with an
+      **encrypted** account, sync some data.
+- [ ] Update to the build under test without uninstalling.
+- [ ] The app opens without `SQLiteNotADatabaseException` and the synced data
+      is still there.
+- [ ] A **non-encrypted** account migrates the same way.
 
-## 2. Dataset resolution for a `DataValue`'s data element
+### Follow the SQLite ALTER TABLE caveats (`164.sql`)
 
-Covers: `core/src/main/java/org/hisp/dhis/android/core/dataset/internal/DataSetElementStore.kt`
-(`getDataSetsForDataElement`), `DataSetDataElementLinkStoreImpl.kt`.
+Manual check (only if migration ordering or scripts around it change):
+- [ ] Run the full migration chain from an old schema version through 164 on
+      a device/emulator and confirm the `Program`/`ProgramStage` `displayXXX`
+      columns are renamed with data intact.
 
-Automated coverage:
-```bash
-./gradlew :core:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.hisp.dhis.android.core.dataset.internal.DataSetElementStoreIntegrationShould
-./gradlew :core:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.package=org.hisp.dhis.android.core.retention.internal
-```
+### Offline-first search keeps local results
 
-Manual check: none required — this is pure Room-query logic fully exercised
-by `DataSetElementStoreIntegrationShould` and the retention purger
-integration tests. Only re-verify manually if the underlying
-`DataSetDataElementLink` table schema changes upstream.
+Manual check (from the consuming app):
+- [ ] Run an `OFFLINE_FIRST` TEI search with the server unreachable or
+      failing: local results are shown, the app does not crash. Since Oslo
+      `1.15.0` the online failure also reaches the app (capture app `3.5.0`
+      shows it as an error row below the local results).
 
-## 3. `ALTER TABLE` migration script fix (`164.sql`)
+## Maintenance rule
 
-Covers: `core/src/main/assets/migrations/164.sql`.
-
-Manual check (only if migration ordering/scripts around it change):
-- [ ] Run the full migration chain from an old schema version through 164
-      on a real device/emulator (not just the migration unit tests) and
-      confirm `Program`/`ProgramStage` `displayXXX` columns are correctly
-      renamed with data intact.
-
-## 4. Candidates pending confirmation (`customizations.md` section 3)
-
-Do not add a manual check here until the candidate is confirmed as an
-intentional, still-needed customization and moved to `customizations.md`
-section 1. Once confirmed, add its validation flow to this file following
-the same shape as sections 1-3 above.
+When a customization survives an upgrade:
+- keep its validation flow here, under its spec title
+- keep its functional description in its spec
+- keep its technical inventory in `customization-files.md`

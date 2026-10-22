@@ -42,6 +42,6 @@ internal interface DataSetElementStore : LinkStore<DataSetElement> {
         attributeOptionComboUid: String,
     ): String?
 
-    // EyeSeeTea customization - synced-data-retention-scope: dataset resolution for DataValue retention grouping
+    // EyeSeeTea customization - Synced Data Retention Scope
     suspend fun getDataSetsForDataElement(dataElementUid: String): List<String>
 }

@@ -29,7 +29,6 @@
 package org.hisp.dhis.android.core.fileresource
 
 import com.google.common.truth.Truth.assertThat
-import org.hisp.dhis.android.core.arch.helpers.FileResizerHelper
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceDownloadCall
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceDownloadParams
 import org.junit.Before
@@ -60,7 +59,6 @@ class FileResourceDownloaderShould {
         assertThat(params.elementTypes).isNotEmpty()
         assertThat(params.valueTypes).isNotEmpty()
         assertThat(params.maxContentLength).isNull()
-        assertThat(params.dimension).isEqualTo(FileResizerHelper.Dimension.MEDIUM)
     }
 
     @Test

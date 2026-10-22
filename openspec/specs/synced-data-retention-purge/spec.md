@@ -1,3 +1,5 @@
+# Synced Data Retention Purge
+
 ## Purpose
 
 Lets a caller reclaim device storage by removing already-synced local data

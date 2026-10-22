@@ -49,7 +49,7 @@ class LogoutCallRealIntegrationShould : BaseRealIntegrationTest() {
 
     // @Test
     fun delete_credentials_when_log_out_after_sync_data() = runTest {
-        d2.userModule().logIn(username, password, url, null).blockingGet()
+        d2.userModule().logIn(username, password, url).blockingGet()
         d2.metadataModule().blockingDownload()
 
         create(d2.httpServiceClient(), d2.coroutineAPICallExecutor(), "DiszpKrYNg8", 0, emptyList())
@@ -66,7 +66,7 @@ class LogoutCallRealIntegrationShould : BaseRealIntegrationTest() {
 
     // @Test
     fun recreate_credentials_when_login_again() = runTest {
-        d2.userModule().logIn(username, password, url, null).blockingGet()
+        d2.userModule().logIn(username, password, url).blockingGet()
         d2.metadataModule().blockingDownload()
         assertThat(SqliteCheckerUtility.isDatabaseEmpty(d2.databaseAdapter())).isFalse()
 
@@ -77,7 +77,7 @@ class LogoutCallRealIntegrationShould : BaseRealIntegrationTest() {
         assertThat(authenticatedUser).isNotNull()
         assertThat(getD2DIComponent(d2).credentialsSecureStore.get()).isNull()
 
-        d2.userModule().logIn(username, password, url, null).blockingGet()
+        d2.userModule().logIn(username, password, url).blockingGet()
         authenticatedUser = authenticatedUserStore!!.selectFirst()
         assertThat(authenticatedUser).isNotNull()
         assertThat(getD2DIComponent(d2).credentialsSecureStore.get()).isNull()
@@ -85,8 +85,8 @@ class LogoutCallRealIntegrationShould : BaseRealIntegrationTest() {
 
     // @Test
     fun response_successful_on_login_logout_and_login() {
-        d2.userModule().logIn(username, password, url, null).blockingGet()
+        d2.userModule().logIn(username, password, url).blockingGet()
         d2.userModule().logOut().blockingAwait()
-        d2.userModule().logIn(username, password, url, null).blockingGet()
+        d2.userModule().logIn(username, password, url).blockingGet()
     }
 }

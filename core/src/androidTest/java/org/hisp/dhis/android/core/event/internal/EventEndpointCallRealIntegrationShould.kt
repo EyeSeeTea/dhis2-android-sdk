@@ -41,7 +41,7 @@ class EventEndpointCallRealIntegrationShould : BaseRealIntegrationTest() {
     // @Test
     @Throws(Exception::class)
     fun download_number_of_events_according_to_default_limit() = runTest {
-        d2.userModule().logIn(username, password, url, null).blockingGet()
+        d2.userModule().logIn(username, password, url).blockingGet()
         d2.metadataModule().blockingDownload()
         val eventEndpointCall =
             create(d2.httpServiceClient(), d2.coroutineAPICallExecutor(), "DiszpKrYNg8", 0, emptyList())
@@ -58,7 +58,7 @@ class EventEndpointCallRealIntegrationShould : BaseRealIntegrationTest() {
     // @Test
     @Throws(Exception::class)
     fun download_event_with_category_combo_option() = runTest {
-        d2.userModule().logIn(username, password, url, null).blockingGet()
+        d2.userModule().logIn(username, password, url).blockingGet()
         d2.metadataModule().blockingDownload()
         create(d2.httpServiceClient(), d2.coroutineAPICallExecutor(), "DiszpKrYNg8", 0, emptyList())
 

@@ -32,11 +32,7 @@ import org.hisp.dhis.android.core.arch.handlers.internal.IdentifiableHandlerImpl
 import org.hisp.dhis.android.core.common.ObjectWithUid
 import org.hisp.dhis.android.core.dataelement.DataElementOperand
 import org.hisp.dhis.android.core.dataelement.internal.DataElementOperandHandler
-import org.hisp.dhis.android.core.dataset.DataInputPeriod
-import org.hisp.dhis.android.core.dataset.DataSet
-import org.hisp.dhis.android.core.dataset.DataSetCompulsoryDataElementOperandLink
-import org.hisp.dhis.android.core.dataset.DataSetElement
-import org.hisp.dhis.android.core.dataset.DataSetInternalAccessor
+import org.hisp.dhis.android.core.dataset.*
 import org.hisp.dhis.android.core.indicator.DataSetIndicatorLink
 import org.hisp.dhis.android.core.indicator.Indicator
 import org.hisp.dhis.android.core.indicator.internal.DataSetIndicatorLinkHandler
@@ -58,7 +54,7 @@ internal class DataSetHandler(
 ) : IdentifiableHandlerImpl<DataSet>(dataSetStore) {
 
     override suspend fun afterObjectHandled(o: DataSet, action: HandleAction) {
-        val sections = DataSetInternalAccessor.accessSections(o)
+        val sections = o.sections()
         sectionHandler.handleMany(sections)
         compulsoryDataElementOperandHandler.handleMany(o.compulsoryDataElementOperands())
         dataSetCompulsoryDataElementOperandLinkHandler.handleMany(

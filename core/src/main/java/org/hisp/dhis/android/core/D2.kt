@@ -239,6 +239,7 @@ class D2 internal constructor(internal val d2DIComponent: D2DIComponent) {
         return d2DIComponent.wipeModule
     }
 
+    // EyeSeeTea customization - Synced Data Retention Scope
     fun retentionModule(): RetentionModule {
         return d2DIComponent.retentionModule
     }

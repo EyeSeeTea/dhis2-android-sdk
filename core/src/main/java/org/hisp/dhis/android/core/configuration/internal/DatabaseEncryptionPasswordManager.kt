@@ -28,7 +28,9 @@
 package org.hisp.dhis.android.core.configuration.internal
 
 import org.hisp.dhis.android.core.arch.storage.internal.SecureStore
+import org.koin.core.annotation.Singleton
 
+@Singleton
 class DatabaseEncryptionPasswordManager(
     private val secureStore: SecureStore,
     private val passwordGenerator: DatabaseEncryptionPasswordGenerator,
@@ -52,7 +54,7 @@ class DatabaseEncryptionPasswordManager(
     }
 
     /**
-     * EyeSeeTea customization
+     * EyeSeeTea fix - Encryption key preserved on database rename (Oslo ANDROSDK-2194, introduced 1.13.1)
      * Copies the encryption password from the old database name to the new one.
      * Used when migrating (e.g. renaming DB file with hash suffix) so the renamed
      * encrypted file can still be opened with the same key.

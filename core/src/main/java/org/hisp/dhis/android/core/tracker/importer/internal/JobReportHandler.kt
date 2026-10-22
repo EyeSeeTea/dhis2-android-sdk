@@ -29,10 +29,7 @@ package org.hisp.dhis.android.core.tracker.importer.internal
 
 import org.hisp.dhis.android.core.common.internal.DataStatePropagator
 import org.hisp.dhis.android.core.common.internal.DataStateUidHolder
-import org.hisp.dhis.android.core.tracker.importer.internal.TrackerImporterObjectType.ENROLLMENT
-import org.hisp.dhis.android.core.tracker.importer.internal.TrackerImporterObjectType.EVENT
-import org.hisp.dhis.android.core.tracker.importer.internal.TrackerImporterObjectType.RELATIONSHIP
-import org.hisp.dhis.android.core.tracker.importer.internal.TrackerImporterObjectType.TRACKED_ENTITY
+import org.hisp.dhis.android.core.tracker.importer.internal.TrackerImporterObjectType.*
 import org.koin.core.annotation.Singleton
 
 @Singleton
@@ -45,7 +42,7 @@ internal class JobReportHandler internal constructor(
 ) {
 
     suspend fun handle(o: JobReport, jobObjects: List<TrackerJobObject>) {
-        val jobObjectsMap = jobObjects.associateBy { jo -> Pair(jo.trackerType(), jo.objectUid()) }
+        val jobObjectsMap = jobObjects.associateBy { jo -> Pair(jo.trackerType, jo.objectUid) }
         val relatedUids = getRelatedUids(jobObjects)
 
         handleErrors(o, jobObjectsMap)
@@ -61,7 +58,7 @@ internal class JobReportHandler internal constructor(
     ) {
         o.validationReport.errorReports.forEach { errorReport ->
             jobObjectsMap[Pair(errorReport.trackerType, errorReport.uid)]?.let {
-                getHandler(it.trackerType()).handleError(it, errorReport)
+                getHandler(it.trackerType).handleError(it, errorReport)
             }
         }
     }
@@ -102,7 +99,7 @@ internal class JobReportHandler internal constructor(
 
         notPresentObjects
             .mapNotNull { jobObjectsMap[it] }
-            .forEach { getHandler(it.trackerType()).handleNotPresent(it) }
+            .forEach { getHandler(it.trackerType).handleNotPresent(it) }
     }
 
     private suspend fun applySuccess(
@@ -117,10 +114,10 @@ internal class JobReportHandler internal constructor(
 
     private suspend fun getRelatedUids(jobObjects: List<TrackerJobObject>): DataStateUidHolder {
         return dataStatePropagator.getRelatedUids(
-            jobObjects.filter { it.trackerType() == TRACKED_ENTITY }.map { it.objectUid() },
-            jobObjects.filter { it.trackerType() == ENROLLMENT }.map { it.objectUid() },
-            jobObjects.filter { it.trackerType() == EVENT }.map { it.objectUid() },
-            jobObjects.filter { it.trackerType() == RELATIONSHIP }.map { it.objectUid() },
+            jobObjects.filter { it.trackerType == TRACKED_ENTITY }.map { it.objectUid },
+            jobObjects.filter { it.trackerType == ENROLLMENT }.map { it.objectUid },
+            jobObjects.filter { it.trackerType == EVENT }.map { it.objectUid },
+            jobObjects.filter { it.trackerType == RELATIONSHIP }.map { it.objectUid },
         )
     }
 

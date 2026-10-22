@@ -1,4 +1,4 @@
-# disabled-account-login Specification
+# Disabled Account Login Handling
 
 ## Purpose
 Define deterministic SDK behavior when a DHIS2 login response reports that the

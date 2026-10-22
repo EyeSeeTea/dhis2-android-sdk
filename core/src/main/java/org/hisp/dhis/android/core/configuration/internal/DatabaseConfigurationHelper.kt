@@ -29,6 +29,7 @@ package org.hisp.dhis.android.core.configuration.internal
 
 import org.hisp.dhis.android.core.arch.helpers.DateUtils
 import org.hisp.dhis.android.core.arch.storage.internal.ObjectKeyValueStore
+import org.hisp.dhis.android.core.common.AuthorizationType
 import org.hisp.dhis.android.core.server.LoginConfig
 import org.koin.core.annotation.Singleton
 
@@ -59,6 +60,7 @@ internal class DatabaseConfigurationHelper(
         encrypt: Boolean,
         loginConfig: LoginConfig? = null,
         importStatus: DatabaseAccountImportStatus? = null,
+        authorizationType: AuthorizationType? = null,
     ): DatabasesConfiguration {
         val dbName = databaseNameGenerator.getDatabaseName(serverUrl, username, encrypt)
         val importDb = importStatus?.let {
@@ -68,12 +70,15 @@ internal class DatabaseConfigurationHelper(
                 .build()
         }
 
+        // EyeSeeTea customization - Change Server URL
         val existedAccount = configuration?.accounts()?.find {
             equalsNormalized(it.serverUrl(), serverUrl) && it.username() == username
         }
 
         val newAccount = if (existedAccount != null && existedAccount.encrypted() == encrypt) {
-            existedAccount
+            existedAccount.toBuilder()
+                .authorizationType(authorizationType)
+                .build()
         } else {
             DatabaseAccount.builder()
                 .username(username)
@@ -84,6 +89,7 @@ internal class DatabaseConfigurationHelper(
                 .lastAccessDate(DateUtils.DATE_FORMAT.parse(dateProvider.dateStr))
                 .loginConfig(loginConfig)
                 .importDB(importDb)
+                .authorizationType(authorizationType)
                 .build()
         }
 

@@ -42,7 +42,7 @@ import org.hisp.dhis.android.core.imports.internal.TrackerImportConflictStore
 import org.hisp.dhis.android.core.tracker.importer.internal.JobReportEventHandler
 import org.hisp.dhis.android.persistence.event.EventTableInfo
 import org.koin.core.annotation.Singleton
-import java.util.Date
+import java.util.*
 
 @Singleton
 internal class EventImportHandler(

@@ -31,7 +31,7 @@ import org.hisp.dhis.android.core.parser.internal.expression.CommonExpressionVis
 import org.hisp.dhis.android.core.parser.internal.expression.ExpressionItem
 import org.hisp.dhis.android.core.parser.internal.expression.ParserUtils
 import org.hisp.dhis.parser.expression.antlr.ExpressionParser.ExprContext
-import java.util.Locale
+import java.util.*
 
 internal class D2Modulus : ExpressionItem {
     override fun evaluate(ctx: ExprContext, visitor: CommonExpressionVisitor): Any {

@@ -91,7 +91,7 @@ class DatabaseConfigurationMigrationIntegrationShould {
         databasesConfigurationStore = DatabaseConfigurationInsecureStoreImpl(insecureStore)
         credentialsSecureStore = CredentialsSecureStoreImpl(chunkedSecureStore)
 
-        // EyeSeeTea customization
+        // EyeSeeTea fix - Encryption key preserved on database rename (Oslo ANDROSDK-2194, introduced 1.13.1)
         migration = DatabaseConfigurationMigration(
             context,
             databasesConfigurationStore,

@@ -32,7 +32,7 @@ import org.hisp.dhis.android.core.imports.ImportStatus
 import org.hisp.dhis.android.core.imports.TrackerImportConflict
 import org.hisp.dhis.android.core.tracker.importer.internal.interpreters.InterpreterSelector
 import org.koin.core.annotation.Singleton
-import java.util.Date
+import java.util.*
 
 @Singleton
 internal class TrackerConflictHelper(

@@ -27,7 +27,6 @@
  */
 package org.hisp.dhis.android.core.fileresource
 
-import org.hisp.dhis.android.core.D2Configuration
 import org.hisp.dhis.android.core.fileresource.internal.FileResourceDownloadParams
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
@@ -38,7 +37,7 @@ import org.koin.core.annotation.Singleton
 internal class FileResourceDIModule {
 
     @Singleton
-    fun downloadParams(d2Config: D2Configuration): FileResourceDownloadParams {
-        return FileResourceDownloadParams(dimension = d2Config.fileResizerDimension())
+    fun downloadParams(): FileResourceDownloadParams {
+        return FileResourceDownloadParams()
     }
 }

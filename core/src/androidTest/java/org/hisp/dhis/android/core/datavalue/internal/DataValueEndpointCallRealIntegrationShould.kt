@@ -52,7 +52,7 @@ class DataValueEndpointCallRealIntegrationShould : BaseRealIntegrationTest() {
     @Throws(Exception::class)
     fun download_data_values() = runTest {
         if (!d2.userModule().isLogged().blockingGet()) {
-            d2.userModule().logIn(username, password, url, null).blockingGet()
+            d2.userModule().logIn(username, password, url).blockingGet()
         }
 
         /*  This test won't pass independently of the sync of metadata, as the foreign keys

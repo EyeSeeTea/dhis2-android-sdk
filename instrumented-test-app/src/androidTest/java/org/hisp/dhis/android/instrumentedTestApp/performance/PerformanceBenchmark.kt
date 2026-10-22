@@ -154,7 +154,7 @@ class PerformanceBenchmark {
 
     private suspend fun login(config: BenchmarkConfiguration) {
         runWithTrace("D2 Login") {
-            d2.userModule().blockingLogIn(config.username, config.password, config.serverUrl, null).blockingGet()
+            d2.userModule().blockingLogIn(config.username, config.password, config.serverUrl)
         }
     }
 

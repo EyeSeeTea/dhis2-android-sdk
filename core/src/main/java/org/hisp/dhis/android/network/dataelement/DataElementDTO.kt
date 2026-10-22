@@ -66,6 +66,8 @@ internal data class DataElementDTO(
     val fieldMask: String?,
     val attributeValues: List<AttributeValueDTO>?,
     val style: ObjectWithStyleDTO?,
+    // EyeSeeTea customization - URL Data Element Field
+    val url: String? = null,
 ) : BaseNameableObjectDTO {
     fun toDomain(): DataElement {
         return DataElement.builder().apply {
@@ -82,6 +84,8 @@ internal data class DataElementDTO(
             fieldMask(fieldMask)
             attributeValues(attributeValues?.map { it.toDomain() })
             style?.let { style(style.toDomain()) }
+            // EyeSeeTea customization - URL Data Element Field
+            url(url)
         }.build()
     }
 }

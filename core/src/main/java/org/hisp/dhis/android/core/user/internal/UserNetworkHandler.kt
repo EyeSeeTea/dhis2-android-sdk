@@ -35,6 +35,7 @@ internal interface UserNetworkHandler {
         credentials: String,
     ): User
 
+    // EyeSeeTea customization - Two-Factor Authentication Login
     suspend fun getUser(withoutOrgUnit: Boolean? = null): User
 
     suspend fun login(payload: LoginPayload): LoginResponse

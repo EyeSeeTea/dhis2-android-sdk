@@ -29,7 +29,7 @@ package org.hisp.dhis.android.core.domain.aggregated.data.internal
 
 import org.hisp.dhis.android.core.arch.helpers.DateUtils
 import org.hisp.dhis.android.core.period.PeriodType
-import java.util.Date
+import java.util.*
 
 data class AggregatedDataCallBundleKey(
     val periodType: PeriodType,
