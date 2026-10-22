@@ -1,13 +1,14 @@
 # Automatic Logout On Unauthorized Session
 
 ## Purpose
-When the server stops accepting a username/password session (password changed,
-session revoked, two-factor session not valid after a restart), the stock SDK
-keeps sending requests that fail with HTTP 401 and the app has no signal to
-send the user back to login. This customization logs the user out of the SDK
-and notifies the app, so it can return to the login screen.
+When the account's server answers a username/password request with HTTP 401,
+the stock SDK only returns the error to that request, and the app has no
+signal that the session is no longer valid. This customization logs the user
+out of the SDK and sends an event to the app through
+`AccountManager.logOutObservable()`, so the app can take the user back to the
+login screen.
 
-The signal is emitted from the SDK's authentication layer because that is the
+The event is emitted from the SDK's authentication layer because that is the
 only place that sees every authenticated response.
 
 ## Requirements
