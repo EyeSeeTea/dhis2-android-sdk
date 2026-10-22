@@ -139,6 +139,8 @@ object FileResizerHelper {
         SMALL(256),
         MEDIUM(512),
         LARGE(1024),
+
+        // EyeSeeTea customization - Original Size Image Download
         ORIGINAL(0),
     }
 

@@ -37,6 +37,7 @@ import org.koin.core.annotation.Singleton
 @ComponentScan
 internal class FileResourceDIModule {
 
+    // EyeSeeTea customization - Original Size Image Download
     @Singleton
     fun downloadParams(d2Config: D2Configuration): FileResourceDownloadParams {
         return FileResourceDownloadParams(dimension = d2Config.fileResizerDimension())

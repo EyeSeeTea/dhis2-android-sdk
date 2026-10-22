@@ -52,7 +52,7 @@ class DatabaseEncryptionPasswordManager(
     }
 
     /**
-     * EyeSeeTea customization
+     * EyeSeeTea fix - Encryption key preserved on database rename (Oslo ANDROSDK-2194, introduced 1.13.1)
      * Copies the encryption password from the old database name to the new one.
      * Used when migrating (e.g. renaming DB file with hash suffix) so the renamed
      * encrypted file can still be opened with the same key.

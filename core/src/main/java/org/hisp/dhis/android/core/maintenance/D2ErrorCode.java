@@ -94,6 +94,7 @@ public enum D2ErrorCode {
     SSL_ERROR,
     SMS_NOT_SUPPORTED,
     INVALID_CHARACTERS,
+    // EyeSeeTea customization - Two-Factor Authentication Login
     //2.41
     INCORRECT_TWO_FACTOR_CODE,
     //2.42

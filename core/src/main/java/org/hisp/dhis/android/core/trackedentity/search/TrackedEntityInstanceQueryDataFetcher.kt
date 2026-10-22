@@ -144,6 +144,7 @@ internal class TrackedEntityInstanceQueryDataFetcher(
         baseOnlineQuery: TrackedEntityInstanceQueryOnline,
         requestLoadSize: Int,
     ): List<Result<TrackedEntityInstance, D2Error>> {
+        // EyeSeeTea fix - Offline-first search keeps local results (Oslo ANDROAPP-7646)
         val status = onlineQueryStatusMap[baseOnlineQuery]
 
         if (status == null || status.isExhausted) {

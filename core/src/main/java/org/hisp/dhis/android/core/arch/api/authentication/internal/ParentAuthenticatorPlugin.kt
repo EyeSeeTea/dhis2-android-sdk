@@ -45,6 +45,7 @@ internal class ParentAuthenticatorPlugin(
 ) {
     val instance = createClientPlugin(name = "ParentAuthenticatorPlugin") {
         on(Send) { request ->
+            // EyeSeeTea customization - Two-Factor Authentication Login
             val isLoginCall = request.headers[AUTHORIZATION_KEY] != null ||
                 request.url.encodedPath.contains("auth/login")
             if (isLoginCall) {

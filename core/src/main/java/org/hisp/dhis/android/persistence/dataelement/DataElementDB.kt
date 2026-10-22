@@ -46,6 +46,7 @@ internal data class DataElementDB(
     override val displayShortName: String?,
     override val description: String?,
     override val displayDescription: String?,
+    // EyeSeeTea customization - URL Data Element Field
     val url: String?,
     val valueType: String?,
     val zeroIsSignificant: Boolean?,
@@ -73,6 +74,7 @@ internal data class DataElementDB(
             optionSet?.let { optionSet(ObjectWithUidDB(it).toDomain()) }
             categoryCombo(ObjectWithUidDB(categoryCombo).toDomain())
             fieldMask(fieldMask)
+            // EyeSeeTea customization - URL Data Element Field
             url(url)
         }.build()
     }
@@ -90,6 +92,7 @@ internal fun DataElement.toDB(): DataElementDB {
         displayShortName = displayShortName(),
         description = description(),
         displayDescription = displayDescription(),
+        // EyeSeeTea customization - URL Data Element Field
         url = url(),
         valueType = valueType()?.name,
         zeroIsSignificant = zeroIsSignificant(),

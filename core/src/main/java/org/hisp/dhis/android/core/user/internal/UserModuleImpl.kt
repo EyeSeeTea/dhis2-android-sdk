@@ -90,10 +90,12 @@ internal class UserModuleImpl(
         return user
     }
 
+    // EyeSeeTea customization - Two-Factor Authentication Login
     override fun logIn(username: String, password: String, serverUrl: String, twoFactorCode: String?): Single<User> {
         return rxSingle { logInCall.logIn(username, password, serverUrl, twoFactorCode) }
     }
 
+    // EyeSeeTea customization - Two-Factor Authentication Login
     override fun blockingLogIn(username: String, password: String, serverUrl: String, twoFactorCode: String?): User {
         return runBlocking { logInCall.logIn(username, password, serverUrl, twoFactorCode) }
     }

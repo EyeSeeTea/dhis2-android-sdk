@@ -61,6 +61,7 @@ internal object DataElementFields : BaseFields<DataElement>() {
         fh.nestedField<ObjectWithUid>(Columns.OPTION_SET).with(ObjectWithUid.uid),
         fh.nestedField<ObjectWithUid>(Columns.CATEGORY_COMBO).with(ObjectWithUid.uid),
         fh.field(Columns.FIELD_MASK),
+        // EyeSeeTea customization - URL Data Element Field
         fh.field(Columns.URL),
         fh.nestedField<ObjectStyle>(STYLE).with(ObjectStyleFields.allFields),
         fh.nestedField<Access>(ACCESS).with(AccessFields.read),

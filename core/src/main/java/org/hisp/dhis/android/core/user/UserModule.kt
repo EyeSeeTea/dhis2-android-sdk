@@ -40,6 +40,8 @@ interface UserModule {
     fun authorities(): AuthorityCollectionRepository
     fun user(): UserObjectRepository
     fun accountManager(): AccountManager
+
+    // EyeSeeTea customization - Two-Factor Authentication Login
     fun logIn(username: String, password: String, serverUrl: String, twoFactorCode: String?): Single<User>
     fun blockingLogIn(username: String, password: String, serverUrl: String, twoFactorCode: String?): User
     fun logOut(): Completable

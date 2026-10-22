@@ -44,6 +44,7 @@ internal data class FileResourceDownloadParams(
     val programUids: List<String> = emptyList(),
     val dataSetUids: List<String> = emptyList(),
     val maxContentLength: Int? = null,
+    // EyeSeeTea customization - Original Size Image Download
     val dimension: FileResizerHelper.Dimension = FileResizerHelper.Dimension.MEDIUM,
 ) : BaseScope {
 

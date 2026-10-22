@@ -54,6 +54,7 @@ internal class UserIdAuthenticatorHelper(
     }
 
     fun builderWithUserId(requestBuilder: HttpRequestBuilder): HttpRequestBuilder {
+        // EyeSeeTea customization - Two-Factor Authentication Login
         return userIdStore.get()?.let {
             requestBuilder.apply {
                 headers.remove(USER_ID_KEY)

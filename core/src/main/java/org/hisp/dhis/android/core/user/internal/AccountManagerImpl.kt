@@ -59,6 +59,7 @@ internal class AccountManagerImpl(
     private val logOutCall: LogOutCall,
     private val context: Context,
     private val databaseConfigurationHelper: DatabaseConfigurationHelper,
+    // EyeSeeTea customization - Automatic Logout On Unauthorized Session
     private val connectLogoutHandler: ConnectLogoutHandler,
 ) : AccountManager {
     private val accountDeletionSubject = PublishSubject.create<AccountDeletionReason>()
@@ -179,6 +180,7 @@ internal class AccountManagerImpl(
         }
     }
 
+    // EyeSeeTea customization - Change Server URL
     override fun changeServerUrl(newServerUrl: String) {
         ServerURLWrapper.setServerUrl(newServerUrl)
 
@@ -203,6 +205,7 @@ internal class AccountManagerImpl(
         }
     }
 
+    // EyeSeeTea customization - Automatic Logout On Unauthorized Session
     override fun logOutObservable(): Observable<Unit> {
         return connectLogoutHandler.logOutObservable()
     }

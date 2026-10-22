@@ -49,6 +49,7 @@ internal class UserNetworkHandlerImpl(
         return userDTO.toDomain()
     }
 
+    // EyeSeeTea customization - Two-Factor Authentication Login
     override suspend fun getUser(withoutOrgUnit: Boolean?): User {
         val fields = if (withoutOrgUnit == true) {
             UserFields.allFieldsWithoutOrgUnit
@@ -60,6 +61,7 @@ internal class UserNetworkHandlerImpl(
         return userDTO.toDomain()
     }
 
+    // EyeSeeTea customization - Two-Factor Authentication Login
     override suspend fun login(payload: LoginPayload): LoginResponse {
         return service.login(payload)
     }

@@ -58,6 +58,7 @@ internal class Migration301(
     private val databaseConfigurationStore: ObjectKeyValueStore<DatabasesConfiguration>,
     private val nameGenerator: DatabaseNameGenerator,
     private val databaseRenamer: DatabaseRenamer,
+    // EyeSeeTea fix - Encryption key preserved on database rename (Oslo ANDROSDK-2194, introduced 1.13.1)
     private val passwordManager: DatabaseEncryptionPasswordManager,
 ) {
 
@@ -97,7 +98,7 @@ internal class Migration301(
         return try {
             val dbRenamed = renameDatabaseFile(oldDbName, newDbName)
             Log.i(TAG, "Start fix: $oldDbName -> $newDbName")
-            // EyeSeeTea customization: copy encryption key so renamed DB can be opened
+            // EyeSeeTea fix - Encryption key preserved on database rename (Oslo ANDROSDK-2194, introduced 1.13.1)
             if (dbRenamed && account.encrypted()) {
                 passwordManager.copyPasswordForRenamedDatabase(oldDbName, newDbName)
                 Log.i(TAG, "Encryption password copied for renamed DB: $oldDbName -> $newDbName")

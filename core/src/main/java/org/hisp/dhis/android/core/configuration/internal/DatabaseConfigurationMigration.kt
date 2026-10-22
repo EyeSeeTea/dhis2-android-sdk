@@ -51,6 +51,7 @@ internal class DatabaseConfigurationMigration(
     private val nameGenerator: DatabaseNameGenerator,
     private val renamer: DatabaseRenamer,
     private val databaseManager: DatabaseManager,
+    // EyeSeeTea fix - Encryption key preserved on database rename (Oslo ANDROSDK-2194, introduced 1.13.1)
     private val passwordManager: DatabaseEncryptionPasswordManager,
 ) {
     @Suppress("TooGenericExceptionCaught")
@@ -100,6 +101,7 @@ internal class DatabaseConfigurationMigration(
         }
 
         runMigrationIfNeeded(existingVersionCode, Migration301.VERSION) {
+            // EyeSeeTea fix - Encryption key preserved on database rename (Oslo ANDROSDK-2194, introduced 1.13.1)
             Migration301(context, databaseConfigurationStore, nameGenerator, renamer, passwordManager).apply()
         }
     }

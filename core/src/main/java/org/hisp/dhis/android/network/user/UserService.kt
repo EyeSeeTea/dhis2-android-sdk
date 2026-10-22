@@ -57,6 +57,7 @@ internal class UserService(private val client: HttpServiceClient) {
         }
     }
 
+    // EyeSeeTea customization - Two-Factor Authentication Login
     suspend fun login(payload: LoginPayload): LoginResponse {
         return client.post {
             url("auth/login")

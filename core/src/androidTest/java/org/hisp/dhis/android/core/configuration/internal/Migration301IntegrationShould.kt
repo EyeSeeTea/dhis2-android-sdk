@@ -205,7 +205,8 @@ class Migration301IntegrationShould {
     }
 
     /**
-     * EyeSeeTea customization: Validates that when migrating an encrypted account, the
+     * EyeSeeTea fix - Encryption key preserved on database rename (Oslo ANDROSDK-2194, introduced 1.13.1).
+     * Validates that when migrating an encrypted account, the
      * encryption password is copied from the old database name to the new one in SecureStore,
      * so the renamed database can still be opened with the same key (avoids SQLiteNotADatabaseException).
      */

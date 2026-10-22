@@ -68,6 +68,7 @@ internal class DatabaseConfigurationHelper(
                 .build()
         }
 
+        // EyeSeeTea customization - Change Server URL
         val existedAccount = configuration?.accounts()?.find {
             equalsNormalized(it.serverUrl(), serverUrl) && it.username() == username
         }

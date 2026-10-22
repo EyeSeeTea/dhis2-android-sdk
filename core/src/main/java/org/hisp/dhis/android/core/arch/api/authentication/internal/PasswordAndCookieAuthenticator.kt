@@ -43,11 +43,14 @@ import org.koin.core.annotation.Singleton
 internal class PasswordAndCookieAuthenticator(
     private val userIdHelper: UserIdAuthenticatorHelper,
     private val cookieHelper: CookieAuthenticatorHelper,
+    // EyeSeeTea customization - Automatic Logout On Unauthorized Session
     private val logoutHandler: ConnectLogoutHandler,
 ) {
 
     companion object {
         private val LOGIN_KEY_LIST = listOf("login.action", "dhis-web-login", "login")
+
+        // EyeSeeTea customization - Automatic Logout On Unauthorized Session
         private const val HTTP_UNAUTHORIZED = 401
         const val LOCATION_KEY = "Location"
     }
@@ -66,6 +69,7 @@ internal class PasswordAndCookieAuthenticator(
         }
         val call = sender.proceed(requestBuilder)
 
+        // EyeSeeTea customization - Automatic Logout On Unauthorized Session
         val isFromLoginCall = call.request.url.encodedPath.contains("auth/login")
 
         val finalCall = if (useCookie && hasAuthenticationFailed(call.response)) {
@@ -76,8 +80,10 @@ internal class PasswordAndCookieAuthenticator(
 
             userIdHelper.builderWithUserId(originalRequest)
             addPasswordHeader(originalRequest, credentials)
+            // EyeSeeTea customization - Automatic Logout On Unauthorized Session
             logoutOrReturnRes(sender.proceed(originalRequest), isFromLoginCall)
         } else {
+            // EyeSeeTea customization - Automatic Logout On Unauthorized Session
             logoutOrReturnRes(call, isFromLoginCall)
         }
 
@@ -85,6 +91,7 @@ internal class PasswordAndCookieAuthenticator(
         return finalCall
     }
 
+    // EyeSeeTea customization - Automatic Logout On Unauthorized Session
     private fun logoutOrReturnRes(call: HttpClientCall, isFromLoginCall: Boolean) =
         if (call.response.status.value == HTTP_UNAUTHORIZED && !isFromLoginCall &&
             ServerURLWrapper.serverUrl?.contains(call.request.url.host) == true

@@ -63,6 +63,7 @@ internal class LogInCall(
         username: String?,
         password: String?,
         serverUrl: String?,
+        // EyeSeeTea customization - Two-Factor Authentication Login
         twoFactorCode: String?,
     ): User {
         exceptions.throwExceptionIfUsernameNull(username)
@@ -80,6 +81,7 @@ internal class LogInCall(
             if (loginDatabaseManager.isPendingToImportDB(trimmedServerUrl, username)) {
                 importDB(trimmedServerUrl, credentials)
             } else {
+                // EyeSeeTea customization - Two-Factor Authentication Login
                 val user = loginInDhis2AndGetUser(credentials, twoFactorCode)
 
                 loginOnline(user, credentials)
@@ -104,6 +106,8 @@ internal class LogInCall(
         }
     }
 
+    // EyeSeeTea customization - Two-Factor Authentication Login
+    // Base behavior: stores the credentials here; loginInDhis2AndGetUser stores them before requesting the user.
     @Suppress("TooGenericExceptionCaught")
     private suspend fun loginOnline(user: User, credentials: Credentials): User {
         userIdStore.set(user.uid())
@@ -215,6 +219,7 @@ internal class LogInCall(
         return credentialsSecureStore.get() != null
     }
 
+    // EyeSeeTea customization - Two-Factor Authentication Login
     private suspend fun loginInDhis2AndGetUser(
         credentials: Credentials,
         twoFactorCode: String?,

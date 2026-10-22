@@ -85,6 +85,7 @@ public abstract class DataElement extends BaseNameableObject
     @Nullable
     public abstract List<AttributeValue> attributeValues();
 
+    // EyeSeeTea customization - URL Data Element Field
     @Nullable
     public abstract String url();
 
@@ -119,6 +120,7 @@ public abstract class DataElement extends BaseNameableObject
 
         public abstract Builder attributeValues(List<AttributeValue> attributeValues);
 
+        // EyeSeeTea customization - URL Data Element Field
         public abstract DataElement.Builder url(String url);
 
         abstract DataElement autoBuild();

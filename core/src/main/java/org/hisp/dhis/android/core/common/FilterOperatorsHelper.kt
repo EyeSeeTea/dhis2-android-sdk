@@ -31,6 +31,8 @@ package org.hisp.dhis.android.core.common
 object FilterOperatorsHelper {
 
     private const val strListSeparator = "%%%<>%%%"
+
+    // EyeSeeTea customization - Semicolon Separated IN Filter Values
     private const val strListSeparatorAlt = ";"
 
     fun listToStr(list: Collection<String>): String {
@@ -38,6 +40,7 @@ object FilterOperatorsHelper {
     }
 
     fun strToList(string: String): Collection<String> {
+        // EyeSeeTea customization - Semicolon Separated IN Filter Values
         if (string.contains(strListSeparatorAlt)) {
             return string.split(strListSeparatorAlt)
         } else {

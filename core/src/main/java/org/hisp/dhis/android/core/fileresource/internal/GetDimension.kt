@@ -3,6 +3,7 @@ package org.hisp.dhis.android.core.fileresource.internal
 import android.util.Log
 import org.hisp.dhis.android.core.arch.helpers.FileResizerHelper
 
+// EyeSeeTea customization - Original Size Image Download
 fun getDimension(dimension: FileResizerHelper.Dimension): String? {
     return if (dimension == FileResizerHelper.Dimension.ORIGINAL) {
         Log.d("GetDimensionShould", "Dimension is original, return null")

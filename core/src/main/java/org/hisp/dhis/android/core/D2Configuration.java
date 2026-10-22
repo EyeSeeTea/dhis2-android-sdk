@@ -70,6 +70,7 @@ public abstract class D2Configuration {
     @NonNull
     public abstract List<NetworkPlugin> networkPlugins();
 
+    // EyeSeeTea customization - Original Size Image Download
     @NonNull
     public abstract FileResizerHelper.Dimension fileResizerDimension();
 
@@ -86,6 +87,7 @@ public abstract class D2Configuration {
                 .networkInterceptors(Collections.emptyList())
                 .interceptors(Collections.emptyList())
                 .networkPlugins(Collections.emptyList())
+                // EyeSeeTea customization - Original Size Image Download
                 .fileResizerDimension(FileResizerHelper.Dimension.MEDIUM);
     }
 
@@ -109,6 +111,7 @@ public abstract class D2Configuration {
 
         public abstract Builder networkPlugins(List<NetworkPlugin> networkPlugins);
 
+        // EyeSeeTea customization - Original Size Image Download
         public abstract Builder fileResizerDimension(FileResizerHelper.Dimension dimension);
 
         public abstract D2Configuration build();

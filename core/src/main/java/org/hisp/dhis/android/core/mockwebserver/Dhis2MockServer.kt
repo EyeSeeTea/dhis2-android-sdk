@@ -114,6 +114,7 @@ class Dhis2MockServer(private val fileReader: IFileReader, port: Int) {
                     .setResponseCode(HttpStatusCode.NotFound.value)
                     .setBody("Path not found")
                 return when {
+                    // EyeSeeTea customization - Two-Factor Authentication Login
                     path.startsWith("/api/auth/login") ->
                         createMockResponse(AUTH_LOGIN_SUCCESS)
                     path == "/api/me/authorization" ->
@@ -331,6 +332,7 @@ class Dhis2MockServer(private val fileReader: IFileReader, port: Int) {
     }
 
     fun enqueueLoginResponses() {
+        // EyeSeeTea customization - Two-Factor Authentication Login
         enqueueMockResponse(AUTH_LOGIN_SUCCESS)
         enqueueMockResponse(USER_JSON)
         enqueueMockResponse(ANDROID_SETTINGS_INFO_JSON)
@@ -552,6 +554,7 @@ class Dhis2MockServer(private val fileReader: IFileReader, port: Int) {
         private const val CONTENT_TYPE = "Content-Type"
         private const val CONTENT_TYPE_JSON = "application/json"
 
+        // EyeSeeTea customization - Two-Factor Authentication Login
         private const val AUTH_LOGIN_SUCCESS = "user/auth_login_success.json"
     }
 }
