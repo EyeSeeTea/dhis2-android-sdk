@@ -19,7 +19,7 @@ documentation: delete when the upgrade closes (see `upgrade-plan.md`).
 - upstream tag branch pushed: `yes`
 - onboarding inventory drafted: `yes` (this file, section below)
 - onboarding inventory confirmed by a developer: `yes` (titles of A and B, 2026-10-21; A6 split into A6a/A6b; B documented as a table, no spec)
-- specs created for confirmed customizations: `yes` (A1–A6b), with inventory, checklist and code markers; A7 and B4 pending a removal decision
+- specs created for confirmed customizations: `yes` (A1–A6b), with inventory, checklist and code markers; A7 and B4 removed (2026-10-22)
 - upgrade change proposed: `no`
 - merge started: `no`
 
@@ -45,12 +45,12 @@ Titles confirmed. A6 is split into A6a (`Tracked Entity Online Search By UIDs`) 
 | # | Proposed title | Kind | What it does | Main files | Feature commits | Consumers (hint) | Oslo 1.15.0 impact |
 |---|----------------|------|--------------|------------|-----------------|------------------|--------------------|
 | A1 | Two-Factor Authentication Login | customization | Logs in through `POST /api/auth/login` with an optional `twoFactorCode`; maps the 2.41/2.42 2FA statuses (TOTP, email, SMS, too many attempts) to 7 new `D2ErrorCode`s; falls back to the legacy basic-auth login for servers without that endpoint; adds `twoFactorCode` to the public `UserModule.logIn`/`blockingLogIn`. Disabled Account Login Handling builds on it. | `LogInCall.kt`, `LoginPayload.kt`, `LoginResponse.kt`, `UserModule.kt`, `UserModuleImpl.kt`, `UserNetworkHandler(Impl).kt`, `UserService.kt`, `D2ErrorCode.java`, `ParentAuthenticatorPlugin.kt`, `UserIdAuthenticatorHelper.kt`, `Dhis2MockServer.kt` | `088c7205b3`, `69d759964a`, `309053f655`, `950f63f87d`, `2735a34fc3`, `8405e1fd27`, `cfc1436e56`, `a532dd36b3`, `759abb465b` | app `develop-eyeseetea` (login + 2FA error handling) | **high** — Oslo rewrote the login flow (OAuth2, credentials auth type, +108/−18 in `LogInCall.kt`), added rx/suspend variants to `UserModule` (+28/−6) and moved `D2ErrorCode` to Kotlin. Oslo now has `TwoFactorAuthManager` (enable/disable 2FA) but still no login with a 2FA code, so this is not absorbed. |
-| A2 | Automatic Logout On Unauthorized Session | customization | When an authenticated request to the account's server gets HTTP 401, removes the stored credentials and emits on `AccountManager.logOutObservable()` so the app can return to login. | `PasswordAndCookieAuthenticator.kt`, `ConnectLogoutHandler.kt` (new), `AccountManager.kt`, `AccountManagerImpl.kt` | `c51c1bb67a`, `0f390e57f3` | widp (restored in app PR #335 after being lost in 3.3.1), psi, spocc | medium — Oslo added its own `logOutObservable` for OAuth2/OpenID only; check whether one mechanism can serve both. |
+| A2 | Automatic Logout On Unauthorized Session | customization | When an authenticated request to the account's server gets HTTP 401, removes the stored credentials and emits on `AccountManager.logOutObservable()` so the app can return to login. | `PasswordAndCookieAuthenticator.kt`, `ConnectLogoutHandler.kt` (new), `AccountManager.kt`, `AccountManagerImpl.kt` | `c51c1bb67a`, `0f390e57f3` | widp (restored in app PR #335 after being lost in 3.3.1), spocc | medium — Oslo added its own `logOutObservable` for OAuth2/OpenID only; check whether one mechanism can serve both. |
 | A3 | Change Server URL | customization | `AccountManager.changeServerUrl()` points the logged-in account (credentials and database configuration) at a new server URL without logging out. | `AccountManager.kt`, `AccountManagerImpl.kt` | `9068073932` | spip, sports, widp | low–medium (`AccountManagerImpl.kt` +8/−2) |
 | A4 | Original Size Image Download | customization (**broken**) | `D2Configuration.fileResizerDimension` lets the app choose the image dimension for file resource downloads, including a new `ORIGINAL` value that requests the file without resizing. | `D2Configuration.java`, `FileResizerHelper.kt`, `FileResourceDIModule.kt`, `FileResourceDownloadParams.kt`, `FileResourceDownloadCall.kt`, `FileResourceService.kt`, `GetDimension.kt` (new) | `c05c5bd3a3` | spip, spocc, widp | **high** — `D2Configuration` moved to Kotlin, `FileResizerHelper.kt` (+56/−52) and `FileResourceDownloadCall.kt` (+31/−8) changed. |
 | A5 | URL Data Element Field | customization | Downloads and stores the `url` field of data elements and exposes it as `DataElement.url()`. | `DataElement.java`, `DataElementDB.kt`, `DataElementFields.kt`, migrations `85.sql` and `175.sql` | `859f0185a1`, `f3921130f5`, `bb6494186c` | widp only — app spec `url-data-element` ("URL data element field"): `EventRepository.kt` reads `de?.url()`, `FieldUiModelExtensions.supportingText()` renders it under the field description; enrollment fields pass `url = null`. Kept in app PR #335 (3.4.2), not tested manually there. Other branches still reference it but no longer use it; may be dropped in a future upgrade | medium — `DataElement` moved to a Kotlin `@ModelBuilder` model. **The column is added by editing Oslo's existing migrations `85.sql` and `175.sql`**, not by a migration of its own: decide whether to keep that. |
 | A6 | Tracked Entity Search By UIDs And Semicolon Lists | customization | Online TEI queries pass the scope's `uids` to the server, and IN-filter values can be given as a `;`-separated string. Remnants of the older "IN operator for TEI attributes" work, which Oslo otherwise absorbed. | `TrackedEntityInstanceQueryOnlineHelper.kt`, `FilterOperatorsHelper.kt` | `e575a8c420`, `a6a763d83d` | to confirm (grep too loose) | low–medium (`TrackedEntityInstanceQueryOnlineHelper.kt` +14/−7) |
-| A7 | RDQA Icons | customization | Adds the `ic_rdqa_*` drawables to the SDK icon set. | `core/src/main/res/drawable/ic_rdqa_*.xml` | `12d1dabaa6` | **none found** in any `develop-*` app branch | none — candidate to **remove** if no consumer uses it. |
+| ~~A7~~ | ~~RDQA Icons~~ | removed | Added the `ic_rdqa_*` drawables (`12d1dabaa6`, 2020, likely for PSI, no longer a client). No consumer in any app branch; the icons are only reachable through server icon metadata. **Removed 2026-10-22.** | | | | |
 
 ### B. Proposed Oslo bug fixes (`// EyeSeeTea fix`, still need a spec)
 
@@ -59,7 +59,7 @@ Titles confirmed. A6 is split into A6a (`Tracked Entity Online Search By UIDs`) 
 | B1 | Encryption Key Preserved On Database Rename | Migration301 renames encrypted databases without moving their password; the fix copies it to the new name. | `Migration301.kt`, `DatabaseEncryptionPasswordManager.kt`, `DatabaseConfigurationMigration.kt` | `f2e617606a`, `3ca4b47125` | not fixed upstream |
 | B2 | Program Rename Migration Fix | `164.sql` follows the SQLite `ALTER TABLE` caveats (Oslo `ANDROSDK-1871`). | `164.sql` | `16080ff19b` | not fixed upstream |
 | B3 | Offline-First Search Keeps Local Results | Null-safe online query status so an `OFFLINE_FIRST` TEI search returns local results when the online part fails, instead of crashing. | `TrackedEntityInstanceQueryDataFetcher.kt` | `34c6efc4cd` | not fixed upstream |
-| B4 | Oversized Icon Resources Removed | Removes 6 large `ic_blister_pills_*_x16` drawables that broke the build with `STRING_TOO_LARGE`. | `core/src/main/res/drawable/ic_blister_pills_*_x16_*.xml` | `ab1f7f4c50` | Oslo still ships them; check whether the build error still happens with the current AGP before keeping it. |
+| ~~B4~~ | ~~Oversized Icon Resources Removed~~ | Removed 6 `ic_blister_pills_*_x16` drawables that broke the build with `STRING_TOO_LARGE` (`ab1f7f4c50`, 2022). | | | **Reverted to Oslo 2026-10-22**: icons restored, `./gradlew :core:assembleDebug` passes. |
 
 ### C. Needs a decision (intent not clear)
 
@@ -101,11 +101,16 @@ confirming nobody relies on them:
 - logout on redirect to `dhis-web-login` (`0111e24737`) — Oslo's
   `LOGIN_KEY_LIST` covers it
 
-Lost without a trace — **confirm they are not needed**:
-- `f251e2f37f` "Save all cookies if sent by server" — 0 % in `HEAD` and in
-  Oslo; Oslo reworked cookie storage (ANDROSDK-2344, cookies by host)
-- `87b902ba3a` "Fix bug when location is not a URL"
-  (`ServerURLVersionRedirectionInterceptor.kt`) — 0 % in `HEAD` and in Oslo
+Lost in Oslo rewrites, confirmed not needed (2026-10-22):
+- `f251e2f37f` "Save all cookies if sent by server" — covered by Oslo
+  ANDROSDK-2344 (in `1.14.2`): `CookieAuthenticatorHelper` stores every
+  `Set-Cookie` per host and `Path` and sends all matching ones in one `Cookie`
+  header.
+- `87b902ba3a` "Fix bug when location is not a URL" — avoided the OkHttp crash
+  on a relative `Location` in `ServerURLVersionRedirectionInterceptor.kt`. Oslo
+  ANDROSDK-2032 replaced it with the Ktor `ServerURLVersionRedirectionPlugin`,
+  whose `URLBuilder.takeFrom` resolves relative locations, so the crash cannot
+  happen. Same file in `1.15.0`.
 
 ### F. Already documented
 
@@ -119,9 +124,6 @@ Retention Scope, Disabled Account Login Handling — spec and
 
 - A5: keep the `url` column inside Oslo's migrations `85.sql`/`175.sql` for this
   upgrade (recommended), and revisit when WIDP stops using it.
-- A7 and B4: remove now if unused?
-- E: are the two "lost" commits (`f251e2f37f`, `87b902ba3a`) still needed by
-  any client?
 
 ## Decisions
 
