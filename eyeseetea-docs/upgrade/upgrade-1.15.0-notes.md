@@ -19,7 +19,7 @@ documentation: delete when the upgrade closes (see `upgrade-plan.md`).
 - upstream tag branch pushed: `yes`
 - onboarding inventory drafted: `yes` (this file, section below)
 - onboarding inventory confirmed by a developer: `yes` (titles of A and B, 2026-10-21; A6 split into A6a/A6b; B documented as a table, no spec)
-- specs created for confirmed customizations: `yes` (A1–A6b), with inventory, checklist and code markers; A7 and B4 removed (2026-10-22)
+- specs created for confirmed customizations: `yes` (A1–A5), with inventory, checklist and code markers; A6a, A6b, A7 and B4 removed (2026-10-22)
 - upgrade change proposed: `no`
 - merge started: `no`
 
@@ -49,7 +49,7 @@ Titles confirmed. A6 is split into A6a (`Tracked Entity Online Search By UIDs`) 
 | A3 | Change Server URL | customization | `AccountManager.changeServerUrl()` points the logged-in account (credentials and database configuration) at a new server URL without logging out. | `AccountManager.kt`, `AccountManagerImpl.kt` | `9068073932` | spip, sports, widp | low–medium (`AccountManagerImpl.kt` +8/−2) |
 | A4 | Original Size Image Download | customization (**broken**) | `D2Configuration.fileResizerDimension` lets the app choose the image dimension for file resource downloads, including a new `ORIGINAL` value that requests the file without resizing. | `D2Configuration.java`, `FileResizerHelper.kt`, `FileResourceDIModule.kt`, `FileResourceDownloadParams.kt`, `FileResourceDownloadCall.kt`, `FileResourceService.kt`, `GetDimension.kt` (new) | `c05c5bd3a3` | spip, spocc, widp | **high** — `D2Configuration` moved to Kotlin, `FileResizerHelper.kt` (+56/−52) and `FileResourceDownloadCall.kt` (+31/−8) changed. |
 | A5 | URL Data Element Field | customization | Downloads and stores the `url` field of data elements and exposes it as `DataElement.url()`. | `DataElement.java`, `DataElementDB.kt`, `DataElementFields.kt`, migrations `85.sql` and `175.sql` | `859f0185a1`, `f3921130f5`, `bb6494186c` | widp only — app spec `url-data-element` ("URL data element field"): `EventRepository.kt` reads `de?.url()`, `FieldUiModelExtensions.supportingText()` renders it under the field description; enrollment fields pass `url = null`. Kept in app PR #335 (3.4.2), not tested manually there. Other branches still reference it but no longer use it; may be dropped in a future upgrade | medium — `DataElement` moved to a Kotlin `@ModelBuilder` model. **The column is added by editing Oslo's existing migrations `85.sql` and `175.sql`**, not by a migration of its own: decide whether to keep that. |
-| A6 | Tracked Entity Search By UIDs And Semicolon Lists | customization | Online TEI queries pass the scope's `uids` to the server, and IN-filter values can be given as a `;`-separated string. Remnants of the older "IN operator for TEI attributes" work, which Oslo otherwise absorbed. | `TrackedEntityInstanceQueryOnlineHelper.kt`, `FilterOperatorsHelper.kt` | `e575a8c420`, `a6a763d83d` | to confirm (grep too loose) | low–medium (`TrackedEntityInstanceQueryOnlineHelper.kt` +14/−7) |
+| ~~A6~~ | ~~Tracked Entity Search By UIDs And Semicolon Lists~~ | removed | Online TEI queries passed the scope's `uids` to the server (A6a), and IN-filter values could be given as a `;`-separated string (A6b), for Simprints biometric GUID search (`e575a8c420`, `a6a763d83d`, `8ecd4d7a93`). No active app branch uses them: they search with `byFilter(...).in(list)`, which the SDK serializes with its own separator, and nobody calls `byTrackedEntities()`. Only `develop-simprints-3.2.1.1` (`byUIds()`, `in("a;b")`) used them, pinned to SDK `1.12.1-eyeseetea-fork-1`. **Reverted to Oslo 2026-10-22**, including the Oslo test case for `;` values. | | | | |
 | ~~A7~~ | ~~RDQA Icons~~ | removed | Added the `ic_rdqa_*` drawables (`12d1dabaa6`, 2020, likely for PSI, no longer a client). No consumer in any app branch; the icons are only reachable through server icon metadata. **Removed 2026-10-22.** | | | | |
 
 ### B. Proposed Oslo bug fixes (`// EyeSeeTea fix`, still need a spec)
@@ -92,7 +92,7 @@ confirming nobody relies on them:
 - `avg`/`sum` aggregation for program indicators (`e3265edc93`, `f7365d0f86`,
   `de215c995f`, `7c8790b2f5`)
 - full IN operator for TEI attribute queries (`83fb05abfc`, `76cda15294`) —
-  only A6 survives
+  A6 was its last remnant, reverted to Oslo on 2026-10-22
 - ProgramStageSection order by `sortOrder` / order direction (`0caade7fa9`,
   `ca72a641eb`) — identical code in Oslo `1.15.0`
 - migration `148.sql` fixes (`0239e1a634`, `3a8d7c9350`) and snapshot
