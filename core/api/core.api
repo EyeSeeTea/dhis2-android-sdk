@@ -10227,10 +10227,6 @@ public final class org/hisp/dhis/android/core/fileresource/OrgHispDhisAndroidCor
 	public static final fun module (Lorg/hisp/dhis/android/core/fileresource/FileResourceDIModule;)Lorg/koin/core/module/Module;
 }
 
-public final class org/hisp/dhis/android/core/fileresource/internal/GetDimensionKt {
-	public static final fun getDimension (Lorg/hisp/dhis/android/core/arch/helpers/FileResizerHelper$Dimension;)Ljava/lang/String;
-}
-
 public final class org/hisp/dhis/android/core/fileresource/internal/UploadQuality : java/lang/Enum {
 	public static final field DEFAULT Lorg/hisp/dhis/android/core/fileresource/internal/UploadQuality;
 	public static final field ORIGINAL Lorg/hisp/dhis/android/core/fileresource/internal/UploadQuality;

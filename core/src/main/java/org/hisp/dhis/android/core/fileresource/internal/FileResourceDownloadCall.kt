@@ -31,6 +31,7 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import org.hisp.dhis.android.core.D2Configuration
 import org.hisp.dhis.android.core.arch.api.executors.internal.CoroutineAPICallExecutor
 import org.hisp.dhis.android.core.arch.api.payload.internal.Payload
 import org.hisp.dhis.android.core.arch.call.D2Progress
@@ -47,7 +48,6 @@ import org.hisp.dhis.android.core.fileresource.FileResourceDomainType
 import org.hisp.dhis.android.core.fileresource.FileResourceElementType
 import org.hisp.dhis.android.core.fileresource.FileResourceInternalAccessor
 import org.hisp.dhis.android.core.fileresource.FileResourceRoutine
-import org.hisp.dhis.android.core.fileresource.internal.FileResourceUtil.computeScalingDimension
 import org.hisp.dhis.android.core.icon.CustomIcon
 import org.hisp.dhis.android.core.maintenance.D2Error
 import org.hisp.dhis.android.core.settings.internal.SynchronizationSettingStore
@@ -64,6 +64,8 @@ internal class FileResourceDownloadCall(
     private val synchronizationSettingsStore: SynchronizationSettingStore,
     private val context: Context,
     private val coroutineAPICallExecutor: CoroutineAPICallExecutor,
+    // EyeSeeTea customization - Original Size Image Download
+    private val d2Configuration: D2Configuration,
 ) {
 
     /**
@@ -290,7 +292,13 @@ internal class FileResourceDownloadCall(
     ): FileResource? {
         val contentLength = fileResource.contentLength()
         val fileIsImage = fileResource.contentType()?.startsWith("image") ?: false
-        val scalingDimension = computeScalingDimension(contentLength, maxContentLength?.toLong(), fileIsImage)
+        // EyeSeeTea customization - Original Size Image Download
+        val scalingDimension = getDimension(
+            d2Configuration.fileResizerDimension(),
+            contentLength,
+            maxContentLength?.toLong(),
+            fileIsImage,
+        )
 
         return try {
             if (scalingDimension != DimensionSize.NotSupported.name &&
