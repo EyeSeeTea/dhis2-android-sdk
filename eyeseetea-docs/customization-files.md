@@ -328,7 +328,6 @@ have no spec: each one is retired when Oslo ships its own fix. Check the
 | Encryption key preserved on database rename | ANDROSDK-2194 | 1.13.1 | `configuration/internal/migration/Migration301.kt`, `configuration/internal/DatabaseEncryptionPasswordManager.kt`, `configuration/internal/DatabaseConfigurationMigration.kt` (+ `Migration301IntegrationShould.kt`, `DatabaseConfigurationMigrationIntegrationShould.kt`) | `f2e617606a`, `3ca4b47125` | Oslo copies the encryption password when Migration301 renames an encrypted database (not in `1.15.0`) |
 | Follow the SQLite ALTER TABLE caveats | ANDROSDK-1871 | 1.10.1 | `core/src/main/assets/migrations/164.sql` | `16080ff19b` | Oslo rewrites `164.sql` without `ALTER TABLE ... RENAME` of a referenced table (not in `1.15.0`) |
 | Offline-first search keeps local results | ANDROAPP-7646 | — | `trackedentity/search/TrackedEntityInstanceQueryDataFetcher.kt` | `34c6efc4cd` | Oslo makes the online query status lookup null-safe. Oslo merged the rest of this fix in `1.14.1` (`58ef16e3fe`) and partially reverted it in `1.15.0` (`2f194a328b`): re-check the search behaviour when merging |
-| Oversized icon resources removed | — | — | 6 `core/src/main/res/drawable/ic_blister_pills_{oval,round}_x16_*.xml` deleted | `ab1f7f4c50` | the build no longer fails with `STRING_TOO_LARGE` with Oslo's icons (Oslo still ships them in `1.15.0`); pending a decision to drop it |
 
 Paths are relative to `core/src/main/java/org/hisp/dhis/android/core/` unless
 they start with `core/`.
@@ -460,9 +459,6 @@ Differences against Oslo that are neither a customization nor an Oslo fix.
 Every entry needs a short reason; this section must be empty when an upgrade
 closes.
 
-- `core/src/main/res/drawable/ic_rdqa_{negative,outline,positive}.xml` —
-  RDQA icons (`12d1dabaa6`). No consumer found in any app `develop-*` branch;
-  pending a decision to remove them.
 - No-op drift (expanded wildcard imports, stray `import android.R`, blank
   lines, `internal` added to `OrphanCleaner`/`SubCollectionCleaner`,
   `AppearanceSettings.Builder`, `86.sql` trailing lines, PMD report settings):
@@ -473,8 +469,11 @@ Not customizations (listed so they are not re-investigated): earlier
 EyeSeeTea work that Oslo absorbed or that no longer exists in the code —
 attribute values on Program/ProgramStage/DataElement, data element legend
 sets, avg/sum program indicators, the full IN operator for TEI attributes,
-ProgramStageSection ordering, the `148.sql` fixes and the duplicate
-`Content-Disposition` header fix.
+ProgramStageSection ordering, the `148.sql` fixes, the duplicate
+`Content-Disposition` header fix, the "save all cookies" fix (Oslo
+ANDROSDK-2344), the relative `Location` redirect fix (Oslo ANDROSDK-2032), and
+the RDQA icons and `STRING_TOO_LARGE` blister icon removal (both reverted to
+Oslo on 2026-10-22: no consumer, and the build passes with Oslo's icons).
 
 ## 6. Notes
 
