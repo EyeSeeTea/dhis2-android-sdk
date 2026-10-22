@@ -74,13 +74,92 @@ Manual check (from the consuming app):
 - [ ] With a previously stored account on the device, a rejected login does
       not delete that account or its unsynced data.
 
-## Pending a spec
+## 5. Two-Factor Authentication Login
 
-Confirmed customizations listed in section 3 of `customization-files.md`
-that still need a spec. Their checks move to a titled section above once the
-spec exists.
+Automated coverage:
+```bash
+./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.user.internal.LogInCallUnitShould"
+./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.arch.api.authentication.internal.ParentAuthenticatorPluginShould"
+```
 
-### Encryption key preserved when a renamed database is opened
+Manual check (from the consuming app, against a 2.41+ server):
+- [ ] A user without 2FA logs in.
+- [ ] A TOTP user is asked for the code, a wrong code is rejected, the right
+      code logs in.
+- [ ] An email or SMS 2FA user gets the "code sent" answer, then logs in with
+      the received code.
+- [ ] A server older than 2.41 (no `/api/auth/login`) still logs in through
+      the fallback.
+- [ ] Offline login with a known account still works.
+
+## 6. Automatic Logout On Unauthorized Session
+
+Automated coverage: none in this repository beyond the login tests; the app
+side is covered by WIDP's `OpenIdSessionTest`.
+
+Manual check (from the consuming app, WIDP):
+- [ ] Logged in with username/password, invalidate the session on the server
+      (change the password or revoke the session) and trigger a sync: the app
+      returns to login with "session expired".
+- [ ] A wrong password at login shows the login error, not a logout.
+
+## 7. Change Server URL
+
+Manual check (from the consuming app, SPIP / Sports / WIDP):
+- [ ] Change the server URL from the app to another address of the same
+      instance: requests go to the new URL and local data is still there.
+- [ ] Log out and log in again with the new URL: the same database opens.
+- [ ] An account for another user on the device is not changed.
+
+## 8. Original Size Image Download
+
+Status: `broken` (see `customization-files.md` 2.8) — no check passes until
+the wiring is restored or the customization is retired.
+
+Automated coverage:
+```bash
+./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.fileresource.internal.GetDimensionShould"
+```
+
+Manual check (from the consuming app, SPIP or WIDP), once restored:
+- [ ] With `fileResizerDimension(ORIGINAL)`, sync a tracker image larger than
+      the medium size: the stored file has the original resolution.
+- [ ] Without the setting, the same image is stored at the medium size.
+
+## 9. URL Data Element Field
+
+Manual check (from the consuming app, WIDP):
+- [ ] After a metadata sync, an event form field whose data element has a
+      `url` shows that URL under its description.
+- [ ] Upgrade a device with existing data to the build under test: the app
+      opens and data element URLs are still there (migrations `85.sql` and
+      `175.sql`).
+
+## 10. Tracked Entity Online Search By UIDs
+
+Automated coverage:
+```bash
+./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.trackedentity.search.TrackedEntityInstanceQueryOnlineHelperShould"
+```
+
+Manual check: none required unless Oslo changes the online query building; then
+run an online search restricted to a few UIDs and confirm only those are
+returned.
+
+## 11. Semicolon Separated IN Filter Values
+
+Automated coverage: the `TrackedEntityInstanceQueryOnlineHelperShould` run in
+section 10.
+
+Manual check: none required unless Oslo changes `FilterOperatorsHelper` or how
+IN filters are serialized.
+
+## Oslo bug fixes
+
+Fixes listed in section 3 of `customization-files.md`. Their checks are
+removed together with the fix when Oslo ships its own.
+
+### Encryption key preserved on database rename
 
 Automated coverage:
 ```bash
@@ -96,12 +175,18 @@ Manual check (only if the migration path itself changed):
       is still there.
 - [ ] A **non-encrypted** account migrates the same way.
 
-### `ALTER TABLE` migration script fix (`164.sql`)
+### Follow the SQLite ALTER TABLE caveats (`164.sql`)
 
 Manual check (only if migration ordering or scripts around it change):
 - [ ] Run the full migration chain from an old schema version through 164 on
       a device/emulator and confirm the `Program`/`ProgramStage` `displayXXX`
       columns are renamed with data intact.
+
+### Offline-first search keeps local results
+
+Manual check (from the consuming app):
+- [ ] Run an `OFFLINE_FIRST` TEI search with the server unreachable or
+      failing: local results are shown, the app does not crash.
 
 ## Maintenance rule
 

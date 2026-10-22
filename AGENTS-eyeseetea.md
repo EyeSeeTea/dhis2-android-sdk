@@ -40,13 +40,16 @@ is in `eyeseetea-docs/customization-files.md`.
 | 2 | `synced-data-relationships-purge` | Synced Data Relationships Purge | active | low |
 | 3 | `synced-data-retention-scope` | Synced Data Retention Scope | active | medium |
 | 4 | `disabled-account-login` | Disabled Account Login Handling | active | medium |
+| 5 | `two-factor-login` | Two-Factor Authentication Login | active | high |
+| 6 | `automatic-logout-on-unauthorized` | Automatic Logout On Unauthorized Session | active | medium |
+| 7 | `change-server-url` | Change Server URL | active | medium |
+| 8 | `original-size-image-download` | Original Size Image Download | broken | high |
+| 9 | `url-data-element` | URL Data Element Field | active | medium |
+| 10 | `tei-online-search-by-uids` | Tracked Entity Online Search By UIDs | active | low |
+| 11 | `semicolon-in-filter-values` | Semicolon Separated IN Filter Values | active | low |
 
-The inventory is incomplete: older customizations (2FA login through
-`/api/auth/login`, server URL change, automatic logout, encrypted database
-rename, migration fixes, ...) are still in section 3 of
-`customization-files.md`, without a spec. They must be onboarded before the
-next Oslo upgrade (`eyeseetea-docs/README.md`, "Onboarding the existing
-customizations").
+Oslo bug fixes (`// EyeSeeTea fix`) have no spec; they are listed with their
+retirement condition in section 3 of `customization-files.md`.
 
 ### Customization code rules
 

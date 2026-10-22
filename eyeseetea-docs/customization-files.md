@@ -171,51 +171,167 @@ Supporting files in the same workflow:
 
 Technical note:
 - An inline edit in Oslo's `LogInCall.kt` (placement level 4), on top of the
-  EyeSeeTea `/api/auth/login` flow, which is itself still undocumented (see
-  section 3). Published in `1.14.2-eyeseetea-fork-3`.
+  EyeSeeTea `/api/auth/login` flow (2.5, Two-Factor Authentication Login).
+  Published in `1.14.2-eyeseetea-fork-3`.
 
-## 3. Shared drift still differing
+### 2.5 Two-Factor Authentication Login
 
-Differences against Oslo that are not yet backed by a spec. Every entry needs a
-short reason. Confirmed customizations move to section 2 once they have a spec;
-absorbed or obsolete ones are removed instead.
+Status: `active`
 
-**This section is not exhaustive yet.** `develop-eyeseetea` carries 96
-EyeSeeTea-only commits since 2020
-(`git rev-list --no-merges develop-eyeseetea --not --remotes=upstream <oslo tags>`);
-the onboarding inventory (see `README.md`, "Onboarding the existing
-customizations") must classify each of them as active, absorbed by Oslo, or
-removed.
+Spec: `openspec/specs/two-factor-login/spec.md`
 
-Confirmed customizations without a spec yet:
-- `core/src/main/java/org/hisp/dhis/android/core/configuration/internal/migration/Migration301.kt`,
-  `core/src/main/java/org/hisp/dhis/android/core/configuration/internal/DatabaseEncryptionPasswordManager.kt`
-  (+ `Migration301IntegrationShould.kt`, `DatabaseConfigurationMigrationIntegrationShould.kt`)
-  — copies the encryption password of an encrypted account to the new key when
-  its database file is renamed, so the renamed database can be opened. Needs a
-  spec and a titled marker (current markers have no title).
-- `core/src/main/assets/migrations/164.sql` — Oslo bug fix (`ANDROSDK-1871`)
-  following the SQLite `ALTER TABLE` caveats. Needs an `EyeSeeTea fix` marker
-  with ticket and version instead of the current free-text comment.
+Main implementation points:
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/LogInCall.kt` — `twoFactorCode` parameter, `loginInDhis2AndGetUser`, `oldLogin`, `generateLoginErrorIfRequired`; `loginOnline` no longer stores the credentials (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/LoginPayload.kt` (new)
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/LoginResponse.kt` (new)
+- `core/src/main/java/org/hisp/dhis/android/core/user/UserModule.kt` — public `logIn`/`blockingLogIn` with `twoFactorCode` (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/UserModuleImpl.kt` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/UserNetworkHandler.kt` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/network/user/UserNetworkHandlerImpl.kt` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/network/user/UserService.kt` — `POST auth/login` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/maintenance/D2ErrorCode.java` — 7 two-factor codes (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/core/arch/api/authentication/internal/ParentAuthenticatorPlugin.kt` — treats `auth/login` as a login call (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/arch/api/authentication/internal/UserIdAuthenticatorHelper.kt` — no user id header before the user is known (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/mockwebserver/Dhis2MockServer.kt` — mock `auth/login` response (Oslo file)
+- `core/api/core.api` — generated
 
-Candidates pending confirmation (found in the diff, intent not confirmed):
-- `LogInCall.kt`, `UserNetworkHandlerImpl.kt`, `UserService.kt`,
-  `LoginPayload.kt`, `LoginResponse.kt`, `D2ErrorCode.java` — login through
-  `/api/auth/login` with an optional `twoFactorCode` (TOTP, email, SMS,
-  `TWO_FACTOR_MANY_SEND_ATTEMPTS`), with a fallback to the old login for
-  servers older than 2.41. Not present in Oslo `1.15.0`.
-- `ConnectLogoutHandler.kt`, `AccountManager.kt`, `AccountManagerImpl.kt` —
-  `changeServerUrl` for the current account, and automatic logout on a 401
-  response or a redirect to `dhis-web-login`.
-- `DatabaseConfigurationHelper.kt` — reuses an existing account with the same
-  `serverUrl` + `username` + `encrypted` instead of creating a new one.
-- `GetDimension.kt`, `FileResourceDownloadCall.kt`,
-  `FileResourceDownloadParams.kt`, `D2Configuration.java` — file resource
-  download sizing.
+Supporting files in the same workflow:
+- `core/src/test/java/org/hisp/dhis/android/core/user/internal/LogInCallUnitShould.kt`
+- `core/src/test/java/org/hisp/dhis/android/core/arch/api/authentication/internal/ParentAuthenticatorPluginShould.kt`
+- `core/src/test/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryOnlineHelperShould.kt` — touched incidentally by `69d759964a`
+- `core/src/sharedTest/resources/user/auth_login_success.json`
+- about 45 `core/src/androidTest/**` files — callers updated for the extra `twoFactorCode` argument (`blockingLogIn(..., null)`); losing one is a compile error, not a silent drop
 
-Not customizations (listed so they are not re-investigated):
-- `core/src/main/java/org/hisp/dhis/android/core/parser/internal/expression/ParserUtils.kt`
-  — wildcard imports expanded; no behavior change.
+Technical note:
+- Highest conflict surface of the fork. Oslo `1.15.0` rewrites the login flow
+  (OAuth2, credentials auth type), adds rx/suspend variants to `UserModule`
+  and moves `D2ErrorCode` to Kotlin. It adds a `TwoFactorAuthManager`
+  (enable/disable 2FA) but still no login with a code, so this is not
+  absorbed. Disabled Account Login Handling (2.4) is built on this flow.
+
+### 2.6 Automatic Logout On Unauthorized Session
+
+Status: `active`
+
+Spec: `openspec/specs/automatic-logout-on-unauthorized/spec.md`
+
+Main implementation points:
+- `core/src/main/java/org/hisp/dhis/android/core/arch/api/authentication/internal/PasswordAndCookieAuthenticator.kt` — `logoutOrReturnRes` on HTTP 401 (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/ConnectLogoutHandler.kt` (new)
+- `core/src/main/java/org/hisp/dhis/android/core/user/AccountManager.kt` — `logOutObservable()` (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/AccountManagerImpl.kt` (Oslo file)
+
+Technical note:
+- Consumed by WIDP (restored in app PR #335). Oslo `1.15.0` adds its own
+  `logOutObservable` for OAuth2/OpenID only; check whether both can share one
+  mechanism when merging.
+
+### 2.7 Change Server URL
+
+Status: `active`
+
+Spec: `openspec/specs/change-server-url/spec.md`
+
+Main implementation points:
+- `core/src/main/java/org/hisp/dhis/android/core/user/AccountManager.kt` — `changeServerUrl()` (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/AccountManagerImpl.kt` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/configuration/internal/DatabaseConfigurationHelper.kt` — reuses the existing account instead of creating a new one (Oslo file)
+
+Technical note:
+- Consumers: SPIP, Sports, WIDP. The account reuse in
+  `DatabaseConfigurationHelper` is what keeps the same database after a URL
+  change; `fea2d9a6b8` restricted it to the same `encrypted` flag.
+
+### 2.8 Original Size Image Download
+
+Status: `broken`
+
+Spec: `openspec/specs/original-size-image-download/spec.md`
+
+Main implementation points:
+- `core/src/main/java/org/hisp/dhis/android/core/D2Configuration.java` — `fileResizerDimension` (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/core/arch/helpers/FileResizerHelper.kt` — `Dimension.ORIGINAL` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/fileresource/FileResourceDIModule.kt` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/fileresource/internal/FileResourceDownloadParams.kt` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/fileresource/internal/GetDimension.kt` (new)
+- `core/src/main/java/org/hisp/dhis/android/core/fileresource/internal/FileResourceDownloadCall.kt` — where the dimension used to be read (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/network/fileresource/FileResourceService.kt` — nullable `dimension` (Oslo file)
+
+Supporting files in the same workflow:
+- `core/src/test/java/org/hisp/dhis/android/core/fileresource/internal/GetDimensionShould.kt`
+- `core/src/test/java/org/hisp/dhis/android/core/fileresource/FileResourceDownloaderShould.kt`
+
+Technical note:
+- **Broken since the Oslo `1.12.0` merge (PR #461, 2025-09-03).** Oslo
+  replaced the download with its own content-length-based size selection;
+  the merge kept the configuration and `params.dimension`, but nothing reads
+  them any more and `getDimension()` is only called from its test. Every app
+  now gets Oslo's selection, which caps images at MEDIUM. `develop-spip`
+  configures `ORIGINAL` with SDK `1.13.1-eyeseetea-fork-4` and is affected;
+  `develop-spocc` (`1.11.0.1`) still works. Decision: re-wire it during the
+  `1.15.0` merge on top of `FileResourceUtil.computeScalingDimension`; WIDP
+  also wants the original size (its app must then set `ORIGINAL`).
+
+### 2.9 URL Data Element Field
+
+Status: `active`
+
+Spec: `openspec/specs/url-data-element/spec.md`
+
+Main implementation points:
+- `core/src/main/java/org/hisp/dhis/android/core/dataelement/DataElement.java` — `url()` (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/persistence/dataelement/DataElementDB.kt` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/network/dataelement/DataElementFields.kt` (Oslo file)
+- `core/src/main/assets/migrations/85.sql` — adds the column (Oslo migration)
+- `core/src/main/assets/migrations/175.sql` — keeps the column when the table is rebuilt (Oslo migration)
+
+Technical note:
+- Consumer: WIDP only. The column lives inside Oslo's own migrations, so a
+  new Oslo migration that rebuilds `DataElement` drops it silently: check every
+  new migration that touches `DataElement`. Oslo `1.15.0` moves `DataElement`
+  to a Kotlin `@ModelBuilder` model.
+
+### 2.10 Tracked Entity Online Search By UIDs
+
+Status: `active`
+
+Spec: `openspec/specs/tei-online-search-by-uids/spec.md`
+
+Main implementation points:
+- `core/src/main/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryOnlineHelper.kt` — `uids = scope.uids()` (Oslo file)
+
+Supporting files in the same workflow:
+- `core/src/main/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryCallFactory.kt` — touched by `e575a8c420`, no EyeSeeTea delta left
+- `core/src/main/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryDataFetcher.kt` — touched by `e575a8c420`; its remaining delta is the Oslo fix in section 3
+
+### 2.11 Semicolon Separated IN Filter Values
+
+Status: `active`
+
+Spec: `openspec/specs/semicolon-in-filter-values/spec.md`
+
+Main implementation points:
+- `core/src/main/java/org/hisp/dhis/android/core/common/FilterOperatorsHelper.kt` — `;` separator in `strToList` (Oslo file)
+
+Supporting files in the same workflow:
+- `core/src/test/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryOnlineHelperShould.kt` — a value containing `;` is split, so the Oslo test case for it was removed (`8ecd4d7a93`)
+
+## 3. Oslo bug fixes
+
+Patches for Oslo bugs, marked in code with
+`// EyeSeeTea fix - <description> (Oslo <ticket>, introduced <version>)`. They
+have no spec: each one is retired when Oslo ships its own fix. Check the
+"Retire when" column at every upgrade.
+
+| Fix | Oslo ticket | Introduced | Files | Commits | Retire when |
+|-----|-------------|------------|-------|---------|-------------|
+| Encryption key preserved on database rename | ANDROSDK-2194 | 1.13.1 | `configuration/internal/migration/Migration301.kt`, `configuration/internal/DatabaseEncryptionPasswordManager.kt`, `configuration/internal/DatabaseConfigurationMigration.kt` (+ `Migration301IntegrationShould.kt`, `DatabaseConfigurationMigrationIntegrationShould.kt`) | `f2e617606a`, `3ca4b47125` | Oslo copies the encryption password when Migration301 renames an encrypted database (not in `1.15.0`) |
+| Follow the SQLite ALTER TABLE caveats | ANDROSDK-1871 | 1.10.1 | `core/src/main/assets/migrations/164.sql` | `16080ff19b` | Oslo rewrites `164.sql` without `ALTER TABLE ... RENAME` of a referenced table (not in `1.15.0`) |
+| Offline-first search keeps local results | ANDROAPP-7646 | — | `trackedentity/search/TrackedEntityInstanceQueryDataFetcher.kt` | `34c6efc4cd` | Oslo makes the online query status lookup null-safe. Oslo merged the rest of this fix in `1.14.1` (`58ef16e3fe`) and partially reverted it in `1.15.0` (`2f194a328b`): re-check the search behaviour when merging |
+| Oversized icon resources removed | — | — | 6 `core/src/main/res/drawable/ic_blister_pills_{oval,round}_x16_*.xml` deleted | `ab1f7f4c50` | the build no longer fails with `STRING_TOO_LARGE` with Oslo's icons (Oslo still ships them in `1.15.0`); pending a decision to drop it |
+
+Paths are relative to `core/src/main/java/org/hisp/dhis/android/core/` unless
+they start with `core/`.
 
 ## 4. Feature commits
 
@@ -295,7 +411,72 @@ these commits touched must appear under the matching section 2 entry.
 - `ca7bc60626` — fix: handle disabled account login without deleting local data
 - `febe27964b` — docs: document disabled account login customization
 
-## 5. Notes
+### 4.5 Two-Factor Authentication Login
+
+- `088c7205b3` — Implement login with new auth/login endpoint: Payload has optional twoFactorCode
+- `42fee86bf4` — Fix LoginCall unit tests
+- `3cabd27114` — Add two factor authentication tests
+- `69d759964a` — Add backward compatibility to login in previous versions to 2.41 without two factor endpoint
+- `309053f655` — Call old login when unexpected error occur to do login
+- `950f63f87d` — Call old login when unexpected error occur to do login
+- `2735a34fc3` — Fix 2 factor code login
+- `8405e1fd27` — Support new error code INCORRECT_TWO_FACTOR_CODE_TOTP
+- `cfc1436e56` — Implement support to two factor by email
+- `a532dd36b3` — Support TWO_FACTOR_MANY_SEND_ATTEMPTS error
+- `759abb465b` — Implement two factor by sms
+
+### 4.6 Automatic Logout On Unauthorized Session
+
+- `c51c1bb67a` — Implement automatic logout
+- `0f390e57f3` — Add tests for launch logout if response code is 401
+
+### 4.7 Change Server URL
+
+- `9068073932` — feat: enable change url of current account
+- `fea2d9a6b8` — Fix test export import with encrypt
+
+### 4.8 Original Size Image Download
+
+- `c05c5bd3a3` — Enable by d2Configuration set download images in original size
+- `1876279b11` — Fix GetDimensionShould
+
+### 4.9 URL Data Element Field
+
+- `859f0185a1` — Download url of the data elements
+- `f3921130f5` — Restore url field in the data element table
+
+### 4.10 Tracked Entity Online Search By UIDs
+
+- `e575a8c420` — Enable query TEI by attribute without value and Tei uids filter
+
+### 4.11 Semicolon Separated IN Filter Values
+
+- `a6a763d83d` — Eanble in parameter separator by ;
+- `8ecd4d7a93` — Fix failing test by customization with send guids witn ;
+
+## 5. Shared drift still differing
+
+Differences against Oslo that are neither a customization nor an Oslo fix.
+Every entry needs a short reason; this section must be empty when an upgrade
+closes.
+
+- `core/src/main/res/drawable/ic_rdqa_{negative,outline,positive}.xml` —
+  RDQA icons (`12d1dabaa6`). No consumer found in any app `develop-*` branch;
+  pending a decision to remove them.
+- No-op drift (expanded wildcard imports, stray `import android.R`, blank
+  lines, `internal` added to `OrphanCleaner`/`SubCollectionCleaner`,
+  `AppearanceSettings.Builder`, `86.sql` trailing lines, PMD report settings):
+  restore Oslo's version during the `1.15.0` merge. File list in
+  `upgrade/upgrade-1.15.0-notes.md`, section D.
+
+Not customizations (listed so they are not re-investigated): earlier
+EyeSeeTea work that Oslo absorbed or that no longer exists in the code —
+attribute values on Program/ProgramStage/DataElement, data element legend
+sets, avg/sum program indicators, the full IN operator for TEI attributes,
+ProgramStageSection ordering, the `148.sql` fixes and the duplicate
+`Content-Disposition` header fix.
+
+## 6. Notes
 
 - This inventory reflects the current branch state only.
 - If a code comment and a spec title diverge, the spec title wins; fix the
