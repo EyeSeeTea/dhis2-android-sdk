@@ -135,25 +135,6 @@ Manual check (from the consuming app, WIDP):
       opens and data element URLs are still there (migrations `85.sql` and
       `175.sql`).
 
-## 10. Tracked Entity Online Search By UIDs
-
-Automated coverage:
-```bash
-./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.trackedentity.search.TrackedEntityInstanceQueryOnlineHelperShould"
-```
-
-Manual check: none required unless Oslo changes the online query building; then
-run an online search restricted to a few UIDs and confirm only those are
-returned.
-
-## 11. Semicolon Separated IN Filter Values
-
-Automated coverage: the `TrackedEntityInstanceQueryOnlineHelperShould` run in
-section 10.
-
-Manual check: none required unless Oslo changes `FilterOperatorsHelper` or how
-IN filters are serialized.
-
 ## Oslo bug fixes
 
 Fixes listed in section 3 of `customization-files.md`. Their checks are

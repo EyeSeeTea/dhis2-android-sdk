@@ -32,19 +32,11 @@ object FilterOperatorsHelper {
 
     private const val strListSeparator = "%%%<>%%%"
 
-    // EyeSeeTea customization - Semicolon Separated IN Filter Values
-    private const val strListSeparatorAlt = ";"
-
     fun listToStr(list: Collection<String>): String {
         return list.joinToString(separator = strListSeparator)
     }
 
     fun strToList(string: String): Collection<String> {
-        // EyeSeeTea customization - Semicolon Separated IN Filter Values
-        if (string.contains(strListSeparatorAlt)) {
-            return string.split(strListSeparatorAlt)
-        } else {
-            return string.split(strListSeparator)
-        }
+        return string.split(strListSeparator)
     }
 }

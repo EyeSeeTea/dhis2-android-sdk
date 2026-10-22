@@ -291,31 +291,6 @@ Technical note:
   new migration that touches `DataElement`. Oslo `1.15.0` moves `DataElement`
   to a Kotlin `@ModelBuilder` model.
 
-### 2.10 Tracked Entity Online Search By UIDs
-
-Status: `active`
-
-Spec: `openspec/specs/tei-online-search-by-uids/spec.md`
-
-Main implementation points:
-- `core/src/main/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryOnlineHelper.kt` — `uids = scope.uids()` (Oslo file)
-
-Supporting files in the same workflow:
-- `core/src/main/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryCallFactory.kt` — touched by `e575a8c420`, no EyeSeeTea delta left
-- `core/src/main/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryDataFetcher.kt` — touched by `e575a8c420`; its remaining delta is the Oslo fix in section 3
-
-### 2.11 Semicolon Separated IN Filter Values
-
-Status: `active`
-
-Spec: `openspec/specs/semicolon-in-filter-values/spec.md`
-
-Main implementation points:
-- `core/src/main/java/org/hisp/dhis/android/core/common/FilterOperatorsHelper.kt` — `;` separator in `strToList` (Oslo file)
-
-Supporting files in the same workflow:
-- `core/src/test/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryOnlineHelperShould.kt` — a value containing `;` is split, so the Oslo test case for it was removed (`8ecd4d7a93`)
-
 ## 3. Oslo bug fixes
 
 Patches for Oslo bugs, marked in code with
@@ -444,15 +419,6 @@ these commits touched must appear under the matching section 2 entry.
 - `859f0185a1` — Download url of the data elements
 - `f3921130f5` — Restore url field in the data element table
 
-### 4.10 Tracked Entity Online Search By UIDs
-
-- `e575a8c420` — Enable query TEI by attribute without value and Tei uids filter
-
-### 4.11 Semicolon Separated IN Filter Values
-
-- `a6a763d83d` — Eanble in parameter separator by ;
-- `8ecd4d7a93` — Fix failing test by customization with send guids witn ;
-
 ## 5. Shared drift still differing
 
 Differences against Oslo that are neither a customization nor an Oslo fix.
@@ -473,7 +439,11 @@ ProgramStageSection ordering, the `148.sql` fixes, the duplicate
 `Content-Disposition` header fix, the "save all cookies" fix (Oslo
 ANDROSDK-2344), the relative `Location` redirect fix (Oslo ANDROSDK-2032), and
 the RDQA icons and `STRING_TOO_LARGE` blister icon removal (both reverted to
-Oslo on 2026-10-22: no consumer, and the build passes with Oslo's icons).
+Oslo on 2026-10-22: no consumer, and the build passes with Oslo's icons), and
+the online TEI search by UIDs and `;`-separated IN filter values (`e575a8c420`,
+`a6a763d83d`, `8ecd4d7a93`; reverted to Oslo on 2026-10-22: only the
+`develop-simprints-3.2.1.1` app line used them, pinned to
+`1.12.1-eyeseetea-fork-1`).
 
 ## 6. Notes
 

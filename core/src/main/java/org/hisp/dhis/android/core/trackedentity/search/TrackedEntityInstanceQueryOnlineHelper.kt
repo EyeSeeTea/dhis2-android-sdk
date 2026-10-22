@@ -102,8 +102,6 @@ internal class TrackedEntityInstanceQueryOnlineHelper(
             includeDeleted = scope.includeDeleted(),
             trackedEntityType = scope.trackedEntityType(),
             order = scope.order(),
-            // EyeSeeTea customization - Tracked Entity Online Search By UIDs
-            uids = scope.uids(),
         ).run {
             scope.program()?.let {
                 copy(
