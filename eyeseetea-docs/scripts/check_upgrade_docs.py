@@ -192,8 +192,15 @@ def commit_touched_files(sha: str) -> tuple[list[str] | None, str | None]:
     return [line for line in result.stdout.splitlines() if line.strip()], None
 
 
+def tracked_files() -> set[str]:
+    # Case-sensitive, unlike a filesystem check on macOS: a file renamed only in
+    # case must not count as still existing under its old name.
+    return set(run_git("ls-files").stdout.splitlines())
+
+
 def check_feat_commit_coverage(files: dict[str, set[str]], commits: dict[str, list[str]]) -> list[str]:
     issues: list[str] = []
+    existing = tracked_files()
     for title in sorted(set(files) - set(commits)):
         issues.append(f"'{title}' has no feature commits in section 4 of customization-files.md")
     for title, shas in sorted(commits.items()):
@@ -210,7 +217,7 @@ def check_feat_commit_coverage(files: dict[str, set[str]], commits: dict[str, li
             for rel_path in touched:
                 if Path(rel_path).suffix not in CODE_EXTENSIONS:
                     continue
-                if not (ROOT / rel_path).exists():
+                if rel_path not in existing:
                     # Renamed or deleted since; the inventory tracks its successor.
                     continue
                 if rel_path not in files[title]:
