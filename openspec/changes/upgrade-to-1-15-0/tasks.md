@@ -44,8 +44,8 @@ Commit: one merge commit for groups 2 to 5.
 
 ## 6. Original Size Image Download re-wire (after the merge)
 
-- [ ] 6.1 Test, in `core/src/test/`, the dimension resolution for images and non-images: no configured dimension returns Oslo's selection, a configured SMALL/MEDIUM/LARGE/ORIGINAL returns that name even above MEDIUM, a non-image ignores the configuration (spec delta scenarios); verify it fails before 6.2
-- [ ] 6.2 Implement the resolution in `GetDimension.kt` and call it from `FileResourceDownloadCall` instead of `computeScalingDimension`, wiring the configured dimension per design.md D3; remove the old "no dimension" path and its test; verify 6.1 and `FileResourceDownloaderShould` pass
+- [x] 6.1 Test, in `core/src/test/`, the dimension resolution for images and non-images: no configured dimension returns Oslo's selection, a configured SMALL/MEDIUM/LARGE/ORIGINAL returns that name even above MEDIUM, a non-image ignores the configuration (spec delta scenarios); verify it fails before 6.2
+- [x] 6.2 Implement the resolution in `GetDimension.kt` and call it from `FileResourceDownloadCall` instead of `computeScalingDimension`, wiring the configured dimension per design.md D3; remove the old "no dimension" path and its test; verify 6.1 and `FileResourceDownloaderShould` pass
 
 Commit: 6.1 and 6.2 together (red → green).
 

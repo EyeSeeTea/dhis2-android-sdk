@@ -217,6 +217,13 @@ against `origin/upstream/1.15.0` once resolved.
   - `:core:testDebugUnitTest`: 1789 tests in 428 classes, 0 failures, 1 skipped (`FieldsStringGenerationShould`, `@Ignore` in Oslo). No test is left for task 6 to fix; `FileResourceDownloaderShould` is Oslo's and passes.
   - `:core:releaseApiDump`: the `core.api` diff against Oslo only adds the customizations' public API: `D2.retentionModule()`, `RetentionModule`, `D2Configuration.fileResizerDimension` (constructor and `copy` change shape), `FileResizerHelper.Dimension.ORIGINAL`, `GetDimensionKt.getDimension` (rewritten in task 6), `DatabaseEncryptionPasswordManager.copyPasswordForRenamedDatabase` (B1), `DataElement.url` and `DataElementTableInfo.URL`, the seven two-factor `D2ErrorCode`s, `AccountManager.changeServerUrl` / `logOutObservable`, the four-argument `UserModule` overloads, and the Koin hints of `RetentionDIModule` and `ConnectLogoutHandler`.
 
+- Original Size Image Download re-wired (tasks 6.1, 6.2, 2026-10-22):
+  - `GetDimension.kt` (now `internal`): for images, the configured `D2Configuration.fileResizerDimension` name when set, otherwise Oslo's `computeScalingDimension`; non-images always get Oslo's result. A configured dimension also overrides Oslo's `NOT_SUPPORTED` (image above `maxContentLength`), per design D3.
+  - `FileResourceDownloadCall.kt`: `D2Configuration` injected through Koin (already a singleton in `appContextDIModule`, accepted by compile safety) and one call to `getDimension` instead of `computeScalingDimension`; `FileResourceDIModule`, `FileResourceDownloadParams` and `FileResourceService` stay as Oslo's.
+  - `GetDimensionShould` rewritten: 3 of 5 tests failed against the stock-only behaviour and pass after the change. Full unit suite: 1792 tests, 0 failures. `core.api` only loses `GetDimensionKt`.
+  - Gotcha: running `releaseApiDump` in the same Gradle invocation as test compilations adds `moduledef_*` Koin hints for Oslo modules to `core.api`; regenerate it from `:core:clean`.
+  - `:core:detekt` fails with two issues left by the merge, for task 7.1: `D2Configuration` `TooManyFunctions` (11/11, the `fileResizerDimension()` accessor) and `LogInCallUnitShould` `LargeClass` (601/600).
+
 ## Finalization
 
 - surviving customizations reflected in specs and `customization-files.md`: `no`
