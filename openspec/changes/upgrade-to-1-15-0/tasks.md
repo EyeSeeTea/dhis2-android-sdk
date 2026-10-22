@@ -51,20 +51,22 @@ Commit: 6.1 and 6.2 together (red → green).
 
 ## 7. Validate (runbook phase 6)
 
-- [ ] 7.1 `./gradlew :core:ktlintCheck :core:detekt` and `./gradlew :core:testDebugUnitTest` pass
-- [ ] 7.2 Run the targeted `androidTest` classes of `validation-checklist.md` on an emulator; verify they pass or record why one cannot run
-- [ ] 7.3 Build the consumer apps against the local SDK (composite build in `EyeSeeTea.md`): `develop-eyeseetea`, `develop-widp`, `develop-oca`, `develop-spip`, `develop-sports`; verify each compiles or record the app-side change it needs
+- [x] 7.1 `./gradlew :core:ktlintCheck :core:detekt` and `./gradlew :core:testDebugUnitTest` pass
+- [x] 7.2 Run the targeted `androidTest` classes of `validation-checklist.md` on an emulator; verify they pass or record why one cannot run
+- [ ] 7.3 Build the capture app against the local SDK (composite build): only `feature-eyeseetea/upgrade_3.5.0` (`develop-eyeseetea` upgraded to app `3.5.0`, local, not pushed), once its merge is finished; the client branches (`develop-widp`, `develop-oca`, `develop-spip`, `develop-sports`) are built when each one is upgraded, using the "Consumer App Actions" section of the notes; verify it compiles or record the app-side change it needs
 - [ ] 7.4 Work through the manual checks of `validation-checklist.md`, including a two-factor login and an original-size image download; verify each item is ticked or has a note
 
 Commit: only if 7.1 or 7.2 need fixes; one commit per fix.
 
 ## 8. Documentation and finalization (runbook phase 7)
 
-- [ ] 8.1 Update `customization-files.md`: Kotlin paths for the moved files, Original Size Image Download back to `active` with its new implementation points, Oslo fixes kept or retired, header baseline `1.15.0`; verify with `python3 eyeseetea-docs/scripts/check_upgrade_docs.py`
-- [ ] 8.2 Remove the "broken" status note from the Purpose of `openspec/specs/original-size-image-download/spec.md`, set its status to `active` in `AGENTS-eyeseetea.md`, and update `validation-checklist.md` for the new behaviour; verify `openspec validate --specs`
-- [ ] 8.3 Add technique T4 "Appended overload over an Oslo public API" to `customization-techniques.md` (design.md D2)
-- [ ] 8.4 Before any push, resolve the branch question of design.md: if OCA is still not in `develop-eyeseetea`, merge OCA there first or repeat this process from `develop-eyeseetea`
+- [x] 8.1 Update `customization-files.md`: Kotlin paths for the moved files, Original Size Image Download back to `active` with its new implementation points, Oslo fixes kept or retired, header baseline `1.15.0`; verify with `python3 eyeseetea-docs/scripts/check_upgrade_docs.py`
+- [x] 8.2 Remove the "broken" status note from the Purpose of `openspec/specs/original-size-image-download/spec.md`, set its status to `active` in `AGENTS-eyeseetea.md`, and update `validation-checklist.md` for the new behaviour; verify `openspec validate --specs`
+- [x] 8.3 Add technique T4 "Appended overload over an Oslo public API" to `customization-techniques.md` (design.md D2)
+- [x] 8.4 Before any push, resolve the branch question of design.md: if OCA is still not in `develop-eyeseetea`, merge OCA there first or repeat this process from `develop-eyeseetea` — decided 2026-10-22: the PR targets `feature-oca/synced-data-retention-purge`, the branch the upgrade started from
+- [ ] 8.5 Copy the "Consumer App Actions" section of `upgrade-1.15.0-notes.md` into the PR description and the `1.15.0-eyeseetea-fork-1` release notes, so it survives the deletion of the notes; verify WIDP's `fileResizerDimension(ORIGINAL)` action is there
 
-Commit: 8.1 to 8.3 as one documentation commit. Archiving the change
+Commit: 8.1 to 8.3 as one documentation commit, together with the pending
+"Consumer App Actions" section of the notes. Archiving the change
 (`/opsx:archive`) and deleting `upgrade-1.15.0-notes.md` happen after the PR
 is merged.

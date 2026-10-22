@@ -145,7 +145,7 @@ In your module's `build.gradle.kts` (e.g., `app/build.gradle.kts`):
 
 ```kotlin
 dependencies {
-    implementation("com.github.EyeSeeTea:dhis2-android-sdk:android-core:v1.13.0-eyeseetea-fork-1")
+    implementation("com.github.EyeSeeTea:dhis2-android-sdk:android-core:1.15.0-eyeseetea-fork-1")
 }
 ```
 
@@ -188,12 +188,44 @@ Gradle will automatically download the SDK from JitPack.
 
 ---
 
+## Local Development with Composite Build
+
+The capture app can build against a local checkout of this SDK instead of
+JitPack. Its `settings.gradle.kts` substitutes
+`com.github.EyeSeeTea:dhis2-android-sdk` with this repository's `:core`
+project when the local SDK is enabled.
+
+#### 1. Place the SDK checkout
+
+The app looks for the SDK, in this order: `dhis2.sdkPath`,
+`../dhis2-android-sdk`, `../../dhis2-android-sdk` and
+`~/Workspace/dhis2-android-sdk`. A sibling checkout needs no path.
+
+#### 2. Enable the local SDK in the app
+
+In the app's `local.properties` (never committed), or as `-P` flags:
+
+```properties
+dhis2.useLocalSdk=true
+# Only if the SDK is not in one of the default locations
+dhis2.sdkPath=/path/to/dhis2-android-sdk
+```
+
+Gradle prints `🔗 Using local SDK from: ...` when the substitution is active.
+
+#### 3. Match the build tooling
+
+The app and the SDK build together, so the app's Android Gradle Plugin must
+match this SDK's. When the app is ahead, lower it locally and never commit the
+change; the steps are in the app's `eyeseetea-docs/SDK_Setup.md` ("AGP
+composite build mismatch").
+
 #### 4. Keep the Same Dependency in `build.gradle.kts`
 
 ```kotlin
 dependencies {
     // ✅ Works automatically with local SDK (if exists) or JitPack
-    implementation("com.github.EyeSeeTea:dhis2-android-sdk:android-core:v1.13.0-eyeseetea-fork-1")
+    implementation("com.github.EyeSeeTea:dhis2-android-sdk:android-core:1.15.0-eyeseetea-fork-1")
 }
 ```
 

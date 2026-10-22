@@ -22,10 +22,10 @@ This file is not for:
 ## Header
 
 - Upstream: `dhis2/dhis2-android-sdk`
-- Oslo version tracked: `1.14.2`
+- Oslo version tracked: `1.15.0`
 - Fork version: see `dhis2AndroidSdkVersion` in `gradle/libs.versions.toml`
 - Base branch: `develop-eyeseetea`
-- Generated on: `2026-10-21`
+- Generated on: `2026-10-21` (updated for `1.15.0` on `2026-10-22`)
 
 ## Title rule
 
@@ -118,7 +118,7 @@ Main implementation points:
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/DataSetRetentionLimitResolver.kt`
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/ProgramRetentionLimitResolver.kt`
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/RetentionCandidate.kt`
-- `core/src/main/java/org/hisp/dhis/android/core/retention/internal/RetentionDIModule.kt`
+- `core/src/main/java/org/hisp/dhis/android/core/retention/internal/RetentionDIModule.kt` — includes `ArchDIModule`, `PersistenceDIModule` and `SettingsDIModule` so Koin compile safety (Oslo ANDROSDK-2241, `1.15.0`) can validate it on its own
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/RetentionModuleImpl.kt`
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/RetentionSelector.kt`
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/DataValueRetentionPurger.kt`
@@ -127,8 +127,8 @@ Main implementation points:
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/RetentionPurger.kt`
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/SyncedDataRetentionPurger.kt`
 - `core/src/main/java/org/hisp/dhis/android/core/retention/internal/TrackedEntityRetentionPurger.kt`
-- `core/src/main/java/org/hisp/dhis/android/core/D2.kt` — `retentionModule()` accessor (Oslo file)
-- `core/src/main/java/org/hisp/dhis/android/core/arch/d2/internal/D2DIComponent.kt` — wiring (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/D2.kt` — `retentionModule()` accessor, marked (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/arch/d2/internal/D2DIComponent.kt` — `retentionModule` constructor parameter, marked (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/core/arch/d2/internal/D2DIComponentFactory.kt` — registers `RetentionDIModule` (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/core/dataset/internal/DataSetElementStore.kt` — `getDataSetsForDataElement` (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/persistence/dataset/DataSetDataElementLinkStoreImpl.kt` — its implementation (Oslo file)
@@ -163,7 +163,7 @@ Spec: `openspec/specs/disabled-account-login/spec.md`
 
 Main implementation points:
 - `core/src/main/java/org/hisp/dhis/android/core/user/internal/LogInCall.kt`
-- `core/src/main/java/org/hisp/dhis/android/core/maintenance/D2ErrorCode.java`
+- `core/src/main/java/org/hisp/dhis/android/core/maintenance/D2ErrorCode.kt` — uses Oslo's `USER_ACCOUNT_DISABLED`; adds no code
 - `core/api/core.api` — generated; must not gain a public `ACCOUNT_DISABLED` value
 
 Supporting files in the same workflow:
@@ -181,15 +181,15 @@ Status: `active`
 Spec: `openspec/specs/two-factor-login/spec.md`
 
 Main implementation points:
-- `core/src/main/java/org/hisp/dhis/android/core/user/internal/LogInCall.kt` — `twoFactorCode` parameter, `loginInDhis2AndGetUser`, `oldLogin`, `generateLoginErrorIfRequired`; `loginOnline` no longer stores the credentials (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/LogInCall.kt` — `twoFactorCode` parameter, `loginInDhis2AndGetUser`, `oldLogin`, `generateLoginErrorIfRequired`; Oslo's `loginOnline` still stores the credentials, which OAuth2/OpenID relogin needs (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/core/user/internal/LoginPayload.kt` (new)
 - `core/src/main/java/org/hisp/dhis/android/core/user/internal/LoginResponse.kt` (new)
-- `core/src/main/java/org/hisp/dhis/android/core/user/UserModule.kt` — public `logIn`/`blockingLogIn` with `twoFactorCode` (Oslo file, public API)
-- `core/src/main/java/org/hisp/dhis/android/core/user/internal/UserModuleImpl.kt` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/user/UserModule.kt` — appended four-argument overloads with `twoFactorCode`: `logIn` (deprecated), `rxLogIn`, `blockingLogIn`, `suspendLogIn`; Oslo's three-argument API untouched (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/core/user/internal/UserModuleImpl.kt` — appended `suspendLogIn` with `twoFactorCode` (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/core/user/internal/UserNetworkHandler.kt` (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/network/user/UserNetworkHandlerImpl.kt` (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/network/user/UserService.kt` — `POST auth/login` (Oslo file)
-- `core/src/main/java/org/hisp/dhis/android/core/maintenance/D2ErrorCode.java` — 7 two-factor codes (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/core/maintenance/D2ErrorCode.kt` — 7 two-factor codes after `INVALID_CHARACTERS` (Oslo file, public API)
 - `core/src/main/java/org/hisp/dhis/android/core/arch/api/authentication/internal/ParentAuthenticatorPlugin.kt` — treats `auth/login` as a login call (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/core/arch/api/authentication/internal/UserIdAuthenticatorHelper.kt` — no user id header before the user is known (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/core/mockwebserver/Dhis2MockServer.kt` — mock `auth/login` response (Oslo file)
@@ -198,9 +198,11 @@ Main implementation points:
 Supporting files in the same workflow:
 - `core/src/test/java/org/hisp/dhis/android/core/user/internal/LogInCallUnitShould.kt`
 - `core/src/test/java/org/hisp/dhis/android/core/arch/api/authentication/internal/ParentAuthenticatorPluginShould.kt`
-- `core/src/test/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryOnlineHelperShould.kt` — touched incidentally by `69d759964a`
 - `core/src/sharedTest/resources/user/auth_login_success.json`
-- about 45 `core/src/androidTest/**` files — callers updated for the extra `twoFactorCode` argument (`blockingLogIn(..., null)`); losing one is a compile error, not a silent drop
+- `core/src/androidTest/**` — no changes since `1.15.0`: tests call Oslo's three-argument `logIn`/`blockingLogIn`
+
+Touched by the feature commits but restored to Oslo (no EyeSeeTea change left):
+- `core/src/test/java/org/hisp/dhis/android/core/trackedentity/search/TrackedEntityInstanceQueryOnlineHelperShould.kt`
 
 Technical note:
 - Highest conflict surface of the fork. Oslo `1.15.0` rewrites the login flow
@@ -208,6 +210,11 @@ Technical note:
   and moves `D2ErrorCode` to Kotlin. It adds a `TwoFactorAuthManager`
   (enable/disable 2FA) but still no login with a code, so this is not
   absorbed. Disabled Account Login Handling (2.4) is built on this flow.
+- Since `1.15.0` the public API is an appended overload over Oslo's
+  (technique T4 in `customization-techniques.md`), and `LogInCall.logIn` takes
+  a trailing `twoFactorCode: String? = null`. Credentials from the password
+  path carry `AuthorizationType.BASIC`, or `ParentAuthenticatorPlugin` stops
+  sending them (`store_credentials_with_basic_authorization_after_two_factor_login`).
 
 ### 2.6 Automatic Logout On Unauthorized Session
 
@@ -222,9 +229,12 @@ Main implementation points:
 - `core/src/main/java/org/hisp/dhis/android/core/user/internal/AccountManagerImpl.kt` (Oslo file)
 
 Technical note:
-- Consumed by WIDP (restored in app PR #335). Oslo `1.15.0` adds its own
-  `logOutObservable` for OAuth2/OpenID only; check whether both can share one
-  mechanism when merging.
+- Consumed by WIDP (restored in app PR #335). Kept as is in `1.15.0`:
+  `AccountManager.logOutObservable()` is still only EyeSeeTea's (`core.api`),
+  and `AccountManagerImpl` takes `ConnectLogoutHandler` after Oslo's OAuth2 and
+  OpenID state stores. Oslo tests that build these classes
+  (`AccountManagerImplShould`, `ParentAuthenticatorPluginShould`) need a
+  `ConnectLogoutHandler` mock.
 
 ### 2.7 Change Server URL
 
@@ -244,33 +254,37 @@ Technical note:
 
 ### 2.8 Original Size Image Download
 
-Status: `broken`
+Status: `active`
 
 Spec: `openspec/specs/original-size-image-download/spec.md`
 
 Main implementation points:
-- `core/src/main/java/org/hisp/dhis/android/core/D2Configuration.java` — `fileResizerDimension` (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/core/D2Configuration.kt` — `fileResizerDimension` property, no default and no `fileResizerDimension()` accessor (detekt `TooManyFunctions`) (Oslo file, public API)
 - `core/src/main/java/org/hisp/dhis/android/core/arch/helpers/FileResizerHelper.kt` — `Dimension.ORIGINAL` (Oslo file)
-- `core/src/main/java/org/hisp/dhis/android/core/fileresource/FileResourceDIModule.kt` (Oslo file)
-- `core/src/main/java/org/hisp/dhis/android/core/fileresource/internal/FileResourceDownloadParams.kt` (Oslo file)
-- `core/src/main/java/org/hisp/dhis/android/core/fileresource/internal/GetDimension.kt` (new)
-- `core/src/main/java/org/hisp/dhis/android/core/fileresource/internal/FileResourceDownloadCall.kt` — where the dimension used to be read (Oslo file)
-- `core/src/main/java/org/hisp/dhis/android/network/fileresource/FileResourceService.kt` — nullable `dimension` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/core/fileresource/internal/GetDimension.kt` — `getDimension`: the configured dimension for images, otherwise Oslo's `computeScalingDimension` (new, `internal`)
+- `core/src/main/java/org/hisp/dhis/android/core/fileresource/internal/FileResourceDownloadCall.kt` — injects `D2Configuration` and calls `getDimension` (Oslo file)
 
 Supporting files in the same workflow:
 - `core/src/test/java/org/hisp/dhis/android/core/fileresource/internal/GetDimensionShould.kt`
+
+Touched by the feature commits but restored to Oslo in `1.15.0` (no EyeSeeTea change left):
+- `core/src/main/java/org/hisp/dhis/android/core/fileresource/FileResourceDIModule.kt`
+- `core/src/main/java/org/hisp/dhis/android/core/fileresource/internal/FileResourceDownloadParams.kt`
 - `core/src/test/java/org/hisp/dhis/android/core/fileresource/FileResourceDownloaderShould.kt`
 
 Technical note:
-- **Broken since the Oslo `1.12.0` merge (PR #461, 2025-09-03).** Oslo
-  replaced the download with its own content-length-based size selection;
-  the merge kept the configuration and `params.dimension`, but nothing reads
-  them any more and `getDimension()` is only called from its test. Every app
-  now gets Oslo's selection, which caps images at MEDIUM. `develop-spip`
-  configures `ORIGINAL` with SDK `1.13.1-eyeseetea-fork-4` and is affected;
-  `develop-spocc` (`1.11.0.1`) still works. Decision: re-wire it during the
-  `1.15.0` merge on top of `FileResourceUtil.computeScalingDimension`; WIDP
-  also wants the original size (its app must then set `ORIGINAL`).
+- Broken from the Oslo `1.12.0` merge (PR #461, 2025-09-03) to `1.14.2`:
+  Oslo replaced the download with its own content-length-based size selection
+  and nothing read the configuration. Re-wired in `1.15.0` on top of
+  `FileResourceUtil.computeScalingDimension`, its single call site.
+- A configured dimension replaces Oslo's selection for images entirely,
+  including its MEDIUM cap and its `maxContentLength` check. Non-images always
+  get Oslo's selection. Oslo already sends `ORIGINAL` as a dimension name, so
+  `FileResourceService`, `FileResourceDownloadParams` and `FileResourceDIModule`
+  are Oslo's.
+- Consumers: `develop-spip` configures `ORIGINAL`. WIDP removed its setting in
+  app commit `b354b59e8` while this was broken and must add
+  `fileResizerDimension(ORIGINAL)` to get original images.
 
 ### 2.9 URL Data Element Field
 
@@ -421,6 +435,7 @@ these commits touched must appear under the matching section 2 entry.
 
 - `c05c5bd3a3` — Enable by d2Configuration set download images in original size
 - `1876279b11` — Fix GetDimensionShould
+- `59fb0039ec` — fix: Download images at the configured dimension on top of Oslo's size selection
 
 ### 4.9 URL Data Element Field
 
@@ -433,11 +448,10 @@ Differences against Oslo that are neither a customization nor an Oslo fix.
 Every entry needs a short reason; this section must be empty when an upgrade
 closes.
 
-- No-op drift (expanded wildcard imports, stray `import android.R`, blank
-  lines, `internal` added to `OrphanCleaner`/`SubCollectionCleaner`,
-  `AppearanceSettings.Builder`, `86.sql` trailing lines, PMD report settings):
-  restore Oslo's version during the `1.15.0` merge. File list in
-  `upgrade/upgrade-1.15.0-notes.md`, section D.
+- None. The no-op drift found in `1.14.2` (expanded wildcard imports, stray
+  `import android.R`, blank lines, `internal` on `OrphanCleaner` /
+  `SubCollectionCleaner`, `86.sql` trailing lines, PMD report settings) was
+  restored to Oslo during the `1.15.0` merge.
 
 Not customizations (listed so they are not re-investigated): earlier
 EyeSeeTea work that Oslo absorbed or that no longer exists in the code —

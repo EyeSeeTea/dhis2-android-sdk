@@ -7,13 +7,6 @@ only get a reduced copy on the device. This customization lets the app choose,
 once for the whole SDK, the image size to download, including the original
 file without resizing.
 
-> **Current status: broken.** The configuration is still accepted, but since
-> the Oslo `1.12.0` merge (EyeSeeTea PR #461, 2025-09-03) the download no
-> longer reads it, so every app gets Oslo's own size selection. Affects
-> `develop-spip` (SDK `1.13.1-eyeseetea-fork-4`), which configures the original
-> size, and WIDP, which also wants it. To be re-wired during the `1.15.0`
-> merge. See `eyeseetea-docs/customization-files.md`.
-
 ## Requirements
 
 ### Requirement: The app configures the downloaded image size

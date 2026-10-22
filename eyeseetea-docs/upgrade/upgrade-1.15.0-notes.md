@@ -9,10 +9,10 @@ documentation: delete when the upgrade closes (see `upgrade-plan.md`).
 - From Oslo version: `1.14.2` (tag `1.14.2` = `578b62470b`, the merge-base of `develop-eyeseetea`)
 - To Oslo version (tag): `1.15.0` (`3ff01d8e93`)
 - Upstream tag branch: `origin/upstream/1.15.0` (exists)
-- Upgrade branch: `feature/upgrade_1.15.0` (working copy: local `feature/upgrade_1.15.0_temp`, branched from `feature-oca/synced-data-retention-purge`, not pushed)
-- OpenSpec change: `openspec/changes/upgrade-to-1-15-0/` (not created yet)
+- Upgrade branch: `feature/upgrade_1.15.0` (renamed from the local `feature/upgrade_1.15.0_temp`), branched from `feature-oca/synced-data-retention-purge`; the PR targets that branch (user decision, 2026-10-22)
+- OpenSpec change: `openspec/changes/upgrade-to-1-15-0/`
 - Started on: `2026-10-21`
-- Status: `in_progress` — merge of `1.15.0` started, conflicts not resolved yet
+- Status: `in_progress` — merge committed, validation done except the app build (7.3) and manual checks (7.4); PR and tag `1.15.0-eyeseetea-fork-1` next
 
 ## Progress
 
@@ -210,6 +210,20 @@ against `origin/upstream/1.15.0` once resolved.
   - `:core:compileDebugKotlin`, `:core:compileDebugUnitTestKotlin` and `:core:compileDebugAndroidTestKotlin` pass after the restore.
 - `:core:compileDebugKotlin` passes; targeted unit tests pass (LogInCallUnitShould 50, ParentAuthenticatorPluginShould 2, AccountManagerImplShould 3, retention resolvers 9). Full `testDebugUnitTest` is task 5.2.
 
+## Consumer App Actions
+
+What each consumer app has to do, or should know, when it moves to
+`1.15.0-eyeseetea-fork-1`. Checked against the `origin/develop-*` branches of
+`dhis2-android-capture-app` on 2026-10-22; local branches may be stale.
+
+- **WIDP (`develop-widp`)** — Original Size Image Download:
+  - The app configures no image dimension today: commit `b354b59e8` ("Remove dead custom code", 2026-03-09) removed `.fileResizerDimension(FileResizerHelper.Dimension.MEDIUM)` from `ServerModule.kt` while the customization was broken.
+  - Without a configured dimension it keeps Oslo's selection (SMALL or MEDIUM; ORIGINAL only for small images), the same as now. Nothing breaks.
+  - WIDP wants original-size images: add `.fileResizerDimension(FileResizerHelper.Dimension.ORIGINAL)` to the `D2Configuration.builder()` in `app/src/main/java/org/dhis2/data/server/ServerModule.kt` (import `org.hisp.dhis.android.core.arch.helpers.FileResizerHelper`).
+  - Two-factor login: keeps calling the four-argument `blockingLogIn(..., twoFactorCode)` / `logIn(..., twoFactorCode)`; no change.
+- **SPIP (`develop-spip`)** — Original Size Image Download: already configures `ORIGINAL`. From this version it really gets the original files (since SDK `1.12.0` it got at most MEDIUM). A configured dimension also bypasses Oslo's `maxContentLength` check, so larger images than before are downloaded; mention it in the SPIP release notes. No code change.
+- **EyeSeeTea, OCA, Sports (`develop-eyeseetea`, `develop-oca`, `develop-sports`)**: no image dimension configured; behaviour unchanged. No code change known yet (task 7.3 builds every app).
+
 ## Validation Notes
 
 - Build (tasks 5.1 to 5.3, 2026-10-22):
@@ -223,6 +237,12 @@ against `origin/upstream/1.15.0` once resolved.
   - `GetDimensionShould` rewritten: 3 of 5 tests failed against the stock-only behaviour and pass after the change. Full unit suite: 1792 tests, 0 failures. `core.api` only loses `GetDimensionKt`.
   - Gotcha: running `releaseApiDump` in the same Gradle invocation as test compilations adds `moduledef_*` Koin hints for Oslo modules to `core.api`; regenerate it from `:core:clean`.
   - `:core:detekt` fails with two issues left by the merge, for task 7.1: `D2Configuration` `TooManyFunctions` (11/11, the `fileResizerDimension()` accessor) and `LogInCallUnitShould` `LargeClass` (601/600).
+
+- Validation (group 7, 2026-10-22):
+  - 7.1: `:core:ktlintCheck`, `:core:detekt` and `:core:testDebugUnitTest` pass (1786 tests). The two detekt issues are fixed in `e0a401199a`: the `D2Configuration.fileResizerDimension()` accessor is removed (the apps only use the builder; Java keeps `getFileResizerDimension()`), and the seven two-factor status tests of `LogInCallUnitShould` are one test over the seven codes (`LargeClass` counts non-blank lines).
+  - 7.2: on the `Pixel_9a` emulator, the checklist classes pass: the `retention.internal` package, `DataSetElementStoreIntegrationShould`, `Migration301IntegrationShould` and `DatabaseConfigurationMigrationIntegrationShould` (83 tests, 0 failures, 3 skipped by Oslo's base store test for models without nullable fields). Also `LogInCallMockIntegrationShould`, `LogInOfflineCallMockIntegrationShould`, `UserModuleMockIntegrationShould`, `MultiUserMockIntegrationShould` and the two `testapp.fileresource` mock tests pass (26 tests); the full-dispatcher setup downloads file resources through `FileResourceDownloadCall`, so the `D2Configuration` injection works at runtime.
+  - 7.3 (user decision): only the capture app branch `feature-eyeseetea/upgrade_3.5.0` is built; it is still mid-merge (7 unresolved files, among them `DomainErrorMapper.kt`, `D2ErrorMessageProviderImpl.kt` and `gradle/libs.versions.toml`), so the build waits for it. Static check meanwhile: the 80 `D2ErrorCode` values the app working tree uses all exist in the SDK, and `LoginRepositoryImpl` calls the four-argument `blockingLogIn(..., null)` overload. The composite build needs the local-only AGP downgrade described in the app's `eyeseetea-docs/SDK_Setup.md`.
+  - `EyeSeeTea.md`: its table of contents links "Local Development with Composite Build" but the section is missing; fix in group 8.
 
 ## Finalization
 

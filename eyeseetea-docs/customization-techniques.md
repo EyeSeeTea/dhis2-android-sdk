@@ -93,6 +93,39 @@ the new structure. The integration test is what tells you it still works.
 
 ---
 
+## T4. Appended overload over an Oslo public API
+
+**Use when:** a customization needs an extra argument on an Oslo public method
+that apps call, and Oslo keeps changing that method's shape.
+
+**Used by:** Two-Factor Authentication Login — the four-argument
+`logIn` / `rxLogIn` / `blockingLogIn` / `suspendLogIn` with `twoFactorCode`,
+appended at the end of `user/UserModule.kt`, and `suspendLogIn` at the end of
+`user/internal/UserModuleImpl.kt`.
+
+**How it works.** Leave Oslo's declarations untouched. Append a titled block
+with real overloads that take the extra argument (Java callers cannot use
+Kotlin default arguments), each delegating to one abstract `suspend` overload
+implemented in an appended block of the Oslo implementation. The internal call
+takes the extra argument as a trailing parameter with a default, so Oslo's own
+path reaches the same flow without it:
+
+```kotlin
+// EyeSeeTea customization - Two-Factor Authentication Login
+fun blockingLogIn(username: String, password: String, serverUrl: String, twoFactorCode: String?): User =
+    runBlocking { suspendLogIn(username, password, serverUrl, twoFactorCode) }
+```
+
+**Prefer first:** a new owned module (T1) when the behaviour is not a variant
+of an Oslo call.
+
+**Upgrade cost.** Low. Oslo's tests and callers keep compiling with Oslo's
+signatures, so they merge without conflicts; `core.api` only gains the
+overloads. When Oslo renames or deprecates the base method, add the matching
+overload and deprecate ours the same way.
+
+---
+
 ## How to add a technique here
 
 Add an entry when you solve an Oslo-code customization in a way another

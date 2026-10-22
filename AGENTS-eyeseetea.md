@@ -21,7 +21,7 @@ guidance; it is imported from `CLAUDE.md`. Oslo ships its own `CLAUDE.md` from
 ./gradlew :core:connectedDebugAndroidTest      # needs a device/emulator
 ./gradlew :core:ktlintCheck :core:detekt
 ./gradlew :core:ktlintFormat
-./gradlew :core:apiDump                         # after an intentional public API change (1.15.0+: releaseApiDump)
+./gradlew :core:releaseApiDump                  # after an intentional public API change; run it after :core:clean
 ./gradlew runChecks                             # clean + ktlint, detekt, checkstyle, pmd, lint
 ```
 
@@ -43,7 +43,7 @@ is in `eyeseetea-docs/customization-files.md`.
 | 5 | `two-factor-login` | Two-Factor Authentication Login | active | high |
 | 6 | `automatic-logout-on-unauthorized` | Automatic Logout On Unauthorized Session | active | medium |
 | 7 | `change-server-url` | Change Server URL | active | medium |
-| 8 | `original-size-image-download` | Original Size Image Download | broken | high |
+| 8 | `original-size-image-download` | Original Size Image Download | active | medium |
 | 9 | `url-data-element` | URL Data Element Field | active | medium |
 
 Oslo bug fixes (`// EyeSeeTea fix`) have no spec; they are listed with their

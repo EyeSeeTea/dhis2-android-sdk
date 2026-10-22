@@ -16,7 +16,7 @@ Run after any Oslo upgrade, and after touching a customization directly.
 ```bash
 ./gradlew :core:ktlintCheck :core:detekt
 ./gradlew :core:testDebugUnitTest
-./gradlew :core:apiCheck            # Oslo 1.15.0+: :core:releaseApiCheck
+./gradlew :core:releaseApiCheck
 ```
 
 If the automated suite fails, stop here; the checks below assume a green
@@ -113,18 +113,20 @@ Manual check (from the consuming app, SPIP / Sports / WIDP):
 
 ## 8. Original Size Image Download
 
-Status: `broken` (see `customization-files.md` 2.8) — no check passes until
-the wiring is restored or the customization is retired.
-
 Automated coverage:
 ```bash
 ./gradlew :core:testDebugUnitTest --tests "org.hisp.dhis.android.core.fileresource.internal.GetDimensionShould"
 ```
 
-Manual check (from the consuming app, SPIP or WIDP), once restored:
+Manual check (from the consuming app, SPIP, or WIDP once it sets the
+dimension):
 - [ ] With `fileResizerDimension(ORIGINAL)`, sync a tracker image larger than
-      the medium size: the stored file has the original resolution.
-- [ ] Without the setting, the same image is stored at the medium size.
+      the medium size: the stored file has the original resolution, also when
+      it is above the sync settings' `fileMaxLengthBytes`.
+- [ ] Without the setting, the same image is stored at the size Oslo selects
+      (never above medium).
+- [ ] A non-image file resource downloads the same with and without the
+      setting.
 
 ## 9. URL Data Element Field
 
