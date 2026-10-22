@@ -30,6 +30,8 @@ package org.hisp.dhis.android.core.user.internal
 import org.hisp.dhis.android.core.arch.db.stores.internal.LinkStore
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit
 import org.hisp.dhis.android.core.user.UserOrganisationUnitLink
+import java.lang.RuntimeException
+import kotlin.Throws
 
 internal interface UserOrganisationUnitLinkStore : LinkStore<UserOrganisationUnitLink> {
     @Throws(RuntimeException::class)

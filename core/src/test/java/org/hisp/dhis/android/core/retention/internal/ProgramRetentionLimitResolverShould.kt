@@ -83,7 +83,7 @@ class ProgramRetentionLimitResolverShould {
             .teiDBTrimming(50)
             .build()
         val programSettings = givenAProgramSettings(
-            globalSettings = null,
+            globalSettings = ProgramSetting.builder().build(),
             specificSettings = mapOf("program1" to specificSetting),
         )
 
@@ -158,7 +158,7 @@ class ProgramRetentionLimitResolverShould {
     }
 
     private fun givenAProgramSettings(
-        globalSettings: ProgramSetting?,
+        globalSettings: ProgramSetting,
         specificSettings: Map<String, ProgramSetting>,
     ): ProgramSettings {
         return ProgramSettings.builder()

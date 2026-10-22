@@ -48,7 +48,7 @@ class DataSetElementStoreIntegrationShould : LinkStoreAbstractIntegrationShould<
     TestDatabaseAdapterFactory.get(),
 ) {
     override fun addMasterUid(): String {
-        return DataSetElementSamples.getDataSetElement().dataSet()!!.uid()
+        return DataSetElementSamples.getDataSetElement().dataSet().uid()
     }
 
     override fun buildObject(): DataSetElement {

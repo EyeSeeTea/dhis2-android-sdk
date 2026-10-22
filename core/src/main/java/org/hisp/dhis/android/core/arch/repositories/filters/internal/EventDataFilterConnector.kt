@@ -32,7 +32,7 @@ import org.hisp.dhis.android.core.common.DateFilterPeriod
 import org.hisp.dhis.android.core.common.DatePeriodType
 import org.hisp.dhis.android.core.common.RelativePeriod
 import org.hisp.dhis.android.core.event.EventDataFilter
-import java.util.Date
+import java.util.*
 
 @Suppress("TooManyFunctions")
 class EventDataFilterConnector<R : BaseRepository> internal constructor(
@@ -71,6 +71,11 @@ class EventDataFilterConnector<R : BaseRepository> internal constructor(
 
     fun like(value: String): R {
         val filter = EventDataFilter.builder().dataItem(key).like(value).build()
+        return repositoryFactory.updated(filter)
+    }
+
+    fun isEmpty(empty: Boolean): R {
+        val filter = EventDataFilter.builder().dataItem(key).isEmpty(empty).build()
         return repositoryFactory.updated(filter)
     }
 

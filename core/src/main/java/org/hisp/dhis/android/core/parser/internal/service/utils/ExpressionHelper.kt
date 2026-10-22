@@ -31,21 +31,20 @@ import org.hisp.dhis.android.core.datavalue.DataValue
 import org.hisp.dhis.android.core.parser.internal.service.dataobject.DataElementObject
 import org.hisp.dhis.android.core.parser.internal.service.dataobject.DataElementOperandObject
 import org.hisp.dhis.android.core.parser.internal.service.dataobject.DimensionalItemObject
+import java.lang.NumberFormatException
 
 internal object ExpressionHelper {
 
     fun getValueMap(dataValues: List<DataValue>): Map<DimensionalItemObject, Double> {
         val valueMap: MutableMap<DimensionalItemObject, Double> = HashMap()
         for (dataValue in dataValues) {
-            dataValue.dataElement()?.let { deId ->
-                val dataElementItem: DimensionalItemObject = DataElementObject(deId)
-                addDimensionalItemValueToMap(dataElementItem, dataValue.value(), valueMap)
+            val deId = dataValue.dataElement()
+            val dataElementItem: DimensionalItemObject = DataElementObject(deId)
+            addDimensionalItemValueToMap(dataElementItem, dataValue.value(), valueMap)
 
-                dataValue.categoryOptionCombo()?.let { cocId ->
-                    val dataElementOperandItem: DimensionalItemObject = DataElementOperandObject(deId, cocId)
-                    addDimensionalItemValueToMap(dataElementOperandItem, dataValue.value(), valueMap)
-                }
-            }
+            val dataElementOperandItem: DimensionalItemObject =
+                DataElementOperandObject(deId, dataValue.categoryOptionCombo())
+            addDimensionalItemValueToMap(dataElementOperandItem, dataValue.value(), valueMap)
         }
         return valueMap
     }

@@ -1,44 +1,44 @@
 ## 1. Start the merge (runbook phase 2)
 
-- [ ] 1.1 Fetch `upstream` tags and confirm `origin/upstream/1.15.0` points at `3ff01d8e93`; verify with `git rev-parse origin/upstream/1.15.0`
-- [ ] 1.2 On `feature/upgrade_1.15.0_temp`, run `git merge origin/upstream/1.15.0` and check that the conflicted files match the 26 listed in proposal.md; record any difference in `eyeseetea-docs/upgrade/upgrade-1.15.0-notes.md`
+- [x] 1.1 Fetch `upstream` tags and confirm `origin/upstream/1.15.0` points at `3ff01d8e93`; verify with `git rev-parse origin/upstream/1.15.0`
+- [x] 1.2 On `feature/upgrade_1.15.0_temp`, run `git merge origin/upstream/1.15.0` and check that the conflicted files match the 26 listed in proposal.md; record any difference in `eyeseetea-docs/upgrade/upgrade-1.15.0-notes.md`
 
 Commit: none yet. Groups 2 to 5 are resolved inside the single merge commit
 that task 5.4 creates (git cannot commit a merge in parts).
 
 ## 2. Classify and resolve the easy batch (runbook phases 3 and 4)
 
-- [ ] 2.1 Fill the file classification table of `upgrade-1.15.0-notes.md` (file, category, expected delta, customization) for every conflicted file and every file in `customization-files.md`, using design.md D5; verify every inventory file has a row
-- [ ] 2.2 Resolve `accept_theirs` files: `core/api/core.api`, `.github/workflows/ci.yml`, `core/plugins/android-pmd.gradle` (accept deletion), `OpenIDConnectHandlerImpl.kt`, `SystemInfoSamples.kt`, `CreateEventUtils.java` and `LoginErrorHandlingRealIntegrationShould.java` (accept deletion); verify `git diff origin/upstream/1.15.0 -- <file>` is empty for each
-- [ ] 2.3 Resolve `CLAUDE.md` as Oslo's file plus the `@AGENTS-eyeseetea.md` import line; verify the two-dot diff is that one line
-- [ ] 2.4 Resolve `gradle/libs.versions.toml` as Oslo's and set `dhis2AndroidSdkVersion = "1.15.0-eyeseetea-fork-1"`; verify the two-dot diff is that line
-- [ ] 2.5 Accept Oslo's version of the five real-server integration tests renamed to Kotlin (`LogInCallRealIntegrationShould`, `MultiUserRealIntegrationShould`, `DataSetCompleteRegistrationCallRealIntegrationShould`, `EventDownloadRealIntegrationShould`, `TrackedEntityInstanceCallRealIntegrationShould`); verify their two-dot diff is empty (D2 keeps the three-argument `logIn`)
+- [x] 2.1 Fill the file classification table of `upgrade-1.15.0-notes.md` (file, category, expected delta, customization) for every conflicted file and every file in `customization-files.md`, using design.md D5; verify every inventory file has a row
+- [x] 2.2 Resolve `accept_theirs` files: `core/api/core.api`, `.github/workflows/ci.yml`, `core/plugins/android-pmd.gradle` (accept deletion), `OpenIDConnectHandlerImpl.kt`, `SystemInfoSamples.kt`, `CreateEventUtils.java` and `LoginErrorHandlingRealIntegrationShould.java` (accept deletion); verify `git diff origin/upstream/1.15.0 -- <file>` is empty for each
+- [x] 2.3 Resolve `CLAUDE.md` as Oslo's file plus the `@AGENTS-eyeseetea.md` import line; verify the two-dot diff is that one line
+- [x] 2.4 Resolve `gradle/libs.versions.toml` as Oslo's and set `dhis2AndroidSdkVersion = "1.15.0-eyeseetea-fork-1"`; verify the two-dot diff is that line
+- [x] 2.5 Accept Oslo's version of the five real-server integration tests renamed to Kotlin (`LogInCallRealIntegrationShould`, `MultiUserRealIntegrationShould`, `DataSetCompleteRegistrationCallRealIntegrationShould`, `EventDownloadRealIntegrationShould`, `TrackedEntityInstanceCallRealIntegrationShould`); verify their two-dot diff is empty (D2 keeps the three-argument `logIn`)
 
 ## 3. Re-apply customizations in conflicted files (runbook phase 5)
 
-- [ ] 3.1 Two-Factor Authentication Login, `UserModule.kt` / `UserModuleImpl.kt`: Oslo's file plus an appended block of four-argument overloads (`logIn` deprecated, `rxLogIn`, `blockingLogIn`, `suspendLogIn`) per design.md D2; verify the two-dot diff only adds the titled block
-- [ ] 3.2 Two-Factor Authentication Login and Disabled Account Login Handling, `LogInCall.kt`: start from Oslo's flow and re-insert the `/api/auth/login` request, two-factor status mapping, basic-auth fallback and disabled-account branch, with `twoFactorCode: String? = null` and credentials stored as `AuthorizationType.BASIC`; verify every inserted block carries its titled comment
-- [ ] 3.3 `D2ErrorCode.kt`: append the two-factor and disabled-account codes from `D2ErrorCode.java` at the end of the enum and accept the Java deletion; verify each code exists once
-- [ ] 3.4 `ParentAuthenticatorPlugin.kt` (auto-merged): check the `auth/login` login-call customization against Oslo's `when` on `authorizationType`; verify the two-dot diff is only the titled block
-- [ ] 3.5 `LogInCallUnitShould.kt` and `ParentAuthenticatorPluginShould.kt`: start from Oslo's tests and re-add the fork's two-factor and disabled-account cases; verify with `./gradlew :core:testDebugUnitTest --tests "*LogInCallUnitShould" --tests "*ParentAuthenticatorPluginShould"` after task 5.2
-- [ ] 3.6 Automatic Logout On Unauthorized Session, `AccountManagerImpl.kt`: Oslo's constructor plus `connectLogoutHandler`; verify `logOutObservable()` still delegates to `ConnectLogoutHandler`
-- [ ] 3.7 Change Server URL, `DatabaseConfigurationHelper.kt`: re-use an existing account, building new ones with Oslo's `authorizationType`; verify the two-dot diff is only the titled block
-- [ ] 3.8 Synced Data retention, `D2DIComponentFactory.kt`: Oslo's module list plus `RetentionDIModule`; verify the two-dot diff is the import and the module line
-- [ ] 3.9 URL Data Element Field: accept the deletion of `DataElement.java` and add `url` to `DataElement.kt`; re-check `DataElementDB.kt`, `DataElementFields.kt`, `85.sql` and `175.sql`; verify `DataElement.url()` and the `url` column are present
-- [ ] 3.10 Original Size Image Download, merge part: accept the deletion of `D2Configuration.java` and add `fileResizerDimension` to `D2Configuration.kt` with no default; resolve `FileResourceService.kt` and `FileResourceDownloadParams.kt` as `accept_theirs` (design.md D3); verify their two-dot diffs are empty
+- [x] 3.1 Two-Factor Authentication Login, `UserModule.kt` / `UserModuleImpl.kt`: Oslo's file plus an appended block of four-argument overloads (`logIn` deprecated, `rxLogIn`, `blockingLogIn`, `suspendLogIn`) per design.md D2; verify the two-dot diff only adds the titled block
+- [x] 3.2 Two-Factor Authentication Login and Disabled Account Login Handling, `LogInCall.kt`: start from Oslo's flow and re-insert the `/api/auth/login` request, two-factor status mapping, basic-auth fallback and disabled-account branch, with `twoFactorCode: String? = null` and credentials stored as `AuthorizationType.BASIC`; verify every inserted block carries its titled comment
+- [x] 3.3 `D2ErrorCode.kt`: append the two-factor and disabled-account codes from `D2ErrorCode.java` at the end of the enum and accept the Java deletion; verify each code exists once
+- [x] 3.4 `ParentAuthenticatorPlugin.kt` (auto-merged): check the `auth/login` login-call customization against Oslo's `when` on `authorizationType`; verify the two-dot diff is only the titled block
+- [x] 3.5 `LogInCallUnitShould.kt` and `ParentAuthenticatorPluginShould.kt`: start from Oslo's tests and re-add the fork's two-factor and disabled-account cases; verify with `./gradlew :core:testDebugUnitTest --tests "*LogInCallUnitShould" --tests "*ParentAuthenticatorPluginShould"` after task 5.2
+- [x] 3.6 Automatic Logout On Unauthorized Session, `AccountManagerImpl.kt`: Oslo's constructor plus `connectLogoutHandler`; verify `logOutObservable()` still delegates to `ConnectLogoutHandler`
+- [x] 3.7 Change Server URL, `DatabaseConfigurationHelper.kt`: re-use an existing account, building new ones with Oslo's `authorizationType`; verify the two-dot diff is only the titled block
+- [x] 3.8 Synced Data retention, `D2DIComponentFactory.kt`: Oslo's module list plus `RetentionDIModule`; verify the two-dot diff is the import and the module line
+- [x] 3.9 URL Data Element Field: accept the deletion of `DataElement.java` and add `url` to `DataElement.kt`; re-check `DataElementDB.kt`, `DataElementFields.kt`, `85.sql` and `175.sql`; verify `DataElement.url()` and the `url` column are present
+- [x] 3.10 Original Size Image Download, merge part: accept the deletion of `D2Configuration.java` and add `fileResizerDimension` to `D2Configuration.kt` with no default; resolve `FileResourceService.kt` and `FileResourceDownloadParams.kt` as `accept_theirs` (design.md D3); verify their two-dot diffs are empty
 
 ## 4. Verify the auto-merged files
 
-- [ ] 4.1 Two-dot diff every file of `customization-files.md` against `origin/upstream/1.15.0` and compare with its expected delta; verify no customization block is lost or duplicated
-- [ ] 4.2 Read the two-dot diff of the remaining both-sides files from proposal.md; restore Oslo's version where the difference is no-op drift (section 5 of `customization-files.md`); verify section 5 is empty
-- [ ] 4.3 Oslo fixes: check whether `1.15.0` still has the bugs behind "Encryption key preserved on database rename", "Follow the SQLite ALTER TABLE caveats" and "Offline-first search keeps local results" (Oslo partially reverted the last one); keep or retire each, and verify the decision is in the notes
+- [x] 4.1 Two-dot diff every file of `customization-files.md` against `origin/upstream/1.15.0` and compare with its expected delta; verify no customization block is lost or duplicated
+- [x] 4.2 Read the two-dot diff of the remaining both-sides files from proposal.md; restore Oslo's version where the difference is no-op drift (section 5 of `customization-files.md`); verify section 5 is empty
+- [x] 4.3 Oslo fixes: check whether `1.15.0` still has the bugs behind "Encryption key preserved on database rename", "Follow the SQLite ALTER TABLE caveats" and "Offline-first search keeps local results" (Oslo partially reverted the last one); keep or retire each, and verify the decision is in the notes
 
 ## 5. Build and commit the merge
 
-- [ ] 5.1 `./gradlew :core:assembleDebug` succeeds; fix compile errors in the resolved files only (including Koin compile safety for `RetentionDIModule`)
-- [ ] 5.2 `./gradlew :core:testDebugUnitTest` passes, apart from tests that task 6 rewrites; list any such test in the notes
-- [ ] 5.3 Regenerate the public API dump (`./gradlew :core:releaseApiDump` or the task available in `1.15.0`); verify the `core.api` diff against Oslo only shows the customizations' public additions
-- [ ] 5.4 Commit the merge (`Merge upstream/1.15.0 into ...`); verify `git status` is clean
+- [x] 5.1 `./gradlew :core:assembleDebug` succeeds; fix compile errors in the resolved files only (including Koin compile safety for `RetentionDIModule`)
+- [x] 5.2 `./gradlew :core:testDebugUnitTest` passes, apart from tests that task 6 rewrites; list any such test in the notes
+- [x] 5.3 Regenerate the public API dump (`./gradlew :core:releaseApiDump` or the task available in `1.15.0`); verify the `core.api` diff against Oslo only shows the customizations' public additions
+- [x] 5.4 Commit the merge (`Merge upstream/1.15.0 into ...`); verify `git status` is clean
 
 Commit: one merge commit for groups 2 to 5.
 

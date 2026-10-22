@@ -45,14 +45,12 @@ import java.io.File
  * This migration:
  * 1. Detects and handles existing collisions
  * 2. Renames database files and their associated files (-shm, -wal, etc.)
- * 3. Copies encryption password from old DB name to new name (encrypted accounts only)
- * 4. Renames FileResource directories (sdk_resources and sdk_cache_resources)
- * 5. Updates protectedDbName for pending imports
- * 6. Updates configuration with new database names
+ * 3. Renames FileResource directories (sdk_resources and sdk_cache_resources)
+ * 4. Updates protectedDbName for pending imports
+ * 5. Updates configuration with new database names
  *
  * The hash suffix ensures each unique URL+username combination has its own database.
  */
-
 internal class Migration301(
     private val context: Context,
     private val databaseConfigurationStore: ObjectKeyValueStore<DatabasesConfiguration>,
@@ -65,14 +63,10 @@ internal class Migration301(
     fun apply() {
         val configuration = databaseConfigurationStore.get()
         if (configuration == null || configuration.accounts().isEmpty()) {
-            Log.i(TAG, "Migration301: no accounts to migrate, skipping")
             return
         }
 
-        Log.i(
-            TAG,
-            "Migration301: starting database name hash migration for ${configuration.accounts().size} account(s)",
-        )
+        Log.i(TAG, "Starting database name hash migration for ${configuration.accounts().size} accounts")
 
         val migratedAccounts = configuration.accounts().mapNotNull { account ->
             migrateAccount(account)
@@ -97,7 +91,6 @@ internal class Migration301(
 
         return try {
             val dbRenamed = renameDatabaseFile(oldDbName, newDbName)
-            Log.i(TAG, "Start fix: $oldDbName -> $newDbName")
             // EyeSeeTea fix - Encryption key preserved on database rename (Oslo ANDROSDK-2194, introduced 1.13.1)
             if (dbRenamed && account.encrypted()) {
                 passwordManager.copyPasswordForRenamedDatabase(oldDbName, newDbName)

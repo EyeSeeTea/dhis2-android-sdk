@@ -51,7 +51,6 @@ abstract class BaseLocalAnalyticsTest : BaseMockIntegrationTest() {
                     RealServerMother.username,
                     RealServerMother.password,
                     objects.dhis2MockServer.baseEndpoint,
-                    null,
                 )
             }
 

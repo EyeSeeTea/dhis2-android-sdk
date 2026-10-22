@@ -31,6 +31,7 @@ import android.content.res.AssetManager
 import org.hisp.dhis.android.core.arch.db.access.DatabaseAdapter
 import org.hisp.dhis.android.core.arch.db.access.internal.migrations.DatabaseCodeMigrations
 import java.io.IOException
+import java.util.ArrayList
 import java.util.Scanner
 
 internal class DatabaseMigrationParser(

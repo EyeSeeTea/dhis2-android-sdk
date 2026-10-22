@@ -167,7 +167,9 @@ Manual check (only if migration ordering or scripts around it change):
 
 Manual check (from the consuming app):
 - [ ] Run an `OFFLINE_FIRST` TEI search with the server unreachable or
-      failing: local results are shown, the app does not crash.
+      failing: local results are shown, the app does not crash. Since Oslo
+      `1.15.0` the online failure also reaches the app (capture app `3.5.0`
+      shows it as an error row below the local results).
 
 ## Maintenance rule
 

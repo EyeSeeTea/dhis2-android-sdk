@@ -73,7 +73,7 @@ class DataSetRetentionLimitResolverShould {
     }
 
     private fun givenADataSetSettings(
-        globalSettings: DataSetSetting?,
+        globalSettings: DataSetSetting,
         specificSettings: Map<String, DataSetSetting>,
     ): DataSetSettings {
         return DataSetSettings.builder()

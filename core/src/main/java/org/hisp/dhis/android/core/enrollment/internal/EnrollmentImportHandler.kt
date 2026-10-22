@@ -32,7 +32,6 @@ import org.hisp.dhis.android.core.arch.handlers.internal.HandleAction
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.common.internal.DataStatePropagator
 import org.hisp.dhis.android.core.enrollment.Enrollment
-import org.hisp.dhis.android.core.enrollment.EnrollmentInternalAccessor
 import org.hisp.dhis.android.core.event.Event
 import org.hisp.dhis.android.core.event.internal.EventImportHandler
 import org.hisp.dhis.android.core.imports.TrackerImportConflict
@@ -44,7 +43,7 @@ import org.hisp.dhis.android.core.imports.internal.TrackerImportConflictStore
 import org.hisp.dhis.android.core.tracker.importer.internal.JobReportEnrollmentHandler
 import org.hisp.dhis.android.persistence.enrollment.EnrollmentTableInfo
 import org.koin.core.annotation.Singleton
-import java.util.Date
+import java.util.*
 
 @Singleton
 internal class EnrollmentImportHandler(
@@ -186,9 +185,7 @@ internal class EnrollmentImportHandler(
         enrollmentUid: String,
         enrollments: List<Enrollment>,
     ): List<Event> {
-        return enrollments.find { it.uid() == enrollmentUid }?.let {
-            EnrollmentInternalAccessor.accessEvents(it)
-        } ?: listOf()
+        return enrollments.find { it.uid() == enrollmentUid }?.events() ?: listOf()
     }
 
     private fun getConflictBuilder(

@@ -30,7 +30,7 @@ package org.hisp.dhis.android.core.period.internal
 import org.hisp.dhis.android.core.common.RelativePeriod
 import org.hisp.dhis.android.core.period.Period
 import org.hisp.dhis.android.core.period.PeriodType
-import java.util.Date
+import java.util.*
 
 internal interface ParentPeriodGenerator {
     fun generatePeriods(): List<Period>

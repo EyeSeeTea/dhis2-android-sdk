@@ -37,7 +37,7 @@ import org.hisp.dhis.android.core.arch.call.D2Progress
 import org.hisp.dhis.android.core.arch.call.fetchers.internal.UidsNoResourceCallFetcher
 import org.hisp.dhis.android.core.arch.call.internal.D2ProgressManager
 import org.hisp.dhis.android.core.arch.call.queries.internal.UidsQuery
-import org.hisp.dhis.android.core.arch.helpers.FileResizerHelper
+import org.hisp.dhis.android.core.arch.helpers.FileResizerHelper.DimensionSize
 import org.hisp.dhis.android.core.arch.helpers.Result
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.common.ValueType
@@ -53,7 +53,7 @@ import org.hisp.dhis.android.core.maintenance.D2Error
 import org.hisp.dhis.android.core.settings.internal.SynchronizationSettingStore
 import org.koin.core.annotation.Singleton
 
-@SuppressWarnings("LongParameterList", "MagicNumber")
+@SuppressWarnings("LongParameterList", "MagicNumber", "TooManyFunctions")
 @Singleton
 internal class FileResourceDownloadCall(
     private val fileResourceStore: FileResourceStore,
@@ -66,15 +66,30 @@ internal class FileResourceDownloadCall(
     private val coroutineAPICallExecutor: CoroutineAPICallExecutor,
 ) {
 
+    /**
+     * Downloads the file resources linked to a set of tracker items that have just been downloaded and persisted.
+     *
+     * Unlike [download], it is scoped to the items in [params] and knows the program they were downloaded for
+     * ([FileResourceDownloadParams.contextProgramUid]), which is required to build the tracked entity attribute
+     * endpoints. It does not delete outdated file resources: that is a global routine and would be too expensive to
+     * run once per page.
+     *
+     * File resources are best effort: a failure here must never abort the tracker data download.
+     */
+    suspend fun downloadTrackerFileResources(params: FileResourceDownloadParams) {
+        try {
+            val existingFileResources = fileResourceStore.selectUids()
+            downloadTrackerValues(withResolvedMaxContentLength(params), existingFileResources)
+        } catch (d2Error: D2Error) {
+            Log.v(FileResourceDownloadCall::class.java.canonicalName, d2Error.errorDescription())
+        }
+    }
+
     fun download(params: FileResourceDownloadParams): Flow<D2Progress> = flow {
         val progressManager = D2ProgressManager(4)
         val existingFileResources = fileResourceStore.selectUids()
 
-        val paramsWithCorrectedMaxContentLength = params.copy(
-            maxContentLength = params.maxContentLength
-                ?: synchronizationSettingsStore.selectFirst()?.fileMaxLengthBytes()
-                ?: defaultDownloadMaxContentLength,
-        )
+        val paramsWithCorrectedMaxContentLength = withResolvedMaxContentLength(params)
 
         downloadAggregatedValues(paramsWithCorrectedMaxContentLength, existingFileResources)
         emit(progressManager.increaseProgress(FileResource::class.java, isComplete = false))
@@ -87,6 +102,14 @@ internal class FileResourceDownloadCall(
 
         fileResourceRoutine.internalDeleteOutdatedFileResources()
         emit(progressManager.increaseProgress(FileResource::class.java, isComplete = true))
+    }
+
+    private suspend fun withResolvedMaxContentLength(params: FileResourceDownloadParams): FileResourceDownloadParams {
+        return params.copy(
+            maxContentLength = params.maxContentLength
+                ?: synchronizationSettingsStore.selectFirst()?.fileMaxLengthBytes()
+                ?: defaultDownloadMaxContentLength,
+        )
     }
 
     private suspend fun downloadAggregatedValues(
@@ -103,7 +126,7 @@ internal class FileResourceDownloadCall(
                 values = dataValues,
                 maxContentLength = params.maxContentLength,
                 download = fileResourceNetworkHandlder::getFileFromDataValue,
-                getUid = { v -> v.value() },
+                getUid = { v -> v.value.value() },
             )
         }
     }
@@ -270,7 +293,7 @@ internal class FileResourceDownloadCall(
         val scalingDimension = computeScalingDimension(contentLength, maxContentLength?.toLong(), fileIsImage)
 
         return try {
-            if (scalingDimension != FileResizerHelper.DimensionSize.NotSupported.name &&
+            if (scalingDimension != DimensionSize.NotSupported.name &&
                 FileResourceInternalAccessor.isStored(fileResource)
             ) {
                 val responseByteArray = coroutineAPICallExecutor.wrap { download(value, scalingDimension) }.getOrThrow()
@@ -282,7 +305,7 @@ internal class FileResourceDownloadCall(
                 null
             }
         } catch (d2Error: D2Error) {
-            fileResource.uid()?.let { fileResourceStore.deleteIfExists(it) }
+            fileResource.uid.let { fileResourceStore.deleteIfExists(it) }
             Log.v(FileResourceDownloadCall::class.java.canonicalName, d2Error.errorDescription())
             null
         }

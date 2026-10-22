@@ -28,14 +28,7 @@
 
 package org.hisp.dhis.android.core.analytics.aggregated.mock
 
-import org.hisp.dhis.android.core.analytics.aggregated.Dimension
-import org.hisp.dhis.android.core.analytics.aggregated.DimensionItem
-import org.hisp.dhis.android.core.analytics.aggregated.GridAnalyticsResponse
-import org.hisp.dhis.android.core.analytics.aggregated.GridDimension
-import org.hisp.dhis.android.core.analytics.aggregated.GridHeader
-import org.hisp.dhis.android.core.analytics.aggregated.GridHeaderItem
-import org.hisp.dhis.android.core.analytics.aggregated.GridResponseValue
-import org.hisp.dhis.android.core.analytics.aggregated.MetadataItem
+import org.hisp.dhis.android.core.analytics.aggregated.*
 import org.hisp.dhis.android.core.analytics.aggregated.mock.AggregatedSamples.cc1
 import org.hisp.dhis.android.core.analytics.aggregated.mock.AggregatedSamples.co11
 import org.hisp.dhis.android.core.analytics.aggregated.mock.AggregatedSamples.co12

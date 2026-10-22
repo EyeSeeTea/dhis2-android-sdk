@@ -279,9 +279,10 @@ Status: `active`
 Spec: `openspec/specs/url-data-element/spec.md`
 
 Main implementation points:
-- `core/src/main/java/org/hisp/dhis/android/core/dataelement/DataElement.java` — `url()` (Oslo file, public API)
+- `core/src/main/java/org/hisp/dhis/android/core/dataelement/DataElement.kt` — `url` / `url()` (Oslo file, public API)
 - `core/src/main/java/org/hisp/dhis/android/persistence/dataelement/DataElementDB.kt` (Oslo file)
 - `core/src/main/java/org/hisp/dhis/android/network/dataelement/DataElementFields.kt` (Oslo file)
+- `core/src/main/java/org/hisp/dhis/android/network/dataelement/DataElementDTO.kt` — parses `url` and passes it to the model (Oslo file)
 - `core/src/main/assets/migrations/85.sql` — adds the column (Oslo migration)
 - `core/src/main/assets/migrations/175.sql` — keeps the column when the table is rebuilt (Oslo migration)
 
@@ -290,6 +291,13 @@ Technical note:
   new Oslo migration that rebuilds `DataElement` drops it silently: check every
   new migration that touches `DataElement`. Oslo `1.15.0` moves `DataElement`
   to a Kotlin `@ModelBuilder` model.
+- Tests: `core/src/test/java/org/hisp/dhis/android/core/dataelement/DataElementUrlShould.kt`
+  with its fixture `core/src/sharedTest/resources/dataelement/data_element_with_url.json`
+  (a copy of Oslo's `data_element.json` with a non-empty `url`, so Oslo's fixture
+  stays untouched).
+- The JSON goes through `DataElementDTO` since Oslo ANDROSDK-1981 (January
+  2025). The DTO had no `url` until the `1.15.0` upgrade, so `url()` was always
+  null in between. Any new Oslo DTO or mapper for `DataElement` must carry it.
 
 ## 3. Oslo bug fixes
 
@@ -302,7 +310,7 @@ have no spec: each one is retired when Oslo ships its own fix. Check the
 |-----|-------------|------------|-------|---------|-------------|
 | Encryption key preserved on database rename | ANDROSDK-2194 | 1.13.1 | `configuration/internal/migration/Migration301.kt`, `configuration/internal/DatabaseEncryptionPasswordManager.kt`, `configuration/internal/DatabaseConfigurationMigration.kt` (+ `Migration301IntegrationShould.kt`, `DatabaseConfigurationMigrationIntegrationShould.kt`) | `f2e617606a`, `3ca4b47125` | Oslo copies the encryption password when Migration301 renames an encrypted database (not in `1.15.0`) |
 | Follow the SQLite ALTER TABLE caveats | ANDROSDK-1871 | 1.10.1 | `core/src/main/assets/migrations/164.sql` | `16080ff19b` | Oslo rewrites `164.sql` without `ALTER TABLE ... RENAME` of a referenced table (not in `1.15.0`) |
-| Offline-first search keeps local results | ANDROAPP-7646 | — | `trackedentity/search/TrackedEntityInstanceQueryDataFetcher.kt` | `34c6efc4cd` | Oslo makes the online query status lookup null-safe. Oslo merged the rest of this fix in `1.14.1` (`58ef16e3fe`) and partially reverted it in `1.15.0` (`2f194a328b`): re-check the search behaviour when merging |
+| Offline-first search keeps local results | ANDROAPP-7646 | — | `trackedentity/search/TrackedEntityInstanceQueryDataFetcher.kt` | `34c6efc4cd` | Oslo makes the online query status lookup null-safe. Oslo merged the rest of this fix in `1.14.1` (`58ef16e3fe`) and reverted that part in `1.15.0` (`2f194a328b`), so online failures reach the app again; capture app 3.5.0 shows them as error rows. Still `!!` in `1.15.0` |
 
 Paths are relative to `core/src/main/java/org/hisp/dhis/android/core/` unless
 they start with `core/`.

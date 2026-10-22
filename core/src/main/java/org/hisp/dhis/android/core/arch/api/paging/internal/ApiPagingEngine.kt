@@ -27,6 +27,8 @@
  */
 package org.hisp.dhis.android.core.arch.api.paging.internal
 
+import kotlin.IllegalArgumentException
+import kotlin.IllegalStateException
 import kotlin.math.ceil
 import kotlin.math.floor
 

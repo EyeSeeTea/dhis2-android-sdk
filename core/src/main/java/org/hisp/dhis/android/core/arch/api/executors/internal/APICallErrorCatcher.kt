@@ -30,6 +30,7 @@ package org.hisp.dhis.android.core.arch.api.executors.internal
 import org.hisp.dhis.android.core.arch.api.internal.D2HttpResponse
 import org.hisp.dhis.android.core.maintenance.D2ErrorCode
 import java.io.IOException
+import kotlin.Throws
 
 internal interface APICallErrorCatcher {
     fun mustBeStored(): Boolean?
